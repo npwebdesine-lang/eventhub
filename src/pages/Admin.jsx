@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { 
   Settings, Plus, Calendar, LogOut, Loader2, X, 
-  Save, Image as ImageIcon, Trash2, DownloadCloud, Share2, Check, Users, QrCode 
+  Save, Image as ImageIcon, Trash2, DownloadCloud, Share2, Check, Users, QrCode, Trash2 
 } from 'lucide-react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
@@ -107,7 +107,22 @@ const Admin = () => {
   }
   setIsModalOpen(true);
 };
+  const handleDelete = async () => {
+    if (!window.confirm(`האם למחוק את האירוע "${formData.name}"?`)) return;
 
+    setSaving(true);
+    try {
+      const { error } = await supabase.from('events').delete().eq('id', currentEventId);
+      if (error) throw error;
+
+      fetchEvents(); // מרענן את הרשימה
+      setIsModalOpen(false); // סוגר את המודל
+    } catch (error) {
+      alert("שגיאה במחיקה");
+    } finally {
+      setSaving(false);
+    }
+  };
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -433,6 +448,16 @@ const Admin = () => {
             </form>
 
             <div className="p-8 bg-slate-50 flex gap-4">
+              {currentEventId && (
+                <button 
+                  type="button" // חשוב מאוד כדי לא להפעיל שמירה בטעות
+                  onClick={handleDelete}
+                  disabled={saving}
+                  className="p-5 bg-rose-50 text-rose-600 rounded-2xl hover:bg-rose-100 transition-all border border-rose-100"
+                >
+                  <Trash2 size={22} />
+                </button>
+              )}
               <button onClick={handleSave} disabled={saving} className="flex-1 bg-indigo-600 text-white font-black py-5 rounded-2xl flex justify-center items-center gap-2 hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 disabled:opacity-50">
                 {saving ? <Loader2 className="animate-spin" /> : <><Save size={22} /> שמור שינויים</>}
               </button>
