@@ -311,8 +311,8 @@ const Admin = () => {
             <div className="p-6">
               {/* כאן הקישור עודכן לעמוד הבית של האירוע, לפי ההגדרה שהייתה לך קודם */}
               <AdminQRGenerator 
-                defaultUrl={`${window.location.origin}`}
-                defaultColor={activeQrEvent.design_config.colors.primary}
+              defaultUrl={`${window.location.origin}/event/${activeQrEvent.id}`}
+              defaultColor={activeQrEvent.design_config.colors.primary}
               />
             </div>
           </div>

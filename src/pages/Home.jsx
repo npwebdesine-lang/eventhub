@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Camera, Heart, Loader2, PartyPopper, MapPin, X, RefreshCw } from 'lucide-react';
 import ModuleCard from '../components/ModuleCard';
 import { supabase } from '../lib/supabase';
+import { useParams } from 'react-router-dom';
 
 const Home = () => {
+  const { id } = useParams();
   const navigate = useNavigate();
   const [eventData, setEventData] = useState(null);
   const [loading, setLoading] = useState(true);

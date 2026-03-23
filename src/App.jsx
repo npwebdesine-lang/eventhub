@@ -3,18 +3,16 @@ import Home from './pages/Home';
 import Photos from './modules/Photos';
 import Dating from './modules/Dating';
 import Admin from './pages/Admin';
-import Album from './pages/Album'; // <-- וודא שהשורה הזו קיימת!
+import Album from './pages/Album'; 
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Admin />} />
+        <Route path="/event/:id" element={<Home />} />
         <Route path="/photos" element={<Photos />} />
         <Route path="/dating" element={<Dating />} />
-        <Route path="/admin" element={<Admin />} />
-        
-        {/* הכתובת שהייתה חסרה לנו */}
         <Route path="/album/:id" element={<Album />} /> 
       </Routes>
     </Router>
