@@ -21,10 +21,18 @@ const Admin = () => {
   const [saving, setSaving] = useState(false);
   const [currentEventId, setCurrentEventId] = useState(null);
   const [formData, setFormData] = useState({
-    name: '', event_date: '',
-    active_modules: { photo: true, dating: false, seating: true },
-    design_config: { template: 'glass', colors: { primary: '#3b82f6', background: '#020617' } }
-  });
+  name: '',
+  event_date: '',
+  active_modules: { 
+    photo: true, 
+    seating: true, 
+    dating: false // הוסף את זה כאן כברירת מחדל
+  },
+  design_config: { 
+    template: 'glass', 
+    colors: { primary: '#3b82f6', background: '#020617' } 
+  }
+});
 
   // מצבי גלריה
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
@@ -77,22 +85,28 @@ const Admin = () => {
   };
 
   const openModal = (event = null) => {
-    if (event) {
-      setCurrentEventId(event.id);
-      setFormData({
-        name: event.name, event_date: event.event_date || '',
-        active_modules: event.active_modules || { photo: true, dating: false, seating: true },
-        design_config: event.design_config || { template: 'glass', colors: { primary: '#3b82f6', background: '#020617' } }
-      });
-    } else {
-      setCurrentEventId(null);
-      setFormData({
-        name: '', event_date: '', active_modules: { photo: true, dating: false, seating: true },
-        design_config: { template: 'glass', colors: { primary: '#3b82f6', background: '#f8fafc' } }
-      });
-    }
-    setIsModalOpen(true);
-  };
+  if (event) {
+    setCurrentEventId(event.id);
+    setFormData({
+      name: event.name,
+      event_date: event.event_date || '',
+      // כאן הקסם: לוקחים את ברירות המחדל ודורסים עם מה שיש ב-DB
+      active_modules: { 
+        photo: true, seating: true, dating: false, 
+        ...event.active_modules 
+      },
+      design_config: event.design_config || { template: 'glass', colors: { primary: '#3b82f6', background: '#020617' } }
+    });
+  } else {
+    setCurrentEventId(null);
+    setFormData({
+      name: '', event_date: '', 
+      active_modules: { photo: true, seating: true, dating: false },
+      design_config: { template: 'glass', colors: { primary: '#3b82f6', background: '#f8fafc' } }
+    });
+  }
+  setIsModalOpen(true);
+};
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -352,6 +366,7 @@ const Admin = () => {
               <h2 className="text-3xl font-black text-slate-800">{currentEventId ? 'עריכת אירוע' : 'אירוע חדש'}</h2>
               <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X size={28} /></button>
             </div>
+            
             <form onSubmit={handleSave} className="p-8 space-y-8 overflow-y-auto max-h-[70vh]">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
@@ -363,6 +378,7 @@ const Admin = () => {
                   <input type="date" value={formData.event_date} onChange={e => setFormData({...formData, event_date: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all" />
                 </div>
               </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-700">צבע מיתוג ראשי</label>
@@ -373,14 +389,49 @@ const Admin = () => {
                   <input type="color" value={formData.design_config.colors.background} onChange={e => setFormData({...formData, design_config: {...formData.design_config, colors: {...formData.design_config.colors, background: e.target.value}}})} className="w-full h-14 rounded-2xl cursor-pointer border-4 border-slate-50" />
                 </div>
               </div>
+
+              {/* בחירת מודולים */}
               <div className="space-y-4 pt-4 border-t border-slate-100">
                 <label className="text-sm font-bold text-slate-700 block">מודולים פעילים באירוע</label>
-                <div className="flex gap-4">
-                    <label className="flex items-center gap-2 p-3 border rounded-xl cursor-pointer hover:bg-slate-50 transition-colors"><input type="checkbox" checked={formData.active_modules.photo} onChange={(e) => setFormData({...formData, active_modules: {...formData.active_modules, photo: e.target.checked}})} className="w-5 h-5 text-indigo-600 rounded" /><span className="font-semibold text-slate-700">מצלמה</span></label>
-                    <label className="flex items-center gap-2 p-3 border rounded-xl cursor-pointer hover:bg-slate-50 transition-colors"><input type="checkbox" checked={formData.active_modules.seating} onChange={(e) => setFormData({...formData, active_modules: {...formData.active_modules, seating: e.target.checked}})} className="w-5 h-5 text-indigo-600 rounded" /><span className="font-semibold text-slate-700">סידור הושבה</span></label>
+                <div className="flex flex-wrap gap-4">
+                  
+                  {/* מודול צילום */}
+                  <label className="flex items-center gap-2 p-3 border rounded-xl cursor-pointer hover:bg-slate-50 transition-colors">
+                    <input 
+                      type="checkbox" 
+                      checked={formData.active_modules.photo} 
+                      onChange={(e) => setFormData({...formData, active_modules: {...formData.active_modules, photo: e.target.checked}})} 
+                      className="w-5 h-5 text-indigo-600 rounded" 
+                    />
+                    <span className="font-semibold text-slate-700">מצלמה</span>
+                  </label>
+
+                  {/* מודול הושבה */}
+                  <label className="flex items-center gap-2 p-3 border rounded-xl cursor-pointer hover:bg-slate-50 transition-colors">
+                    <input 
+                      type="checkbox" 
+                      checked={formData.active_modules.seating} 
+                      onChange={(e) => setFormData({...formData, active_modules: {...formData.active_modules, seating: e.target.checked}})} 
+                      className="w-5 h-5 text-indigo-600 rounded" 
+                    />
+                    <span className="font-semibold text-slate-700">סידור הושבה</span>
+                  </label>
+
+                  {/* מודול דייטליין - החדש */}
+                  <label className="flex items-center gap-2 p-3 border border-rose-100 bg-rose-50/30 rounded-xl cursor-pointer hover:bg-rose-50 transition-colors">
+                    <input 
+                      type="checkbox" 
+                      checked={formData.active_modules.dating} 
+                      onChange={(e) => setFormData({...formData, active_modules: {...formData.active_modules, dating: e.target.checked}})} 
+                      className="w-5 h-5 text-rose-500 rounded accent-rose-500" 
+                    />
+                    <span className="font-semibold text-slate-700">דייט-ליין</span>
+                  </label>
+
                 </div>
               </div>
             </form>
+
             <div className="p-8 bg-slate-50 flex gap-4">
               <button onClick={handleSave} disabled={saving} className="flex-1 bg-indigo-600 text-white font-black py-5 rounded-2xl flex justify-center items-center gap-2 hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 disabled:opacity-50">
                 {saving ? <Loader2 className="animate-spin" /> : <><Save size={22} /> שמור שינויים</>}
@@ -389,7 +440,6 @@ const Admin = () => {
           </div>
         </div>
       )}
-
       {/* מודל גלריה */}
       {isGalleryOpen && activeGalleryEvent && (
         <div className="fixed inset-0 z-[200] flex flex-col animate-in fade-in duration-300" style={{ backgroundColor: activeGalleryEvent.design_config.colors.background }}>
