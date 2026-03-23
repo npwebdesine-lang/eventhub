@@ -10,6 +10,12 @@ const AdminQRGenerator = ({ defaultUrl = "https://example.com", defaultColor = "
   const qrRef = useRef(null);
   const qrCodeInstance = useRef(null);
 
+  // סנכרון המידע כשמחליפים אירוע בלוח הבקרה
+  useEffect(() => {
+    setUrl(defaultUrl);
+    setDotsColor(defaultColor);
+  }, [defaultUrl, defaultColor]);
+
   useEffect(() => {
     qrCodeInstance.current = new QRCodeStyling({
       width: 260,
@@ -37,7 +43,6 @@ const AdminQRGenerator = ({ defaultUrl = "https://example.com", defaultColor = "
     }
   }, []);
 
-  // עדכון בזמן אמת של ה-QR
   useEffect(() => {
     if (qrCodeInstance.current) {
       qrCodeInstance.current.update({
@@ -65,8 +70,6 @@ const AdminQRGenerator = ({ defaultUrl = "https://example.com", defaultColor = "
 
   return (
     <div className="flex flex-col gap-6" dir="rtl">
-      
-      {/* הגדרות חזותיות */}
       <div className="space-y-4">
         <div>
           <label className="text-sm font-bold text-slate-700 block mb-1">קישור הברקוד (URL)</label>
@@ -102,7 +105,6 @@ const AdminQRGenerator = ({ defaultUrl = "https://example.com", defaultColor = "
         </div>
       </div>
 
-      {/* תצוגה מקדימה של ה-QR */}
       <div className="flex justify-center p-6 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200">
         <div ref={qrRef} className="rounded-2xl overflow-hidden bg-white p-2 shadow-sm" />
       </div>

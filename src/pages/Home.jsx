@@ -20,7 +20,7 @@ const Home = () => {
   const [isSearchingTable, setIsSearchingTable] = useState(false);
   const [tableResult, setTableResult] = useState(null);
 
-  useEffect(() => {
+ useEffect(() => {
     const savedName = localStorage.getItem('guest_name');
     const savedId = localStorage.getItem('guest_id');
     
@@ -30,7 +30,13 @@ const Home = () => {
 
     const fetchEvent = async () => {
       try {
-        const { data, error } = await supabase.from('events').select('*').limit(1).single();
+        // תיקון: שליפת האירוע הספציפי לפי ה-ID מהכתובת
+        const { data, error } = await supabase
+          .from('events')
+          .select('*')
+          .eq('id', id)
+          .single();
+
         if (error) throw error;
         setEventData(data);
       } catch (error) {
@@ -40,8 +46,8 @@ const Home = () => {
       }
     };
 
-    fetchEvent();
-  }, []);
+    if (id) fetchEvent();
+  }, [id]); // הוספת id למערך התלות
 
   const handleRegister = (e) => {
     e.preventDefault();
@@ -153,15 +159,27 @@ const Home = () => {
 
         <div className="grid grid-cols-2 gap-4">
           {active_modules.photo && (
-            <ModuleCard title="כל אחד צלם" icon={Camera} color="bg-orange-500" onClick={() => navigate('/photos')} />
+            <ModuleCard 
+            title="כל אחד צלם"
+            icon={Camera} 
+            color="bg-orange-500"
+            onClick={() => navigate(`/photos?event=${id}`)} />
           )}
           
           {active_modules.seating && (
-            <ModuleCard title="איפה אני יושב?" icon={MapPin} color="bg-emerald-500" onClick={findMyTable} />
+            <ModuleCard
+            title="איפה אני יושב?" 
+            icon={MapPin} 
+            color="bg-emerald-500" 
+            onClick={findMyTable} />
           )}
 
           {active_modules.dating && (
-            <ModuleCard title="דייט-ליין" icon={Heart} color="bg-rose-500" onClick={() => navigate('/dating')} />
+            <ModuleCard 
+            title="דייט-ליין" 
+            icon={Heart} 
+            color="bg-rose-500" 
+            onClick={() => navigate(`/dating?event=${id}`)} />
           )}
         </div>
       </div>
