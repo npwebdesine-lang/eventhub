@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { 
   Settings, Plus, Calendar, LogOut, Loader2, X, 
-  Save, Image as ImageIcon, Trash2, DownloadCloud, Share2, Check, Users, QrCode, Trash2 
+  Save, Image as ImageIcon, Trash2, DownloadCloud, Share2, Check, Users, QrCode, Heart, ChevronRight
 } from 'lucide-react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
@@ -16,42 +16,23 @@ const Admin = () => {
   const [events, setEvents] = useState([]);
   const [dataLoading, setDataLoading] = useState(false);
 
-  // מצבי טופס עריכה
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // היררכיה חדשה: אירוע נבחר לניהול מלא
+  const [selectedEvent, setSelectedEvent] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [currentEventId, setCurrentEventId] = useState(null);
-  const [formData, setFormData] = useState({
-  name: '',
-  event_date: '',
-  active_modules: { 
-    photo: true, 
-    seating: true, 
-    dating: false // הוסף את זה כאן כברירת מחדל
-  },
-  design_config: { 
-    template: 'glass', 
-    colors: { primary: '#3b82f6', background: '#020617' } 
-  }
-});
+  const [formData, setFormData] = useState(null);
 
-  // מצבי גלריה
+  // מצבי מודולים ספציפיים
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
-  const [activeGalleryEvent, setActiveGalleryEvent] = useState(null);
   const [galleryPhotos, setGalleryPhotos] = useState([]);
-  const [galleryLoading, setGalleryLoading] = useState(false);
   const [downloadingZip, setDownloadingZip] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
-
-  // מצבי הושבה
+  
   const [isSeatingModalOpen, setIsSeatingModalOpen] = useState(false);
-  const [activeSeatingEvent, setActiveSeatingEvent] = useState(null);
   const [seatingText, setSeatingText] = useState('');
   const [seatingLoading, setSeatingLoading] = useState(false);
   const [savedGuestsCount, setSavedGuestsCount] = useState(0);
 
-  // מצבי QR
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
-  const [activeQrEvent, setActiveQrEvent] = useState(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -84,161 +65,118 @@ const Admin = () => {
     setAuthLoading(false);
   };
 
-  const openModal = (event = null) => {
-  if (event) {
-    setCurrentEventId(event.id);
+  // פתיחת אירוע לניהול
+  const handleManageEvent = (event) => {
+    setSelectedEvent(event);
     setFormData({
       name: event.name,
       event_date: event.event_date || '',
-      // כאן הקסם: לוקחים את ברירות המחדל ודורסים עם מה שיש ב-DB
-      active_modules: { 
-        photo: true, seating: true, dating: false, 
-        ...event.active_modules 
-      },
+      active_modules: { photo: true, seating: true, dating: false, ...event.active_modules },
       design_config: event.design_config || { template: 'glass', colors: { primary: '#3b82f6', background: '#020617' } }
     });
-  } else {
-    setCurrentEventId(null);
+  };
+
+  const handleCreateNew = () => {
+    setSelectedEvent({ id: null, isNew: true });
     setFormData({
       name: '', event_date: '', 
       active_modules: { photo: true, seating: true, dating: false },
       design_config: { template: 'glass', colors: { primary: '#3b82f6', background: '#f8fafc' } }
     });
-  }
-  setIsModalOpen(true);
-};
-  const handleDelete = async () => {
-    if (!window.confirm(`האם למחוק את האירוע "${formData.name}"?`)) return;
-
-    setSaving(true);
-    try {
-      const { error } = await supabase.from('events').delete().eq('id', currentEventId);
-      if (error) throw error;
-
-      fetchEvents(); // מרענן את הרשימה
-      setIsModalOpen(false); // סוגר את המודל
-    } catch (error) {
-      alert("שגיאה במחיקה");
-    } finally {
-      setSaving(false);
-    }
   };
-  const handleSave = async (e) => {
-    e.preventDefault();
+
+  const handleSave = async () => {
+    if (!formData.name) return alert("יש להזין שם אירוע");
     setSaving(true);
     try {
-      if (currentEventId) await supabase.from('events').update(formData).eq('id', currentEventId);
-      else await supabase.from('events').insert([formData]);
-      setIsModalOpen(false);
+      if (selectedEvent.id) {
+        await supabase.from('events').update(formData).eq('id', selectedEvent.id);
+      } else {
+        await supabase.from('events').insert([formData]);
+      }
+      setSelectedEvent(null);
       fetchEvents();
     } catch (error) { alert(error.message); }
     finally { setSaving(false); }
   };
 
-  const openGallery = async (event) => {
-    setActiveGalleryEvent(event);
-    setIsGalleryOpen(true);
-    setGalleryLoading(true);
+  const handleDelete = async () => {
+    if (!window.confirm(`האם אתה בטוח שברצונך למחוק את האירוע "${formData.name}"? כל הנתונים יימחקו לצמיתות!`)) return;
+    setSaving(true);
     try {
-      const { data } = await supabase.from('photos').select('*').eq('event_id', event.id).order('created_at', { ascending: false });
-      setGalleryPhotos(data || []);
-    } catch (error) { console.error(error); }
-    finally { setGalleryLoading(false); }
+      await supabase.from('events').delete().eq('id', selectedEvent.id);
+      setSelectedEvent(null);
+      fetchEvents();
+    } catch (error) { alert("שגיאה במחיקה"); }
+    finally { setSaving(false); }
   };
 
-  const handleDeletePhoto = async (photo) => {
-    if (!window.confirm(`למחוק את התמונה של ${photo.guest_name}?`)) return;
+  // --- פונקציות מודולים ---
+  const copyShareLink = async (eventId) => {
+    const url = `${window.location.origin}/event/${eventId}`;
     try {
-      await supabase.from('photos').delete().eq('id', photo.id);
-      const filePath = photo.image_url.split('/event-photos/')[1];
-      if (filePath) await supabase.storage.from('event-photos').remove([filePath]);
-      setGalleryPhotos(prev => prev.filter(p => p.id !== photo.id));
-    } catch (error) { alert(error.message); }
+      await navigator.clipboard.writeText(url);
+      setCopiedId(eventId);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (err) { alert("הקישור הוא: " + url); }
+  };
+
+  const openGallery = async () => {
+    setIsGalleryOpen(true);
+    const { data } = await supabase.from('photos').select('*').eq('event_id', selectedEvent.id).order('created_at', { ascending: false });
+    setGalleryPhotos(data || []);
   };
 
   const downloadAlbum = async () => {
     setDownloadingZip(true);
     try {
       const zip = new JSZip();
-      const imgFolder = zip.folder(`Album_${activeGalleryEvent.name}`);
+      const imgFolder = zip.folder(`Album_${formData.name}`);
       await Promise.all(galleryPhotos.map(async (p, i) => {
         const res = await fetch(p.image_url);
         const blob = await res.blob();
         imgFolder.file(`${p.guest_name}_${i+1}.jpg`, blob);
       }));
       const content = await zip.generateAsync({ type: 'blob' });
-      saveAs(content, `${activeGalleryEvent.name}_Photos.zip`);
+      saveAs(content, `${formData.name}_Photos.zip`);
     } catch (error) { console.error(error); }
     finally { setDownloadingZip(false); }
   };
 
-  const copyShareLink = async (eventId) => {
-    const url = `${window.location.origin}/album/${eventId}`;
+  const handleDeletePhoto = async (photo) => {
+    if (!window.confirm(`למחוק את התמונה של ${photo.guest_name}?`)) return;
     try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(url);
-      } else {
-        const textArea = document.createElement("textarea");
-        textArea.value = url;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textArea);
-      }
-      setCopiedId(eventId);
-      setTimeout(() => setCopiedId(null), 2000);
-    } catch (err) {
-      alert("לא הצלחנו להעתיק אוטומטית. הקישור הוא: " + url);
-    }
+      await supabase.from('photos').delete().eq('id', photo.id);
+      setGalleryPhotos(prev => prev.filter(p => p.id !== photo.id));
+    } catch (error) { alert(error.message); }
   };
 
-  const openSeatingModal = async (event) => {
-    setActiveSeatingEvent(event);
+  const openSeatingManager = async () => {
     setSeatingText('');
     setIsSeatingModalOpen(true);
-    setSeatingLoading(true);
-    try {
-      const { count } = await supabase.from('seating').select('*', { count: 'exact', head: true }).eq('event_id', event.id);
-      setSavedGuestsCount(count || 0);
-    } catch (error) { console.error(error); } 
-    finally { setSeatingLoading(false); }
+    const { count } = await supabase.from('seating').select('*', { count: 'exact', head: true }).eq('event_id', selectedEvent.id);
+    setSavedGuestsCount(count || 0);
   };
 
   const handleSaveSeating = async () => {
-    if (!seatingText.trim()) return alert("אנא הדבק רשימה קודם");
+    if (!seatingText.trim()) return alert("אנא הדבק רשימה");
     setSeatingLoading(true);
     try {
-      const lines = seatingText.split('\n');
-      const parsedGuests = [];
-      lines.forEach(line => {
-        const cleanLine = line.trim();
-        if (!cleanLine) return;
-        const match = cleanLine.match(/^(.*?)[-,\s]*(\d+)\s*$/);
-        if (match) {
-          const name = match[1].trim();
-          const table = match[2].trim();
-          if (name && table) parsedGuests.push({ event_id: activeSeatingEvent.id, guest_name: name, table_number: table });
-        }
-      });
-      if (parsedGuests.length === 0) {
-        setSeatingLoading(false);
-        return alert("לא הצלחנו לזהות שמות ומספרי שולחנות. וודא שהפורמט הוא 'שם - מספר'");
-      }
-      await supabase.from('seating').delete().eq('event_id', activeSeatingEvent.id);
-      const { error } = await supabase.from('seating').insert(parsedGuests);
-      if (error) throw error;
+      const parsedGuests = seatingText.split('\n').map(line => {
+        const match = line.trim().match(/^(.*?)[-,\s]*(\d+)\s*$/);
+        return match ? { event_id: selectedEvent.id, guest_name: match[1].trim(), table_number: match[2].trim() } : null;
+      }).filter(Boolean);
+      
+      if (parsedGuests.length === 0) throw new Error("לא זיהינו שמות בפורמט התקין (שם - מספר)");
+      await supabase.from('seating').delete().eq('event_id', selectedEvent.id);
+      await supabase.from('seating').insert(parsedGuests);
       setSavedGuestsCount(parsedGuests.length);
       setSeatingText('');
-      alert(`מעולה! ${parsedGuests.length} מוזמנים נשמרו בהצלחה.`);
-      setIsSeatingModalOpen(false);
+      alert(`נשמרו ${parsedGuests.length} מוזמנים.`);
     } catch (error) { alert(error.message); } 
     finally { setSeatingLoading(false); }
   };
 
-  const openQrModal = (event) => {
-    setActiveQrEvent(event);
-    setIsQrModalOpen(true);
-  };
 
   if (authLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="animate-spin text-indigo-600" size={48} /></div>;
 
@@ -261,111 +199,239 @@ const Admin = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] p-4 md:p-12" dir="rtl">
-      <div className="max-w-6xl mx-auto space-y-8">
-        
-        <div className="flex flex-col md:flex-row justify-between items-center bg-white p-8 rounded-[2rem] shadow-sm border border-slate-200 gap-6">
-          <div>
-            <h1 className="text-4xl font-black text-slate-900">לוח בקרה</h1>
-            <p className="text-slate-500 font-medium text-lg mt-1">מערכת ה-SaaS שלך לניהול חוויות באירועים</p>
+    <div className="min-h-screen bg-[#f8fafc] p-4 md:p-8" dir="rtl">
+      
+      {/* מסך ראשי - רשימת אירועים */}
+      {!selectedEvent && (
+        <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in">
+          <div className="flex flex-col md:flex-row justify-between items-center bg-white p-8 rounded-[2rem] shadow-sm border border-slate-200 gap-6">
+            <div>
+              <h1 className="text-4xl font-black text-slate-900">לוח בקרה</h1>
+              <p className="text-slate-500 font-medium text-lg mt-1">מערכת ה-SaaS שלך לניהול חוויות</p>
+            </div>
+            <div className="flex gap-4 w-full md:w-auto">
+              <button onClick={handleCreateNew} className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-2xl flex items-center justify-center gap-2 font-bold transition-all shadow-lg shadow-indigo-100">
+                <Plus size={22} /> אירוע חדש
+              </button>
+              <button onClick={() => supabase.auth.signOut()} className="bg-slate-100 p-4 rounded-2xl text-slate-600 hover:bg-slate-200 transition-colors"><LogOut size={22} /></button>
+            </div>
           </div>
-          <div className="flex gap-4 w-full md:w-auto">
-            <button onClick={() => openModal()} className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-2xl flex items-center justify-center gap-2 font-bold transition-all shadow-lg shadow-indigo-100">
-              <Plus size={22} /> אירוע חדש
-            </button>
-            <button onClick={() => supabase.auth.signOut()} className="bg-slate-100 p-4 rounded-2xl text-slate-600 hover:bg-slate-200 transition-colors"><LogOut size={22} /></button>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-1 gap-4">
-          {dataLoading ? <div className="p-20 flex justify-center"><Loader2 className="animate-spin text-indigo-600" size={48} /></div> :
-            events.map(event => (
-              <div key={event.id} className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-200 flex flex-col xl:flex-row items-center justify-between group hover:border-indigo-200 transition-all gap-6">
-                <div className="flex items-center gap-6 w-full xl:w-auto">
-                  <div className="bg-indigo-50 p-5 rounded-3xl text-indigo-600 group-hover:scale-110 transition-transform duration-500"><Calendar size={32} /></div>
-                  <div>
-                    <h3 className="font-black text-2xl text-slate-800">{event.name}</h3>
-                    <div className="flex gap-4 mt-2 text-slate-500 font-medium">
-                      <span>{new Date(event.event_date).toLocaleDateString('he-IL')}</span>
-                      <span>•</span>
-                      <span className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: event.design_config.colors.primary }}></div>
-                        עיצוב {event.design_config.template}
-                      </span>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {dataLoading ? <Loader2 className="animate-spin text-indigo-600 mx-auto col-span-full" size={48} /> :
+              events.map(event => (
+                <div key={event.id} className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-200 flex flex-col group hover:border-indigo-300 hover:shadow-xl transition-all relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="bg-indigo-100 p-4 rounded-2xl text-indigo-600"><Calendar size={28} /></div>
+                    <div>
+                      <h3 className="font-black text-2xl text-slate-800 line-clamp-1">{event.name}</h3>
+                      <p className="text-slate-500 font-medium">{new Date(event.event_date).toLocaleDateString('he-IL')}</p>
                     </div>
                   </div>
-                </div>
-
-                <div className="flex flex-wrap justify-center items-center gap-3 w-full xl:w-auto">
-                  <button onClick={() => openGallery(event)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-xl flex items-center gap-2 font-bold shadow-md transition-all">
-                    <ImageIcon size={18} /> אלבום
-                  </button>
-                  
-                  {event.active_modules?.seating && (
-                    <button onClick={() => openSeatingModal(event)} className="bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-3 rounded-xl flex items-center gap-2 font-bold shadow-md transition-all">
-                      <Users size={18} /> הושבה
+                  <div className="flex gap-2 mt-auto">
+                    <button onClick={() => handleManageEvent(event)} className="flex-1 bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl font-bold transition-all flex justify-center items-center gap-2">
+                      <Settings size={18} /> ניהול אירוע
                     </button>
-                  )}
+                    <button onClick={() => copyShareLink(event.id)} className={`p-3 rounded-xl transition-all border ${copiedId === event.id ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-600 hover:text-indigo-600'}`} title="העתק קישור לאירוע">
+                      {copiedId === event.id ? <Check size={20} /> : <Share2 size={20} />}
+                    </button>
+                  </div>
+                </div>
+              ))
+            }
+          </div>
+        </div>
+      )}
 
-                  <button onClick={() => openQrModal(event)} className="bg-slate-800 hover:bg-slate-900 text-white px-5 py-3 rounded-xl flex items-center gap-2 font-bold shadow-md transition-all">
-                    <QrCode size={18} /> שילוט QR
+      {/* מסך ניהול אירוע נבחר */}
+      {selectedEvent && (
+        <div className="max-w-5xl mx-auto animate-in slide-in-from-bottom-8 duration-500">
+          <button onClick={() => setSelectedEvent(null)} className="flex items-center gap-2 text-slate-500 hover:text-slate-900 font-bold mb-6 transition-colors">
+            <ChevronRight size={20} /> חזרה לכל האירועים
+          </button>
+
+          <div className="bg-white rounded-[2.5rem] shadow-xl border border-slate-200 overflow-hidden">
+            {/* Header של מסך הניהול */}
+            <div className="p-8 md:p-10 border-b border-slate-100 bg-slate-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+              <div>
+                <h2 className="text-3xl font-black text-slate-900">{selectedEvent.isNew ? 'יצירת אירוע חדש' : `ניהול: ${formData.name}`}</h2>
+                <p className="text-slate-500 mt-2">הגדרות כלליות ומודולים</p>
+              </div>
+              <div className="flex gap-3 w-full md:w-auto">
+                {!selectedEvent.isNew && (
+                  <button onClick={handleDelete} disabled={saving} className="p-4 bg-rose-50 text-rose-600 rounded-2xl hover:bg-rose-100 transition-all border border-rose-100" title="מחק אירוע">
+                    <Trash2 size={22} />
                   </button>
+                )}
+                <button onClick={handleSave} disabled={saving} className="flex-1 md:flex-none bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black flex justify-center items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200">
+                  {saving ? <Loader2 className="animate-spin" /> : <><Save size={22} /> שמור שינויים</>}
+                </button>
+              </div>
+            </div>
+
+            <div className="p-8 md:p-10 grid grid-cols-1 lg:grid-cols-3 gap-12">
+              
+              {/* טור ימני: הגדרות בסיסיות */}
+              <div className="lg:col-span-1 space-y-6">
+                <h3 className="text-xl font-black text-slate-800 border-b pb-4">הגדרות בסיס</h3>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">שם האירוע</label>
+                  <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700">תאריך</label>
+                  <input type="date" value={formData.event_date} onChange={e => setFormData({...formData, event_date: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 text-center block">צבע מיתוג</label>
+                    <input type="color" value={formData.design_config.colors.primary} onChange={e => setFormData({...formData, design_config: {...formData.design_config, colors: {...formData.design_config.colors, primary: e.target.value}}})} className="w-full h-12 rounded-xl cursor-pointer border-2 border-slate-100" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 text-center block">צבע רקע</label>
+                    <input type="color" value={formData.design_config.colors.background} onChange={e => setFormData({...formData, design_config: {...formData.design_config, colors: {...formData.design_config.colors, background: e.target.value}}})} className="w-full h-12 rounded-xl cursor-pointer border-2 border-slate-100" />
+                  </div>
+                </div>
+                
+                {!selectedEvent.isNew && (
+                  <button onClick={() => setIsQrModalOpen(true)} className="w-full mt-4 bg-slate-900 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-all">
+                    <QrCode size={20} /> הפק שילוט QR לאירוע
+                  </button>
+                )}
+              </div>
+
+              {/* טור שמאלי: ניהול מודולים (הקסם החדש) */}
+              <div className="lg:col-span-2 space-y-8">
+                <h3 className="text-xl font-black text-slate-800 border-b pb-4">מודולים ופיצ'רים</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   
-                  <button onClick={() => openModal(event)} className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-3 rounded-xl flex items-center gap-2 font-bold transition-all">
-                    <Settings size={18} /> הגדרות
-                  </button>
-                  <button 
-                    onClick={() => copyShareLink(event.id)}
-                    className={`p-3 rounded-xl transition-all border ${copiedId === event.id ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-white border-slate-200 text-slate-400 hover:text-indigo-600'}`}
-                    title="העתק קישור לגלריה"
-                  >
-                    {copiedId === event.id ? <Check size={20} /> : <Share2 size={20} />}
-                  </button>
+                  {/* מודול צילום */}
+                  <div className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.photo ? 'border-orange-500 bg-orange-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
+                    <div className="flex justify-between items-start mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-3 rounded-xl ${formData.active_modules.photo ? 'bg-orange-500 text-white' : 'bg-slate-200 text-slate-500'}`}><Camera size={24} /></div>
+                        <h4 className="font-black text-lg text-slate-800">כל אחד צלם</h4>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" className="sr-only peer" checked={formData.active_modules.photo} onChange={e => setFormData({...formData, active_modules: {...formData.active_modules, photo: e.target.checked}})} />
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                      </label>
+                    </div>
+                    {formData.active_modules.photo && !selectedEvent.isNew && (
+                      <div className="space-y-3 animate-in fade-in">
+                        <p className="text-sm text-slate-600 font-medium mb-4">ניהול הגלריה המשותפת של האורחים.</p>
+                        <button onClick={openGallery} className="w-full py-3 bg-white border border-orange-200 text-orange-600 font-bold rounded-xl hover:bg-orange-50 transition-colors flex justify-center items-center gap-2">
+                          <ImageIcon size={18} /> ניהול תמונות האלבום
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* מודול הושבה */}
+                  <div className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.seating ? 'border-emerald-500 bg-emerald-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
+                    <div className="flex justify-between items-start mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-3 rounded-xl ${formData.active_modules.seating ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'}`}><Users size={24} /></div>
+                        <h4 className="font-black text-lg text-slate-800">סידור הושבה</h4>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" className="sr-only peer" checked={formData.active_modules.seating} onChange={e => setFormData({...formData, active_modules: {...formData.active_modules, seating: e.target.checked}})} />
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                      </label>
+                    </div>
+                    {formData.active_modules.seating && !selectedEvent.isNew && (
+                      <div className="space-y-3 animate-in fade-in">
+                        <p className="text-sm text-slate-600 font-medium mb-4">ניהול רשימת המוזמנים ושולחנות.</p>
+                        <button onClick={openSeatingManager} className="w-full py-3 bg-white border border-emerald-200 text-emerald-600 font-bold rounded-xl hover:bg-emerald-50 transition-colors flex justify-center items-center gap-2">
+                          <Settings size={18} /> הזנת רשימת הושבה
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* מודול דייטליין */}
+                  <div className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.dating ? 'border-rose-500 bg-rose-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
+                    <div className="flex justify-between items-start mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-3 rounded-xl ${formData.active_modules.dating ? 'bg-rose-500 text-white' : 'bg-slate-200 text-slate-500'}`}><Heart size={24} /></div>
+                        <div>
+                          <h4 className="font-black text-lg text-slate-800">Daitline (דייטליין)</h4>
+                          <span className="text-xs font-bold text-rose-500 bg-rose-100 px-2 py-0.5 rounded-full">פרימיום</span>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" className="sr-only peer" checked={formData.active_modules.dating} onChange={e => setFormData({...formData, active_modules: {...formData.active_modules, dating: e.target.checked}})} />
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
+                      </label>
+                    </div>
+                    {formData.active_modules.dating && !selectedEvent.isNew && (
+                      <div className="p-4 bg-white rounded-xl border border-rose-100 text-center animate-in fade-in">
+                        <p className="text-sm text-slate-600 font-medium mb-3">צפייה ומחיקת משתמשים ממודול ההיכרויות (יפותח בשלב הבא).</p>
+                        <button disabled className="w-full py-3 bg-rose-50 text-rose-400 font-bold rounded-xl flex justify-center items-center gap-2 cursor-not-allowed">
+                           ניהול משתמשים (בקרוב)
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
                 </div>
               </div>
-            ))
-          }
-        </div>
-      </div>
-
-      {/* --- מודל ה-QR המעוצב החדש --- */}
-      {isQrModalOpen && activeQrEvent && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[100]">
-          <div className="bg-white w-full max-w-md rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-6 flex justify-between items-center bg-slate-50 border-b border-slate-100">
-              <h2 className="text-2xl font-black text-slate-800">QR מעוצב: {activeQrEvent.name}</h2>
-              <button onClick={() => setIsQrModalOpen(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors"><X size={24} /></button>
             </div>
-            
-            <div className="p-6">
-              {/* כאן הקישור עודכן לעמוד הבית של האירוע, לפי ההגדרה שהייתה לך קודם */}
-              <AdminQRGenerator 
-                key={activeQrEvent.id} 
-                defaultUrl={`${window.location.origin}/event/${activeQrEvent.id}`}
-                defaultColor={activeQrEvent.design_config?.colors?.primary || '#3b82f6'}
-              />
+          </div>
+        </div>
+      )}
+
+      {/* --- מודלים פנימיים למודולים שונים --- */}
+      
+      {/* מודל גלריה למנהל (נפתח מה"כל אחד צלם") */}
+      {isGalleryOpen && (
+        <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-md flex flex-col animate-in fade-in duration-300">
+          <div className="p-6 md:p-8 flex justify-between items-center bg-white">
+            <div>
+              <h2 className="text-3xl font-black text-slate-800">גלריית האירוע</h2>
+              <p className="text-slate-500 font-medium">{galleryPhotos.length} תמונות נאספו</p>
+            </div>
+            <div className="flex gap-4">
+              <button onClick={downloadAlbum} disabled={downloadingZip || galleryPhotos.length === 0} className="bg-orange-500 text-white font-black px-6 py-3 rounded-xl flex items-center gap-2 hover:bg-orange-600 transition-all disabled:opacity-50">
+                {downloadingZip ? <Loader2 className="animate-spin" /> : <><DownloadCloud size={20} /> ייצוא ZIP</>}
+              </button>
+              <button onClick={() => setIsGalleryOpen(false)} className="bg-slate-100 text-slate-600 p-3 rounded-xl hover:bg-slate-200 transition-colors"><X size={24} /></button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto p-6 md:p-10">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+              {galleryPhotos.map(photo => (
+                <div key={photo.id} className="relative group rounded-2xl overflow-hidden aspect-square border-4 border-white shadow-xl">
+                  <img src={photo.image_url} className="w-full h-full object-cover" alt="Moment" />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all flex flex-col justify-between p-4">
+                    <button onClick={() => handleDeletePhoto(photo)} className="self-end bg-rose-500 text-white p-2 rounded-lg hover:bg-rose-600 transition-colors shadow-lg"><Trash2 size={20} /></button>
+                    <p className="text-white text-sm font-black truncate">{photo.guest_name}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       )}
 
       {/* מודל הושבה */}
-      {isSeatingModalOpen && activeSeatingEvent && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[100]">
-          <div className="bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+      {isSeatingModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[200]">
+          <div className="bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95">
             <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-emerald-50/50">
               <div>
-                <h2 className="text-3xl font-black text-slate-800">ניהול הושבה - {activeSeatingEvent.name}</h2>
+                <h2 className="text-2xl font-black text-slate-800">ניהול הושבה</h2>
                 <p className="text-emerald-600 font-bold mt-1">כרגע מוזנים במערכת {savedGuestsCount} אורחים</p>
               </div>
               <button onClick={() => setIsSeatingModalOpen(false)} className="p-2 hover:bg-emerald-100 text-emerald-600 rounded-full transition-colors"><X size={28} /></button>
             </div>
             <div className="p-8">
-              <label className="block text-sm font-bold text-slate-700 mb-2">הדבק רשימת מוזמנים</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2">הדבק רשימת מוזמנים (פורמט: שם - מספר שולחן)</label>
               <textarea value={seatingText} onChange={e => setSeatingText(e.target.value)} placeholder="ישראל ישראלי 12&#10;שרה כהן - 5" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 transition-all h-64 resize-none" />
             </div>
             <div className="p-8 bg-slate-50 border-t border-slate-100 flex gap-4">
-              <button onClick={handleSaveSeating} disabled={seatingLoading || !seatingText} className="flex-1 bg-emerald-500 text-white font-black py-5 rounded-2xl flex justify-center items-center gap-2 hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-100 disabled:opacity-50">
+              <button onClick={handleSaveSeating} disabled={seatingLoading || !seatingText} className="w-full bg-emerald-500 text-white font-black py-5 rounded-2xl flex justify-center items-center gap-2 hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-100 disabled:opacity-50">
                 {seatingLoading ? <Loader2 className="animate-spin" /> : <><Users size={22} /> פענח ושמור רשימה</>}
               </button>
             </div>
@@ -373,124 +439,16 @@ const Admin = () => {
         </div>
       )}
 
-      {/* מודל עריכה */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[100]">
-          <div className="bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-8 border-b border-slate-100 flex justify-between items-center">
-              <h2 className="text-3xl font-black text-slate-800">{currentEventId ? 'עריכת אירוע' : 'אירוע חדש'}</h2>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X size={28} /></button>
+      {/* מודל QR */}
+      {isQrModalOpen && selectedEvent && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[200]">
+          <div className="bg-white w-full max-w-md rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 flex justify-between items-center bg-slate-50 border-b border-slate-100">
+              <h2 className="text-2xl font-black text-slate-800">QR מעוצב שולחני</h2>
+              <button onClick={() => setIsQrModalOpen(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors"><X size={24} /></button>
             </div>
-            
-            <form onSubmit={handleSave} className="p-8 space-y-8 overflow-y-auto max-h-[70vh]">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">שם האירוע</label>
-                  <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all" required />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">תאריך</label>
-                  <input type="date" value={formData.event_date} onChange={e => setFormData({...formData, event_date: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">צבע מיתוג ראשי</label>
-                  <input type="color" value={formData.design_config.colors.primary} onChange={e => setFormData({...formData, design_config: {...formData.design_config, colors: {...formData.design_config.colors, primary: e.target.value}}})} className="w-full h-14 rounded-2xl cursor-pointer border-4 border-slate-50" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700">צבע רקע אפליקציה</label>
-                  <input type="color" value={formData.design_config.colors.background} onChange={e => setFormData({...formData, design_config: {...formData.design_config, colors: {...formData.design_config.colors, background: e.target.value}}})} className="w-full h-14 rounded-2xl cursor-pointer border-4 border-slate-50" />
-                </div>
-              </div>
-
-              {/* בחירת מודולים */}
-              <div className="space-y-4 pt-4 border-t border-slate-100">
-                <label className="text-sm font-bold text-slate-700 block">מודולים פעילים באירוע</label>
-                <div className="flex flex-wrap gap-4">
-                  
-                  {/* מודול צילום */}
-                  <label className="flex items-center gap-2 p-3 border rounded-xl cursor-pointer hover:bg-slate-50 transition-colors">
-                    <input 
-                      type="checkbox" 
-                      checked={formData.active_modules.photo} 
-                      onChange={(e) => setFormData({...formData, active_modules: {...formData.active_modules, photo: e.target.checked}})} 
-                      className="w-5 h-5 text-indigo-600 rounded" 
-                    />
-                    <span className="font-semibold text-slate-700">מצלמה</span>
-                  </label>
-
-                  {/* מודול הושבה */}
-                  <label className="flex items-center gap-2 p-3 border rounded-xl cursor-pointer hover:bg-slate-50 transition-colors">
-                    <input 
-                      type="checkbox" 
-                      checked={formData.active_modules.seating} 
-                      onChange={(e) => setFormData({...formData, active_modules: {...formData.active_modules, seating: e.target.checked}})} 
-                      className="w-5 h-5 text-indigo-600 rounded" 
-                    />
-                    <span className="font-semibold text-slate-700">סידור הושבה</span>
-                  </label>
-
-                  {/* מודול דייטליין - החדש */}
-                  <label className="flex items-center gap-2 p-3 border border-rose-100 bg-rose-50/30 rounded-xl cursor-pointer hover:bg-rose-50 transition-colors">
-                    <input 
-                      type="checkbox" 
-                      checked={formData.active_modules.dating} 
-                      onChange={(e) => setFormData({...formData, active_modules: {...formData.active_modules, dating: e.target.checked}})} 
-                      className="w-5 h-5 text-rose-500 rounded accent-rose-500" 
-                    />
-                    <span className="font-semibold text-slate-700">דייט-ליין</span>
-                  </label>
-
-                </div>
-              </div>
-            </form>
-
-            <div className="p-8 bg-slate-50 flex gap-4">
-              {currentEventId && (
-                <button 
-                  type="button" // חשוב מאוד כדי לא להפעיל שמירה בטעות
-                  onClick={handleDelete}
-                  disabled={saving}
-                  className="p-5 bg-rose-50 text-rose-600 rounded-2xl hover:bg-rose-100 transition-all border border-rose-100"
-                >
-                  <Trash2 size={22} />
-                </button>
-              )}
-              <button onClick={handleSave} disabled={saving} className="flex-1 bg-indigo-600 text-white font-black py-5 rounded-2xl flex justify-center items-center gap-2 hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 disabled:opacity-50">
-                {saving ? <Loader2 className="animate-spin" /> : <><Save size={22} /> שמור שינויים</>}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* מודל גלריה */}
-      {isGalleryOpen && activeGalleryEvent && (
-        <div className="fixed inset-0 z-[200] flex flex-col animate-in fade-in duration-300" style={{ backgroundColor: activeGalleryEvent.design_config.colors.background }}>
-          <div className="p-6 md:p-10 shadow-xl flex justify-between items-center" style={{ backgroundColor: activeGalleryEvent.design_config.colors.primary }}>
-            <div className="text-white">
-              <h2 className="text-3xl md:text-5xl font-black drop-shadow-md">{activeGalleryEvent.name} - גלריית ניהול</h2>
-              <p className="text-lg opacity-90 mt-2 font-medium">{galleryPhotos.length} תמונות נאספו עד כה</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <button onClick={downloadAlbum} disabled={downloadingZip || galleryPhotos.length === 0} className="bg-white text-indigo-900 font-black px-8 py-4 rounded-2xl flex items-center gap-2 hover:scale-105 transition-all shadow-2xl disabled:opacity-50">
-                {downloadingZip ? <Loader2 className="animate-spin" /> : <><DownloadCloud size={22} /> ייצוא ZIP ללקוח</>}
-              </button>
-              <button onClick={() => setIsGalleryOpen(false)} className="bg-black/20 text-white p-4 rounded-full hover:bg-black/40 transition-colors"><X size={32} /></button>
-            </div>
-          </div>
-          <div className="flex-1 overflow-y-auto p-8 md:p-16">
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-              {galleryPhotos.map(photo => (
-                <div key={photo.id} className="relative group rounded-3xl overflow-hidden aspect-square border border-white/10 shadow-2xl">
-                  <img src={photo.image_url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Moment" />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all flex flex-col justify-between p-6">
-                    <button onClick={() => handleDeletePhoto(photo)} className="self-end bg-rose-500 text-white p-3 rounded-2xl hover:bg-rose-600 transition-colors shadow-lg"><Trash2 size={24} /></button>
-                    <p className="text-white text-xl font-black truncate">{photo.guest_name}</p>
-                  </div>
-                </div>
-              ))}
+            <div className="p-6">
+              <AdminQRGenerator key={selectedEvent.id} defaultUrl={`${window.location.origin}/event/${selectedEvent.id}`} defaultColor={formData.design_config?.colors?.primary || '#3b82f6'} />
             </div>
           </div>
         </div>
