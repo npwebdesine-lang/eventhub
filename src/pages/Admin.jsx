@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { 
   Settings, Plus, Calendar, LogOut, Loader2, X, 
-  Save, Image as ImageIcon, Trash2, DownloadCloud, Share2, Check, Users, QrCode, Heart, ChevronRight, Camera, User, Sparkles, Edit2, Zap, Target, ListPlus, Wine, Briefcase, Music, PartyPopper, Gem, Link, UploadCloud, Car
+  Save, Image as ImageIcon, Trash2, DownloadCloud, Share2, Check, Users, QrCode, Heart, ChevronRight, Camera, User, Sparkles, Edit2, Zap, Target, ListPlus, Wine, Briefcase, Music, PartyPopper, Gem, Link, UploadCloud, Car, CheckCircle2, Download
 } from 'lucide-react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
@@ -34,6 +34,7 @@ const Admin = () => {
   const [copiedEventId, setCopiedEventId] = useState(null);
   const [copiedInviteId, setCopiedInviteId] = useState(null);
   
+  // הושבה
   const [isSeatingModalOpen, setIsSeatingModalOpen] = useState(false);
   const [seatingText, setSeatingText] = useState('');
   const [seatingLoading, setSeatingLoading] = useState(false);
@@ -43,6 +44,7 @@ const Admin = () => {
   const [editGuestName, setEditGuestName] = useState('');
   const [editGuestTable, setEditGuestTable] = useState('');
 
+  // מודולים אחרים
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isDatingManagerOpen, setIsDatingManagerOpen] = useState(false);
   const [datingProfiles, setDatingProfiles] = useState([]);
@@ -55,6 +57,13 @@ const Admin = () => {
   const [isIcebreakerUserManagerOpen, setIsIcebreakerUserManagerOpen] = useState(false);
   const [icebreakerProfiles, setIcebreakerProfiles] = useState([]);
   const [icebreakerUsersLoading, setIcebreakerUsersLoading] = useState(false);
+
+  // === מודול RSVP (אישורי הגעה) ===
+  const [isRsvpManagerOpen, setIsRsvpManagerOpen] = useState(false);
+  const [rsvpList, setRsvpList] = useState([]);
+  const [rsvpLoading, setRsvpLoading] = useState(false);
+  const [editingRsvpId, setEditingRsvpId] = useState(null);
+  const [editRsvpName, setEditRsvpName] = useState('');
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => { setSession(session); setAuthLoading(false); if (session) fetchEvents(); });
@@ -71,7 +80,7 @@ const Admin = () => {
     setFormData({ 
       name: event.name, 
       event_date: event.event_date || '', 
-      active_modules: { photo: true, seating: true, dating: false, icebreaker: false, rideshare: false, ...event.active_modules }, 
+      active_modules: { photo: true, seating: true, dating: false, icebreaker: false, rideshare: false, rsvp: false, ...event.active_modules }, 
       design_config: {
         template: event.design_config?.template || 'glass',
         colors: event.design_config?.colors || { primary: '#3b82f6', background: '#020617' },
@@ -85,7 +94,7 @@ const Admin = () => {
     setSelectedEvent({ id: null, isNew: true }); 
     setFormData({ 
       name: '', event_date: '', 
-      active_modules: { photo: true, seating: true, dating: false, icebreaker: false, rideshare: false }, 
+      active_modules: { photo: true, seating: true, dating: false, icebreaker: false, rideshare: false, rsvp: false }, 
       design_config: { 
         template: 'glass', 
         colors: { primary: '#3b82f6', background: '#020617' },
@@ -118,11 +127,14 @@ const Admin = () => {
   const openGallery = async () => { setIsGalleryOpen(true); const { data } = await supabase.from('photos').select('*').eq('event_id', selectedEvent.id).order('created_at', { ascending: false }); setGalleryPhotos(data || []); };
   const downloadAlbum = async () => { setDownloadingZip(true); try { const zip = new JSZip(); const imgFolder = zip.folder(`Album_${formData.name}`); await Promise.all(galleryPhotos.map(async (p, i) => { const res = await fetch(p.image_url); const blob = await res.blob(); imgFolder.file(`${p.guest_name}_${i+1}.jpg`, blob); })); const content = await zip.generateAsync({ type: 'blob' }); saveAs(content, `${formData.name}_Photos.zip`); } catch (error) { console.error(error); } finally { setDownloadingZip(false); } };
   const handleDeletePhoto = async (photo) => { if (!window.confirm(`למחוק את התמונה של ${photo.guest_name}?`)) return; try { await supabase.from('photos').delete().eq('id', photo.id); setGalleryPhotos(prev => prev.filter(p => p.id !== photo.id)); } catch (error) { alert(error.message); } };
+  
+  // הושבה
   const openSeatingManager = async () => { setSeatingText(''); setIsSeatingModalOpen(true); setSeatingLoading(true); try { const { data, count, error } = await supabase.from('seating').select('*', { count: 'exact' }).eq('event_id', selectedEvent.id).order('guest_name', { ascending: true }); if (error) throw error; setSeatingGuests(data || []); setSavedGuestsCount(count || 0); } catch (error) { console.error(error); } finally { setSeatingLoading(false); } };
   const handleSaveSeating = async () => { if (!seatingText.trim()) return alert("אנא הדבק רשימה"); setSeatingLoading(true); try { const parsedGuests = seatingText.split('\n').map(line => { const match = line.trim().match(/^(.*?)[-,\s]*(\d+)\s*$/); return match ? { event_id: selectedEvent.id, guest_name: match[1].trim(), table_number: match[2].trim() } : null; }).filter(Boolean); if (parsedGuests.length === 0) throw new Error("לא זיהינו שמות בפורמט תקין"); await supabase.from('seating').insert(parsedGuests); openSeatingManager(); alert(`נוספו בהצלחה ${parsedGuests.length} מוזמנים.`); } catch (error) { alert(error.message); } finally { setSeatingLoading(false); } };
   const handleDeleteGuest = async (guestId, name) => { if (!window.confirm(`למחוק את ${name}?`)) return; try { await supabase.from('seating').delete().eq('id', guestId); setSeatingGuests(prev => prev.filter(g => g.id !== guestId)); setSavedGuestsCount(prev => prev - 1); } catch (error) { alert("שגיאה במחיקת האורח"); } };
   const startEditingGuest = (guest) => { setEditingGuestId(guest.id); setEditGuestName(guest.guest_name); setEditGuestTable(guest.table_number); };
   const saveGuestEdit = async (guestId) => { if (!editGuestName.trim() || !editGuestTable.trim()) return alert("שדות חסרים"); try { const { error } = await supabase.from('seating').update({ guest_name: editGuestName, table_number: editGuestTable }).eq('id', guestId); if (error) throw error; setSeatingGuests(prev => prev.map(g => g.id === guestId ? { ...g, guest_name: editGuestName, table_number: editGuestTable } : g)); setEditingGuestId(null); } catch (error) { alert("שגיאה בעדכון"); } };
+  
   const openDatingManager = async () => { setIsDatingManagerOpen(true); setDatingLoading(true); try { const { data } = await supabase.from('dating_profiles').select('*').eq('event_id', selectedEvent.id).order('created_at', { ascending: false }); setDatingProfiles(data || []); } catch (error) { console.error(error); } finally { setDatingLoading(false); } };
   const handleDeleteDatingProfile = async (profileId, name) => { if (!window.confirm(`למחוק את הפרופיל של ${name}?`)) return; try { await supabase.from('dating_profiles').delete().eq('id', profileId); setDatingProfiles(prev => prev.filter(p => p.id !== profileId)); } catch (error) { alert("תקלה במחיקה"); } };
   const openIcebreakerManager = async () => { setIsIcebreakerModalOpen(true); setIcebreakerLoading(true); try { const { data } = await supabase.from('icebreaker_missions').select('*').eq('event_id', selectedEvent.id).order('created_at', { ascending: false }); setIcebreakerMissions(data || []); } catch (error) { console.error(error); } finally { setIcebreakerLoading(false); } };
@@ -131,6 +143,63 @@ const Admin = () => {
   const loadPreset = async (presetType) => { const missionsToAdd = MISSION_PRESETS[presetType]; if (!missionsToAdd) return; if (!window.confirm(`להוסיף משימות מוכנות לבנק?`)) return; setIcebreakerLoading(true); try { const inserts = missionsToAdd.map(content => ({ event_id: selectedEvent.id, content })); const { data, error } = await supabase.from('icebreaker_missions').insert(inserts).select(); if (error) throw error; setIcebreakerMissions([...data, ...icebreakerMissions]); alert("החבילה נטענה!"); } catch (error) { alert("שגיאה בטעינת החבילה"); } finally { setIcebreakerLoading(false); } };
   const openIcebreakerUserManager = async () => { setIsIcebreakerUserManagerOpen(true); setIcebreakerUsersLoading(true); try { const { data } = await supabase.from('icebreaker_profiles').select('*').eq('event_id', selectedEvent.id).order('created_at', { ascending: false }); setIcebreakerProfiles(data || []); } catch (error) { console.error(error); } finally { setIcebreakerUsersLoading(false); } };
   const handleDeleteIcebreakerProfile = async (profileId, name) => { if (!window.confirm(`למחוק את ${name} מהמשחק?`)) return; try { await supabase.from('icebreaker_profiles').delete().eq('id', profileId); setIcebreakerProfiles(prev => prev.filter(p => p.id !== profileId)); } catch (error) { alert("תקלה במחיקה"); } };
+
+  // === פונקציות RSVP ===
+  const openRsvpManager = async () => {
+    setIsRsvpManagerOpen(true);
+    setRsvpLoading(true);
+    try {
+      const { data, error } = await supabase.from('rsvps').select('*').eq('event_id', selectedEvent.id).order('created_at', { ascending: false });
+      if (error) throw error;
+      setRsvpList(data || []);
+    } catch (error) { console.error(error); } finally { setRsvpLoading(false); }
+  };
+
+  const handleDeleteRsvp = async (rsvpId, name) => {
+    if (!window.confirm(`למחוק את אישור ההגעה של ${name}?`)) return;
+    try {
+      await supabase.from('rsvps').delete().eq('id', rsvpId);
+      setRsvpList(prev => prev.filter(r => r.id !== rsvpId));
+    } catch (error) { alert("שגיאה במחיקה"); }
+  };
+
+  const startEditingRsvp = (rsvp) => {
+    setEditingRsvpId(rsvp.id);
+    setEditRsvpName(rsvp.guest_name);
+  };
+
+  const saveRsvpEdit = async (rsvpId) => {
+    if (!editRsvpName.trim()) return alert("חובה להזין שם");
+    try {
+      const { error } = await supabase.from('rsvps').update({ guest_name: editRsvpName }).eq('id', rsvpId);
+      if (error) throw error;
+      setRsvpList(prev => prev.map(r => r.id === rsvpId ? { ...r, guest_name: editRsvpName } : r));
+      setEditingRsvpId(null);
+    } catch (error) { alert("שגיאה בעדכון"); }
+  };
+
+  const exportRsvpToCSV = () => {
+    // סידור הרשימה לפי הקבוצה, כך שמשפחות יופיעו ביחד
+    const sorted = [...rsvpList].sort((a, b) => a.group_id.localeCompare(b.group_id));
+    
+    // פתרון להצגת עברית תקינה באקסל (\uFEFF = BOM)
+    let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+    csvContent += "שם האורח,מי מילא את הטופס,טלפון,תאריך רישום\n";
+    
+    sorted.forEach(row => {
+      const date = new Date(row.created_at).toLocaleDateString('he-IL');
+      csvContent += `"${row.guest_name}","${row.submitter_name}","${row.submitter_phone}","${date}"\n`;
+    });
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `RSVP_${formData.name}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
 
   if (authLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="animate-spin text-indigo-600" size={48} /></div>;
   if (!session) { return ( <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4" dir="rtl"><form onSubmit={handleLogin} className="bg-white p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-slate-200"><div className="text-center mb-8"><h1 className="text-3xl font-black text-slate-800">EventHub Admin</h1><p className="text-slate-500 mt-2">ניהול מערכת האירועים שלך</p></div><div className="space-y-4"><input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="אימייל" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all" dir="ltr" /><input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="סיסמה" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all" dir="ltr" /><button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all">התחבר למערכת</button></div></form></div> ); }
@@ -230,6 +299,31 @@ const Admin = () => {
                 <h3 className="text-xl font-black text-slate-800 border-b pb-4">מודולים ופיצ'רים</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   
+                  {/* --- מודול RSVP החדש! --- */}
+                  <div className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.rsvp ? 'border-blue-500 bg-blue-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
+                    <div className="flex justify-between items-start mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-3 rounded-xl ${formData.active_modules.rsvp ? 'bg-blue-500 text-white' : 'bg-slate-200 text-slate-500'}`}><CheckCircle2 size={24} /></div>
+                        <div>
+                          <h4 className="font-black text-lg text-slate-800">אישורי הגעה (RSVP)</h4>
+                          <span className="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">מערכת קצה לקצה</span>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" className="sr-only peer" checked={formData.active_modules.rsvp || false} onChange={e => setFormData({...formData, active_modules: {...formData.active_modules, rsvp: e.target.checked}})} />
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                      </label>
+                    </div>
+                    {formData.active_modules.rsvp && !selectedEvent.isNew && (
+                      <div className="p-4 bg-white rounded-xl border border-blue-100 text-center animate-in fade-in space-y-3">
+                        <p className="text-sm text-slate-600 font-medium mb-3">כפתור לאישור הגעה יופיע כעת בדף ההזמנה הדיגיטלית.</p>
+                        <button onClick={openRsvpManager} className="w-full py-3 bg-white border border-blue-200 text-blue-600 font-bold rounded-xl hover:bg-blue-50 transition-colors flex justify-center items-center gap-2 shadow-sm">
+                          <Users size={18} /> ניהול אישורי הגעה
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
                   {/* צילום */}
                   <div className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.photo ? 'border-orange-500 bg-orange-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
                     <div className="flex justify-between items-start mb-6"><div className="flex items-center gap-3"><div className={`p-3 rounded-xl ${formData.active_modules.photo ? 'bg-orange-500 text-white' : 'bg-slate-200 text-slate-500'}`}><Camera size={24} /></div><h4 className="font-black text-lg text-slate-800">כל אחד צלם</h4></div><label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={formData.active_modules.photo} onChange={e => setFormData({...formData, active_modules: {...formData.active_modules, photo: e.target.checked}})} /><div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div></label></div>
@@ -243,37 +337,20 @@ const Admin = () => {
                   </div>
 
                   {/* דייטליין */}
-                  <div className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.dating ? 'border-rose-500 bg-rose-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
+                  <div className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.dating ? 'border-rose-500 bg-rose-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
                     <div className="flex justify-between items-start mb-6"><div className="flex items-center gap-3"><div className={`p-3 rounded-xl ${formData.active_modules.dating ? 'bg-rose-500 text-white' : 'bg-slate-200 text-slate-500'}`}><Heart size={24} /></div><div><h4 className="font-black text-lg text-slate-800">Daitline (דייטליין)</h4></div></div><label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={formData.active_modules.dating} onChange={e => setFormData({...formData, active_modules: {...formData.active_modules, dating: e.target.checked}})} /><div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div></label></div>
                     {formData.active_modules.dating && !selectedEvent.isNew && (<div className="animate-in fade-in"><button onClick={openDatingManager} className="w-full py-3 bg-white border border-rose-200 text-rose-600 font-bold rounded-xl hover:bg-rose-50 transition-colors flex justify-center items-center gap-2 shadow-sm"><Users size={18} /> ניהול משתמשי דייטליין</button></div>)}
                   </div>
 
                   {/* שובר קרח */}
-                  <div className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.icebreaker ? 'border-cyan-500 bg-cyan-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
+                  <div className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.icebreaker ? 'border-cyan-500 bg-cyan-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
                     <div className="flex justify-between items-start mb-6"><div className="flex items-center gap-3"><div className={`p-3 rounded-xl ${formData.active_modules.icebreaker ? 'bg-cyan-500 text-white' : 'bg-slate-200 text-slate-500'}`}><Zap size={24} /></div><div><h4 className="font-black text-lg text-slate-800">שובר קרח (IceBreaker)</h4></div></div><label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={formData.active_modules.icebreaker || false} onChange={e => setFormData({...formData, active_modules: {...formData.active_modules, icebreaker: e.target.checked}})} /><div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div></label></div>
-                    {formData.active_modules.icebreaker && !selectedEvent.isNew && (<div className="flex flex-col md:flex-row gap-3 animate-in fade-in"><button onClick={openIcebreakerManager} className="flex-1 py-3 bg-white border border-cyan-200 text-cyan-600 font-bold rounded-xl hover:bg-cyan-50 transition-colors flex justify-center items-center gap-2 shadow-sm"><Target size={18} /> בנק המשימות</button><button onClick={openIcebreakerUserManager} className="flex-1 py-3 bg-white border border-cyan-200 text-cyan-600 font-bold rounded-xl hover:bg-cyan-50 transition-colors flex justify-center items-center gap-2 shadow-sm"><Users size={18} /> משתמשי שובר קרח</button></div>)}
+                    {formData.active_modules.icebreaker && !selectedEvent.isNew && (<div className="flex flex-col md:flex-row gap-3 animate-in fade-in"><button onClick={openIcebreakerManager} className="flex-1 py-3 bg-white border border-cyan-200 text-cyan-600 font-bold rounded-xl hover:bg-cyan-50 transition-colors flex justify-center items-center gap-2 shadow-sm"><Target size={18} /> בנק המשימות</button><button onClick={openIcebreakerUserManager} className="flex-1 py-3 bg-white border border-cyan-200 text-cyan-600 font-bold rounded-xl hover:bg-cyan-50 transition-colors flex justify-center items-center gap-2 shadow-sm"><Users size={18} /> משתמשים</button></div>)}
                   </div>
 
-                  {/* --- מודול טרמפים החדש! --- */}
-                  <div className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.rideshare ? 'border-amber-500 bg-amber-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
-                    <div className="flex justify-between items-start mb-6">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-3 rounded-xl ${formData.active_modules.rideshare ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-500'}`}><Car size={24} /></div>
-                        <div>
-                          <h4 className="font-black text-lg text-slate-800">לוח טרמפים</h4>
-                          <span className="text-xs font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">פרימיום</span>
-                        </div>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" checked={formData.active_modules.rideshare || false} onChange={e => setFormData({...formData, active_modules: {...formData.active_modules, rideshare: e.target.checked}})} />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
-                      </label>
-                    </div>
-                    {formData.active_modules.rideshare && !selectedEvent.isNew && (
-                      <div className="p-4 bg-white rounded-xl border border-amber-100 text-center animate-in fade-in">
-                        <p className="text-sm text-slate-600 font-medium mb-3">המודול פתוח! הכפתור ללוח הטרמפים יופיע כעת בדף ההזמנה הדיגיטלית של האורחים.</p>
-                      </div>
-                    )}
+                  {/* טרמפים */}
+                  <div className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.rideshare ? 'border-amber-500 bg-amber-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
+                    <div className="flex justify-between items-start mb-6"><div className="flex items-center gap-3"><div className={`p-3 rounded-xl ${formData.active_modules.rideshare ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-500'}`}><Car size={24} /></div><div><h4 className="font-black text-lg text-slate-800">לוח טרמפים</h4></div></div><label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={formData.active_modules.rideshare || false} onChange={e => setFormData({...formData, active_modules: {...formData.active_modules, rideshare: e.target.checked}})} /><div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div></label></div>
                   </div>
 
                 </div>
@@ -283,37 +360,81 @@ const Admin = () => {
         </div>
       )}
 
-      {/* פופאפים */}
-      {isGalleryOpen && ( <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-md flex flex-col animate-in fade-in duration-300"><div className="p-6 md:p-8 flex justify-between items-center bg-white"><div><h2 className="text-3xl font-black text-slate-800">גלריית האירוע</h2><p className="text-slate-500 font-medium">{galleryPhotos.length} תמונות נאספו</p></div><div className="flex gap-4"><button onClick={downloadAlbum} disabled={downloadingZip || galleryPhotos.length === 0} className="bg-orange-500 text-white font-black px-6 py-3 rounded-xl flex items-center gap-2 hover:bg-orange-600 transition-all disabled:opacity-50">{downloadingZip ? <Loader2 className="animate-spin" /> : <><DownloadCloud size={20} /> ייצוא ZIP</>}</button><button onClick={() => setIsGalleryOpen(false)} className="bg-slate-100 text-slate-600 p-3 rounded-xl hover:bg-slate-200 transition-colors"><X size={24} /></button></div></div><div className="flex-1 overflow-y-auto p-6 md:p-10"><div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">{galleryPhotos.map(photo => (<div key={photo.id} className="relative group rounded-2xl overflow-hidden aspect-square border-4 border-white shadow-xl"><img src={photo.image_url} className="w-full h-full object-cover" alt="Moment" /><div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all flex flex-col justify-between p-4"><button onClick={() => handleDeletePhoto(photo)} className="self-end bg-rose-500 text-white p-2 rounded-lg hover:bg-rose-600 transition-colors shadow-lg"><Trash2 size={20} /></button><p className="text-white text-sm font-black truncate">{photo.guest_name}</p></div></div>))}</div></div></div> )}
-      {isSeatingModalOpen && ( <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[200]"><div className="bg-white w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]"><div className="p-8 border-b border-slate-100 flex justify-between items-center bg-emerald-50/50 shrink-0"><div><h2 className="text-2xl font-black text-slate-800">ניהול הושבה</h2><p className="text-emerald-600 font-bold mt-1">סה"כ במערכת: {savedGuestsCount} אורחים</p></div><button onClick={() => setIsSeatingModalOpen(false)} className="p-2 hover:bg-emerald-100 text-emerald-600 rounded-full transition-colors"><X size={28} /></button></div><div className="flex flex-col md:flex-row flex-1 overflow-hidden"><div className="w-full md:w-1/2 p-8 border-l border-slate-100 flex flex-col bg-white shrink-0"><label className="block text-sm font-bold text-slate-700 mb-2">הדבקת רשימה מהירה</label><p className="text-xs text-slate-500 mb-4">פורמט נדרש: שם האורח - מספר שולחן</p><textarea value={seatingText} onChange={e => setSeatingText(e.target.value)} placeholder="ישראל ישראלי 12&#10;שרה כהן - 5" className="w-full flex-1 p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 transition-all resize-none min-h-[200px]" /><button onClick={handleSaveSeating} disabled={seatingLoading || !seatingText} className="w-full mt-4 bg-emerald-500 text-white font-black py-4 rounded-2xl flex justify-center items-center gap-2 hover:bg-emerald-600 transition-all shadow-xl shadow-emerald-100 disabled:opacity-50">{seatingLoading ? <Loader2 className="animate-spin" /> : <><Plus size={20} /> פענח והוסף לרשימה</>}</button></div><div className="w-full md:w-1/2 bg-slate-50 p-8 overflow-y-auto"><h3 className="text-lg font-black text-slate-800 mb-4">רשימת האורחים ({seatingGuests.length})</h3>{seatingGuests.length === 0 ? (<div className="text-center py-10 text-slate-400"><Users size={48} className="mx-auto mb-3 opacity-20" /><p className="font-medium">עדיין לא הוזנו אורחים</p></div>) : (<div className="space-y-3">{seatingGuests.map(guest => (<div key={guest.id} className="bg-white p-3 rounded-2xl border border-slate-200 flex items-center justify-between shadow-sm hover:border-emerald-200 transition-colors">{editingGuestId === guest.id ? (<div className="flex-1 flex items-center gap-2 mr-2"><input type="text" value={editGuestName} onChange={(e) => setEditGuestName(e.target.value)} className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold outline-none" /><span className="text-slate-400">-</span><input type="text" value={editGuestTable} onChange={(e) => setEditGuestTable(e.target.value)} className="w-16 p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold text-center outline-none" placeholder="שולחן"/></div>) : (<div className="flex-1 flex items-center gap-3"><div className="bg-emerald-100 text-emerald-700 w-10 h-10 rounded-xl flex items-center justify-center font-black shrink-0">{guest.table_number}</div><span className="font-bold text-slate-700 truncate">{guest.guest_name}</span></div>)}<div className="flex items-center gap-1 shrink-0 bg-slate-50 p-1 rounded-xl mr-2">{editingGuestId === guest.id ? (<><button onClick={() => saveGuestEdit(guest.id)} className="p-2 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors" title="שמור"><Check size={16} /></button><button onClick={() => setEditingGuestId(null)} className="p-2 text-slate-400 hover:bg-slate-200 rounded-lg transition-colors" title="ביטול"><X size={16} /></button></>) : (<><button onClick={() => startEditingGuest(guest)} className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors" title="ערוך"><Edit2 size={16} /></button><button onClick={() => handleDeleteGuest(guest.id, guest.guest_name)} className="p-2 text-rose-500 hover:bg-rose-100 rounded-lg transition-colors" title="מחק"><Trash2 size={16} /></button></>)}</div></div>))}</div>)}</div></div></div></div> )}
-      {isQrModalOpen && selectedEvent && ( <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[200]"><div className="bg-white w-full max-w-md rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"><div className="p-6 flex justify-between items-center bg-slate-50 border-b border-slate-100"><h2 className="text-2xl font-black text-slate-800">QR מעוצב שולחני</h2><button onClick={() => setIsQrModalOpen(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors"><X size={24} /></button></div><div className="p-6"><AdminQRGenerator key={selectedEvent.id} defaultUrl={`${window.location.origin}/event/${selectedEvent.id}`} defaultColor={formData.design_config?.colors?.primary || '#3b82f6'} /></div></div></div> )}
-      {isDatingManagerOpen && ( <div className="fixed inset-0 z-[200] bg-slate-900/80 backdrop-blur-md flex flex-col animate-in fade-in duration-300"><div className="p-6 md:p-8 flex justify-between items-center bg-white shadow-sm z-10"><div><h2 className="text-3xl font-black text-slate-800">משתמשי דייטליין</h2><p className="text-rose-500 font-bold">{datingProfiles.length} משתמשים נרשמו למודול</p></div><button onClick={() => setIsDatingManagerOpen(false)} className="bg-slate-100 text-slate-600 p-3 rounded-xl hover:bg-slate-200 transition-colors"><X size={24} /></button></div><div className="flex-1 overflow-y-auto p-6 md:p-10">{datingLoading ? (<Loader2 className="animate-spin text-rose-500 mx-auto mt-20" size={48} />) : datingProfiles.length === 0 ? (<div className="text-center text-white/50 mt-20 text-xl font-bold">אין עדיין משתמשים רשומים לדייטליין.</div>) : (<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">{datingProfiles.map(profile => (<div key={profile.id} className="bg-white rounded-[2rem] p-5 shadow-xl flex items-center gap-4 border border-slate-100"><div className="w-20 h-20 rounded-2xl bg-slate-100 overflow-hidden flex-shrink-0">{profile.photo_url ? <img src={profile.photo_url} className="w-full h-full object-cover" /> : <User size={32} className="m-auto mt-6 text-slate-300" />}</div><div className="flex-1 min-w-0"><h3 className="font-black text-lg text-slate-800 truncate">{profile.name}, {profile.age}</h3><p className="text-sm text-slate-500 truncate">{profile.connection}</p><button onClick={() => handleDeleteDatingProfile(profile.id, profile.name)} className="mt-3 text-xs font-bold text-rose-500 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors"><Trash2 size={14} /> מחק משתמש</button></div></div>))}</div>)}</div></div> )}
-      {isIcebreakerUserManagerOpen && ( <div className="fixed inset-0 z-[200] bg-slate-900/80 backdrop-blur-md flex flex-col animate-in fade-in duration-300"><div className="p-6 md:p-8 flex justify-between items-center bg-white shadow-sm z-10"><div><h2 className="text-3xl font-black text-slate-800">משתמשי IceBreaker</h2><p className="text-cyan-600 font-bold">{icebreakerProfiles.length} שחקנים נרשמו</p></div><button onClick={() => setIsIcebreakerUserManagerOpen(false)} className="bg-slate-100 text-slate-600 p-3 rounded-xl hover:bg-slate-200 transition-colors"><X size={24} /></button></div><div className="flex-1 overflow-y-auto p-6 md:p-10">{icebreakerUsersLoading ? (<Loader2 className="animate-spin text-cyan-500 mx-auto mt-20" size={48} />) : icebreakerProfiles.length === 0 ? (<div className="text-center text-white/50 mt-20 text-xl font-bold">אין עדיין שחקנים במשחק.</div>) : (<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">{icebreakerProfiles.map(profile => (<div key={profile.id} className="bg-white rounded-[2rem] p-5 shadow-xl flex items-center gap-4 border border-slate-100"><div className="w-20 h-20 rounded-2xl bg-slate-100 overflow-hidden flex-shrink-0">{profile.photo_url ? <img src={profile.photo_url} className="w-full h-full object-cover" /> : <User size={32} className="m-auto mt-6 text-slate-300" />}</div><div className="flex-1 min-w-0"><h3 className="font-black text-lg text-slate-800 truncate">{profile.name}</h3><button onClick={() => handleDeleteIcebreakerProfile(profile.id, profile.name)} className="mt-3 text-xs font-bold text-rose-500 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors"><Trash2 size={14} /> מחק משתמש</button></div></div>))}</div>)}</div></div> )}
-      {isIcebreakerModalOpen && (
-        <div className="fixed inset-0 z-[200] bg-slate-900/80 backdrop-blur-md flex flex-col animate-in fade-in duration-300">
-          <div className="p-6 md:p-8 flex justify-between items-center bg-white shadow-sm z-10 shrink-0">
-            <div><h2 className="text-3xl font-black text-slate-800">בנק המשימות (IceBreaker)</h2><p className="text-cyan-600 font-bold mt-1">{icebreakerMissions.length} משימות פעילות</p></div><button onClick={() => setIsIcebreakerModalOpen(false)} className="bg-slate-100 text-slate-600 p-3 rounded-xl hover:bg-slate-200 transition-colors"><X size={24} /></button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-6 md:p-10 max-w-4xl mx-auto w-full">
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 mb-6 flex flex-col md:flex-row gap-4 items-center">
-              <input type="text" value={newMissionText} onChange={(e) => setNewMissionText(e.target.value)} placeholder="הוסף משימה ידנית..." className="w-full flex-1 bg-slate-50 border border-slate-200 p-4 rounded-xl outline-none focus:ring-2 focus:ring-cyan-500" onKeyDown={(e) => e.key === 'Enter' && handleAddMission()} />
-              <button onClick={handleAddMission} disabled={icebreakerLoading || !newMissionText.trim()} className="w-full md:w-auto bg-cyan-500 hover:bg-cyan-600 text-white font-black px-6 py-4 rounded-xl transition-all shadow-lg shadow-cyan-500/30 disabled:opacity-50 shrink-0">הוסף ידנית</button>
-            </div>
-            <div className="bg-cyan-50 border border-cyan-100 p-6 rounded-3xl mb-8">
-              <div className="mb-4"><h4 className="font-black text-slate-800 flex items-center gap-2"><ListPlus size={20} className="text-cyan-600"/> טעינת חבילות משימות (Presets)</h4><p className="text-sm text-slate-500">לחץ כדי להוסיף 20 משימות שמותאמות בדיוק לאירוע שלך.</p></div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 w-full">
-                <button onClick={() => loadPreset('wedding_classic')} className="bg-white border border-cyan-200 text-cyan-800 font-bold py-3 px-4 rounded-xl hover:bg-cyan-100 hover:border-cyan-400 transition-colors flex flex-col items-center gap-1 shadow-sm"><Wine size={20} className="text-cyan-500"/> חתונה קלאסית</button>
-                <button onClick={() => loadPreset('wedding_young')} className="bg-white border border-cyan-200 text-cyan-800 font-bold py-3 px-4 rounded-xl hover:bg-cyan-100 hover:border-cyan-400 transition-colors flex flex-col items-center gap-1 shadow-sm"><Music size={20} className="text-cyan-500"/> חתונת צעירים</button>
-                <button onClick={() => loadPreset('corporate')} className="bg-white border border-cyan-200 text-cyan-800 font-bold py-3 px-4 rounded-xl hover:bg-cyan-100 hover:border-cyan-400 transition-colors flex flex-col items-center gap-1 shadow-sm"><Briefcase size={20} className="text-cyan-500"/> אירוע חברה</button>
-                <button onClick={() => loadPreset('barmitzvah')} className="bg-white border border-cyan-200 text-cyan-800 font-bold py-3 px-4 rounded-xl hover:bg-cyan-100 hover:border-cyan-400 transition-colors flex flex-col items-center gap-1 shadow-sm"><Gem size={20} className="text-cyan-500"/> בר מצווה</button>
-                <button onClick={() => loadPreset('batmitzvah')} className="bg-white border border-cyan-200 text-cyan-800 font-bold py-3 px-4 rounded-xl hover:bg-cyan-100 hover:border-cyan-400 transition-colors flex flex-col items-center gap-1 shadow-sm"><Heart size={20} className="text-cyan-500"/> בת מצווה</button>
-                <button onClick={() => loadPreset('birthday')} className="bg-white border border-cyan-200 text-cyan-800 font-bold py-3 px-4 rounded-xl hover:bg-cyan-100 hover:border-cyan-400 transition-colors flex flex-col items-center gap-1 shadow-sm"><PartyPopper size={20} className="text-cyan-500"/> מסיבה / יומולדת</button>
+      {/* === פופ-אפ מנהל RSVP === */}
+      {isRsvpManagerOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[200]">
+          <div className="bg-white w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]">
+            
+            <div className="p-6 md:p-8 border-b border-slate-100 flex justify-between items-center bg-blue-50/50 shrink-0">
+              <div>
+                <h2 className="text-2xl font-black text-slate-800">אישורי הגעה (RSVP)</h2>
+                <p className="text-blue-600 font-bold mt-1">סה"כ אישרו הגעה: {rsvpList.length} אורחים</p>
+              </div>
+              <div className="flex gap-3">
+                <button onClick={exportRsvpToCSV} disabled={rsvpList.length === 0} className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-xl font-bold transition-colors flex items-center gap-2 shadow-sm disabled:opacity-50">
+                  <Download size={18} /> ייצוא לאקסל
+                </button>
+                <button onClick={() => setIsRsvpManagerOpen(false)} className="p-2 hover:bg-blue-100 text-blue-600 rounded-full transition-colors"><X size={24} /></button>
               </div>
             </div>
-            {icebreakerLoading && icebreakerMissions.length === 0 ? ( <Loader2 className="animate-spin text-cyan-500 mx-auto mt-10" size={48} /> ) : icebreakerMissions.length === 0 ? ( <div className="text-center text-slate-400 mt-10 bg-white p-10 rounded-3xl border border-dashed border-slate-300"><Target size={64} className="mx-auto mb-4 opacity-20" /><p className="text-xl font-bold">אין משימות בבנק.</p><p className="text-sm mt-2">הוסיפו משימות או טענו חבילה כדי להתחיל לשבור את הקרח!</p></div> ) : ( <div className="space-y-3">{icebreakerMissions.map(mission => ( <div key={mission.id} className="bg-white p-5 rounded-2xl border border-slate-200 flex justify-between items-center shadow-sm hover:border-cyan-200 transition-colors"><p className="font-medium text-slate-800 text-lg flex-1 pl-4 leading-snug">{mission.content}</p><button onClick={() => handleDeleteMission(mission.id)} className="p-3 text-rose-500 bg-rose-50 hover:bg-rose-100 rounded-xl transition-colors shrink-0"><Trash2 size={20} /></button></div> ))}</div> )}
+
+            <div className="flex-1 bg-slate-50 p-6 md:p-8 overflow-y-auto">
+              {rsvpLoading ? (
+                <div className="flex justify-center py-20"><Loader2 className="animate-spin text-blue-500" size={48} /></div>
+              ) : rsvpList.length === 0 ? (
+                <div className="text-center py-20 text-slate-400">
+                  <CheckCircle2 size={48} className="mx-auto mb-3 opacity-20" />
+                  <p className="font-medium text-lg">עדיין לא התקבלו אישורי הגעה.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {rsvpList.map(guest => (
+                    <div key={guest.id} className="bg-white p-4 rounded-2xl border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between shadow-sm hover:border-blue-200 transition-colors gap-4">
+                      
+                      <div className="flex-1 w-full">
+                        {editingRsvpId === guest.id ? (
+                          <div className="flex items-center gap-2">
+                            <input type="text" value={editRsvpName} onChange={(e) => setEditRsvpName(e.target.value)} className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500" />
+                          </div>
+                        ) : (
+                          <div>
+                            <h4 className="font-bold text-slate-800 text-lg">{guest.guest_name}</h4>
+                            <p className="text-xs text-slate-500 font-medium mt-1">נרשם ע"י: {guest.submitter_name} | {guest.submitter_phone}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 shrink-0 bg-slate-50 p-1.5 rounded-xl w-full md:w-auto">
+                        {editingRsvpId === guest.id ? (
+                          <>
+                            <button onClick={() => saveRsvpEdit(guest.id)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors" title="שמור"><Check size={18} /></button>
+                            <button onClick={() => setEditingRsvpId(null)} className="p-2 text-slate-400 hover:bg-slate-200 rounded-lg transition-colors" title="ביטול"><X size={18} /></button>
+                          </>
+                        ) : (
+                          <>
+                            <button onClick={() => startEditingRsvp(guest)} className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors flex items-center gap-1 font-bold text-sm" title="ערוך"><Edit2 size={16} /> ערוך</button>
+                            <div className="w-px h-6 bg-slate-200 mx-1"></div>
+                            <button onClick={() => handleDeleteRsvp(guest.id, guest.guest_name)} className="p-2 text-rose-500 hover:bg-rose-100 rounded-lg transition-colors flex items-center gap-1 font-bold text-sm" title="מחק"><Trash2 size={16} /> מחק</button>
+                          </>
+                        )}
+                      </div>
+
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
+
+      {/* --- שאר הפופאפים ... --- */}
+      {isGalleryOpen && ( <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-md flex flex-col animate-in fade-in duration-300"><div className="p-6 md:p-8 flex justify-between items-center bg-white"><div><h2 className="text-3xl font-black text-slate-800">גלריית האירוע</h2></div><button onClick={() => setIsGalleryOpen(false)} className="bg-slate-100 text-slate-600 p-3 rounded-xl"><X size={24} /></button></div><div className="flex-1 overflow-y-auto p-6 md:p-10"><div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">{galleryPhotos.map(photo => (<div key={photo.id} className="relative group rounded-2xl overflow-hidden aspect-square"><img src={photo.image_url} className="w-full h-full object-cover" /><button onClick={() => handleDeletePhoto(photo)} className="absolute top-2 right-2 bg-rose-500 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100"><Trash2 size={16} /></button></div>))}</div></div></div> )}
+      {isSeatingModalOpen && ( <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[200]"><div className="bg-white w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]"><div className="p-8 border-b border-slate-100 flex justify-between items-center bg-emerald-50/50 shrink-0"><div><h2 className="text-2xl font-black text-slate-800">ניהול הושבה</h2><p className="text-emerald-600 font-bold mt-1">סה"כ במערכת: {savedGuestsCount} אורחים</p></div><button onClick={() => setIsSeatingModalOpen(false)} className="p-2 hover:bg-emerald-100 text-emerald-600 rounded-full transition-colors"><X size={28} /></button></div><div className="flex flex-col md:flex-row flex-1 overflow-hidden"><div className="w-full md:w-1/2 p-8 border-l border-slate-100 flex flex-col bg-white shrink-0"><textarea value={seatingText} onChange={e => setSeatingText(e.target.value)} placeholder="ישראל ישראלי 12&#10;שרה כהן - 5" className="w-full flex-1 p-4 bg-slate-50 border border-slate-200 rounded-2xl min-h-[200px]" /><button onClick={handleSaveSeating} className="w-full mt-4 bg-emerald-500 text-white font-black py-4 rounded-2xl hover:bg-emerald-600">פענח והוסף לרשימה</button></div><div className="w-full md:w-1/2 bg-slate-50 p-8 overflow-y-auto"><div className="space-y-3">{seatingGuests.map(guest => (<div key={guest.id} className="bg-white p-3 rounded-2xl flex justify-between"><div className="flex items-center gap-3"><div className="bg-emerald-100 text-emerald-700 w-10 h-10 flex items-center justify-center rounded-xl">{guest.table_number}</div><span className="font-bold text-slate-700">{guest.guest_name}</span></div><button onClick={() => handleDeleteGuest(guest.id, guest.guest_name)} className="text-rose-500"><Trash2 size={16} /></button></div>))}</div></div></div></div></div> )}
+      {isQrModalOpen && selectedEvent && ( <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[200]"><div className="bg-white w-full max-w-md rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"><div className="p-6 flex justify-between items-center bg-slate-50"><h2 className="text-2xl font-black text-slate-800">QR מעוצב</h2><button onClick={() => setIsQrModalOpen(false)}><X size={24}/></button></div><div className="p-6"><AdminQRGenerator key={selectedEvent.id} defaultUrl={`${window.location.origin}/event/${selectedEvent.id}`} defaultColor={formData.design_config?.colors?.primary || '#3b82f6'} /></div></div></div> )}
+      {isDatingManagerOpen && ( <div className="fixed inset-0 z-[200] bg-slate-900/80 backdrop-blur-md flex flex-col animate-in fade-in duration-300"><div className="p-6 md:p-8 flex justify-between items-center bg-white shadow-sm z-10"><div><h2 className="text-3xl font-black text-slate-800">משתמשי דייטליין</h2></div><button onClick={() => setIsDatingManagerOpen(false)} className="bg-slate-100 p-3 rounded-xl"><X size={24} /></button></div><div className="flex-1 overflow-y-auto p-6 md:p-10"><div className="grid grid-cols-1 md:grid-cols-3 gap-6">{datingProfiles.map(profile => (<div key={profile.id} className="bg-white rounded-[2rem] p-5 shadow-xl flex items-center gap-4 border border-slate-100"><h3 className="font-black">{profile.name}</h3><button onClick={() => handleDeleteDatingProfile(profile.id, profile.name)} className="text-rose-500"><Trash2 size={14}/></button></div>))}</div></div></div> )}
+      {isIcebreakerUserManagerOpen && ( <div className="fixed inset-0 z-[200] bg-slate-900/80 backdrop-blur-md flex flex-col animate-in fade-in duration-300"><div className="p-6 md:p-8 flex justify-between items-center bg-white shadow-sm z-10"><div><h2 className="text-3xl font-black text-slate-800">משתמשי IceBreaker</h2></div><button onClick={() => setIsIcebreakerUserManagerOpen(false)} className="bg-slate-100 p-3 rounded-xl"><X size={24} /></button></div><div className="flex-1 overflow-y-auto p-6 md:p-10"><div className="grid grid-cols-1 md:grid-cols-3 gap-6">{icebreakerProfiles.map(profile => (<div key={profile.id} className="bg-white rounded-[2rem] p-5 shadow-xl flex items-center gap-4"><h3 className="font-black">{profile.name}</h3><button onClick={() => handleDeleteIcebreakerProfile(profile.id, profile.name)} className="text-rose-500"><Trash2 size={14}/></button></div>))}</div></div></div> )}
+      {isIcebreakerModalOpen && ( <div className="fixed inset-0 z-[200] bg-slate-900/80 backdrop-blur-md flex flex-col animate-in fade-in duration-300"><div className="p-6 md:p-8 flex justify-between items-center bg-white shadow-sm z-10"><div><h2 className="text-3xl font-black text-slate-800">בנק המשימות</h2></div><button onClick={() => setIsIcebreakerModalOpen(false)} className="bg-slate-100 p-3 rounded-xl"><X size={24} /></button></div><div className="flex-1 overflow-y-auto p-6 md:p-10 max-w-4xl mx-auto w-full"><div className="bg-white p-6 rounded-3xl mb-6 flex"><input type="text" value={newMissionText} onChange={(e) => setNewMissionText(e.target.value)} placeholder="הוסף משימה..." className="w-full flex-1 p-4 bg-slate-50 rounded-xl" /><button onClick={handleAddMission} className="bg-cyan-500 text-white font-black px-6 py-4 rounded-xl">הוסף</button></div><div className="space-y-3">{icebreakerMissions.map(mission => (<div key={mission.id} className="bg-white p-5 rounded-2xl flex justify-between"><p className="font-medium">{mission.content}</p><button onClick={() => handleDeleteMission(mission.id)} className="text-rose-500"><Trash2 size={20}/></button></div>))}</div></div></div> )}
     </div>
   );
 };
