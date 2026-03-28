@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Camera, Heart, Loader2, PartyPopper, MapPin, X, RefreshCw } from 'lucide-react';
+import { Camera, Heart, Loader2, PartyPopper, MapPin, X, RefreshCw, Zap, Users, Car } from 'lucide-react';
 import ModuleCard from '../components/ModuleCard';
 import { supabase } from '../lib/supabase';
 import gsap from 'gsap';
@@ -19,6 +19,11 @@ const Home = () => {
   const [showTableModal, setShowTableModal] = useState(false);
   const [isSearchingTable, setIsSearchingTable] = useState(false);
   const [tableResult, setTableResult] = useState(null);
+  
+  // השדרוג: "מי איתי בשולחן"
+  const [showMates, setShowMates] = useState(false);
+  const [tableMates, setTableMates] = useState([]);
+  const [loadingMates, setLoadingMates] = useState(false);
 
   // התראות דייטליין
   const [hasUnreadDating, setHasUnreadDating] = useState(false);
@@ -58,7 +63,7 @@ const Home = () => {
           .select('*', { count: 'exact', head: true })
           .eq('event_id', id)
           .eq('receiver_id', guestId)
-          .eq('is_read', false); // רק הודעות שלא נקראו
+          .eq('is_read', false); 
           
         if (!error && count > 0) {
           setHasUnreadDating(true);
@@ -102,10 +107,14 @@ const Home = () => {
     setShowTableModal(false);
   };
 
+  // חיפוש שולחן
   const findMyTable = async () => {
     setIsSearchingTable(true);
     setShowTableModal(true);
     setTableResult(null);
+    setShowMates(false);
+    setTableMates([]);
+    
     try {
       const guestName = localStorage.getItem('guest_name');
       const { data, error } = await supabase.from('seating').select('table_number').eq('event_id', eventData.id).ilike('guest_name', `%${guestName.trim()}%`).limit(1);
@@ -115,6 +124,29 @@ const Home = () => {
       setTableResult({ found: false });
     } finally {
       setIsSearchingTable(false);
+    }
+  };
+
+  // משיכת השותפים לאותו שולחן
+  const fetchTableMates = async (tableNum) => {
+    setLoadingMates(true);
+    setShowMates(true);
+    try {
+      const guestName = localStorage.getItem('guest_name');
+      const { data, error } = await supabase
+        .from('seating')
+        .select('guest_name')
+        .eq('event_id', eventData.id)
+        .eq('table_number', tableNum);
+      
+      if (error) throw error;
+      
+      const others = data.filter(g => g.guest_name.toLowerCase() !== guestName.toLowerCase());
+      setTableMates(others);
+    } catch (error) {
+      console.error("שגיאה במשיכת יושבי השולחן:", error);
+    } finally {
+      setLoadingMates(false);
     }
   };
 
@@ -168,7 +200,6 @@ const Home = () => {
 
           {active_modules.dating && (
             <div className="module-card-anim opacity-0 relative">
-              {/* נקודת התראה (Badge) שמהבהבת כשיש הודעה שלא נקראה */}
               {hasUnreadDating && (
                 <span className="absolute -top-2 -right-2 flex h-5 w-5 z-20">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
@@ -178,31 +209,89 @@ const Home = () => {
               <ModuleCard title="דייט-ליין" icon={Heart} color="bg-rose-500" onClick={() => navigate(`/dating?event=${id}`)} />
             </div>
           )}
+
+          {active_modules.icebreaker && (
+            <div className="module-card-anim opacity-0">
+              <ModuleCard 
+                title="שובר קרח" 
+                icon={Zap} 
+                color="bg-cyan-500" 
+                onClick={() => navigate(`/icebreaker?event=${id}`)} 
+              />
+            </div>
+          )}
+
+          {/* לוח טרמפים */}
+          {active_modules.rideshare && (
+            <div className="module-card-anim opacity-0">
+              <ModuleCard 
+                title="לוח טרמפים" 
+                icon={Car} 
+                color="bg-amber-500" 
+                onClick={() => navigate(`/rideshare?event=${id}`)} 
+              />
+            </div>
+          )}
         </div>
       </div>
 
-      {/* פופ-אפ התוצאה: איפה אני יושב? */}
+      {/* פופ-אפ התוצאה: איפה אני יושב? + מי איתי בשולחן */}
       {showTableModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl relative animate-in zoom-in-95">
-            <button onClick={() => setShowTableModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-800 bg-slate-100 p-2 rounded-full transition-colors"><X size={24} /></button>
-            {isSearchingTable ? (
-              <div className="py-8"><Loader2 className="animate-spin text-emerald-500 mx-auto mb-4" size={48} /><p className="text-slate-600 font-bold text-lg">מחפש את השולחן שלך...</p></div>
-            ) : tableResult?.found ? (
-              <div className="py-4">
-                <div className="bg-emerald-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner"><span className="text-5xl font-black text-emerald-600">{tableResult.number}</span></div>
-                <h3 className="text-2xl font-black text-slate-800 mb-2">מצאנו אותך!</h3>
-                <p className="text-slate-600 text-lg font-medium">את/ה יושב/ת בשולחן מספר <strong className="text-emerald-600">{tableResult.number}</strong>.<br/> שיהיה בתאבון!</p>
-              </div>
-            ) : (
-              <div className="py-4">
-                <div className="bg-rose-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"><MapPin size={40} className="text-rose-500" /></div>
-                <h3 className="text-2xl font-black text-slate-800 mb-2">אופס...</h3>
-                <p className="text-slate-600 font-medium mb-6">לא מצאנו את השם בדיוק כפי שהקלדת אותו.</p>
-                <button onClick={handleChangeName} className="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-3.5 rounded-2xl transition-colors flex justify-center items-center gap-2 border border-indigo-100"><RefreshCw size={20} /> נסה/י שם אחר</button>
+          <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl relative animate-in zoom-in-95 max-h-[90vh] overflow-hidden flex flex-col">
+            <button onClick={() => setShowTableModal(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-800 bg-slate-100 p-2 rounded-full transition-colors z-10"><X size={24} /></button>
+            
+            <div className="overflow-y-auto hide-scrollbar pt-6 pb-2">
+              {isSearchingTable ? (
+                <div className="py-8"><Loader2 className="animate-spin text-emerald-500 mx-auto mb-4" size={48} /><p className="text-slate-600 font-bold text-lg">מחפש את השולחן שלך...</p></div>
+              ) : tableResult?.found ? (
+                <div className="py-2">
+                  <div className="bg-emerald-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+                    <span className="text-5xl font-black text-emerald-600">{tableResult.number}</span>
+                  </div>
+                  <h3 className="text-2xl font-black text-slate-800 mb-2">מצאנו אותך!</h3>
+                  <p className="text-slate-600 text-lg font-medium mb-6">את/ה יושב/ת בשולחן מספר <strong className="text-emerald-600">{tableResult.number}</strong>.</p>
+                  
+                  {/* אזור "מי איתי בשולחן" */}
+                  {!showMates ? (
+                    <button onClick={() => fetchTableMates(tableResult.number)} className="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold py-3.5 rounded-2xl transition-colors flex justify-center items-center gap-2 border border-emerald-200">
+                      <Users size={20} /> מי עוד יושב בשולחן הזה?
+                    </button>
+                  ) : (
+                    <div className="bg-slate-50 rounded-2xl border border-slate-100 p-4 text-right animate-in slide-in-from-top-4">
+                      <h4 className="font-bold text-slate-700 mb-3 border-b border-slate-200 pb-2">השותפים שלך לשולחן:</h4>
+                      {loadingMates ? (
+                        <div className="flex justify-center py-4"><Loader2 className="animate-spin text-emerald-500" size={24} /></div>
+                      ) : tableMates.length > 0 ? (
+                        <ul className="space-y-2.5 pr-1">
+                          {tableMates.map((mate, idx) => (
+                            <li key={idx} className="text-slate-600 font-medium flex items-center gap-2">
+                              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></div>
+                              <span>{mate.guest_name}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-slate-500 text-sm text-center py-4 font-medium">נראה שאת/ה לבד בשולחן הזה כרגע... שווה להתלונן להנהלה 😉</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="py-4">
+                  <div className="bg-rose-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"><MapPin size={40} className="text-rose-500" /></div>
+                  <h3 className="text-2xl font-black text-slate-800 mb-2">אופס...</h3>
+                  <p className="text-slate-600 font-medium mb-6">לא מצאנו את השם בדיוק כפי שהקלדת אותו.</p>
+                  <button onClick={handleChangeName} className="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-3.5 rounded-2xl transition-colors flex justify-center items-center gap-2 border border-indigo-100"><RefreshCw size={20} /> נסה/י שם אחר</button>
+                </div>
+              )}
+            </div>
+            
+            {!isSearchingTable && (
+              <div className="pt-3 mt-auto shrink-0 bg-white">
+                <button onClick={() => setShowTableModal(false)} className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3.5 rounded-2xl transition-colors">סגור</button>
               </div>
             )}
-            {!isSearchingTable && (<button onClick={() => setShowTableModal(false)} className="w-full mt-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3.5 rounded-2xl transition-colors">סגור</button>)}
           </div>
         </div>
       )}

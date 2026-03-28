@@ -1,3 +1,5 @@
+// AdminQRGenerator.jsx - דף ליצירת QR Code מותאם אישית לאירועים
+
 import React, { useState, useEffect, useRef } from 'react';
 import QRCodeStyling from 'qr-code-styling';
 import { DownloadCloud, Image as ImageIcon } from 'lucide-react';
