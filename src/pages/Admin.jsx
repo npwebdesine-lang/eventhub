@@ -80,7 +80,8 @@ const Admin = () => {
     setFormData({ 
       name: event.name, 
       event_date: event.event_date || '', 
-      active_modules: { photo: true, seating: true, dating: false, icebreaker: false, rideshare: false, rsvp: false, ...event.active_modules }, 
+      // ברירת מחדל הכל כבוי, ואז דורסים עם מה שנשמר במסד הנתונים
+      active_modules: { photo: false, seating: false, dating: false, icebreaker: false, rideshare: false, rsvp: false, ...event.active_modules }, 
       design_config: {
         template: event.design_config?.template || 'glass',
         colors: event.design_config?.colors || { primary: '#3b82f6', background: '#020617' },
@@ -94,7 +95,8 @@ const Admin = () => {
     setSelectedEvent({ id: null, isNew: true }); 
     setFormData({ 
       name: '', event_date: '', 
-      active_modules: { photo: true, seating: true, dating: false, icebreaker: false, rideshare: false, rsvp: false }, 
+      // כאן שינינו הכל ל-FALSE כברירת מחדל באירוע חדש
+      active_modules: { photo: false, seating: false, dating: false, icebreaker: false, rideshare: false, rsvp: false }, 
       design_config: { 
         template: 'glass', 
         colors: { primary: '#3b82f6', background: '#020617' },
@@ -179,10 +181,7 @@ const Admin = () => {
   };
 
   const exportRsvpToCSV = () => {
-    // סידור הרשימה לפי הקבוצה, כך שמשפחות יופיעו ביחד
     const sorted = [...rsvpList].sort((a, b) => a.group_id.localeCompare(b.group_id));
-    
-    // פתרון להצגת עברית תקינה באקסל (\uFEFF = BOM)
     let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
     csvContent += "שם האורח,מי מילא את הטופס,טלפון,תאריך רישום\n";
     
@@ -299,7 +298,7 @@ const Admin = () => {
                 <h3 className="text-xl font-black text-slate-800 border-b pb-4">מודולים ופיצ'רים</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   
-                  {/* --- מודול RSVP החדש! --- */}
+                  {/* --- מודול RSVP --- */}
                   <div className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.rsvp ? 'border-blue-500 bg-blue-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
                     <div className="flex justify-between items-start mb-6">
                       <div className="flex items-center gap-3">
@@ -337,13 +336,13 @@ const Admin = () => {
                   </div>
 
                   {/* דייטליין */}
-                  <div className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.dating ? 'border-rose-500 bg-rose-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
+                  <div className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.dating ? 'border-rose-500 bg-rose-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
                     <div className="flex justify-between items-start mb-6"><div className="flex items-center gap-3"><div className={`p-3 rounded-xl ${formData.active_modules.dating ? 'bg-rose-500 text-white' : 'bg-slate-200 text-slate-500'}`}><Heart size={24} /></div><div><h4 className="font-black text-lg text-slate-800">Daitline (דייטליין)</h4></div></div><label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={formData.active_modules.dating} onChange={e => setFormData({...formData, active_modules: {...formData.active_modules, dating: e.target.checked}})} /><div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div></label></div>
                     {formData.active_modules.dating && !selectedEvent.isNew && (<div className="animate-in fade-in"><button onClick={openDatingManager} className="w-full py-3 bg-white border border-rose-200 text-rose-600 font-bold rounded-xl hover:bg-rose-50 transition-colors flex justify-center items-center gap-2 shadow-sm"><Users size={18} /> ניהול משתמשי דייטליין</button></div>)}
                   </div>
 
                   {/* שובר קרח */}
-                  <div className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.icebreaker ? 'border-cyan-500 bg-cyan-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
+                  <div className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.icebreaker ? 'border-cyan-500 bg-cyan-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
                     <div className="flex justify-between items-start mb-6"><div className="flex items-center gap-3"><div className={`p-3 rounded-xl ${formData.active_modules.icebreaker ? 'bg-cyan-500 text-white' : 'bg-slate-200 text-slate-500'}`}><Zap size={24} /></div><div><h4 className="font-black text-lg text-slate-800">שובר קרח (IceBreaker)</h4></div></div><label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={formData.active_modules.icebreaker || false} onChange={e => setFormData({...formData, active_modules: {...formData.active_modules, icebreaker: e.target.checked}})} /><div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div></label></div>
                     {formData.active_modules.icebreaker && !selectedEvent.isNew && (<div className="flex flex-col md:flex-row gap-3 animate-in fade-in"><button onClick={openIcebreakerManager} className="flex-1 py-3 bg-white border border-cyan-200 text-cyan-600 font-bold rounded-xl hover:bg-cyan-50 transition-colors flex justify-center items-center gap-2 shadow-sm"><Target size={18} /> בנק המשימות</button><button onClick={openIcebreakerUserManager} className="flex-1 py-3 bg-white border border-cyan-200 text-cyan-600 font-bold rounded-xl hover:bg-cyan-50 transition-colors flex justify-center items-center gap-2 shadow-sm"><Users size={18} /> משתמשים</button></div>)}
                   </div>
