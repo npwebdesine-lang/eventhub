@@ -1,9 +1,43 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Camera, Heart, Loader2, PartyPopper, MapPin, X, RefreshCw, Zap, Users, Car } from 'lucide-react';
+import { Camera, Heart, Loader2, PartyPopper, MapPin, X, RefreshCw, Zap, Users, Car, Info } from 'lucide-react';
 import ModuleCard from '../components/ModuleCard';
 import { supabase } from '../lib/supabase';
 import gsap from 'gsap';
+
+// אובייקט שמכיל את ההסברים לכל מודול עבור האורחים
+const MODULES_INFO = {
+  photo: {
+    title: 'כל אחד צלם',
+    description: 'העלו לכאן את התמונות והסרטונים שלכם מהאירוע! כל התמונות יישמרו באלבום דיגיטלי משותף שיישאר למזכרת לבעלי השמחה ולכם.',
+    icon: Camera,
+    color: 'bg-orange-500'
+  },
+  seating: {
+    title: 'איפה אני יושב?',
+    description: 'הזינו את השם שלכם ותגלו באיזה שולחן אתם יושבים. תוכלו גם לראות אילו אורחים נוספים יושבים יחד איתכם בשולחן!',
+    icon: MapPin,
+    color: 'bg-emerald-500'
+  },
+  dating: {
+    title: 'דייט-ליין',
+    description: 'הרשת החברתית של האירוע לרווקים ורווקות בלבד! פתחו פרופיל מהיר, שלחו קריצות והכירו אורחים אחרים שבאו לחגוג.',
+    icon: Heart,
+    color: 'bg-rose-500'
+  },
+  icebreaker: {
+    title: 'שובר קרח',
+    description: 'משחק משימות חברתי ומצחיק! המערכת תגריל לכם משימה (למשל: "תעשו שוט עם...") ואורח אחר. מצאו אותו, צלמו והעלו לקיר התהילה.',
+    icon: Zap,
+    color: 'bg-cyan-500'
+  },
+  rideshare: {
+    title: 'לוח טרמפים',
+    description: 'צריכים טרמפ הביתה? או שיש לכם מקום פנוי ברכב? היכנסו ללוח כדי להציע או לחפש טרמפים וליצור קשר בקלות עם אורחים אחרים.',
+    icon: Car,
+    color: 'bg-amber-500'
+  }
+};
 
 const Home = () => {
   const { id } = useParams();
@@ -19,14 +53,15 @@ const Home = () => {
   const [showTableModal, setShowTableModal] = useState(false);
   const [isSearchingTable, setIsSearchingTable] = useState(false);
   const [tableResult, setTableResult] = useState(null);
-  
-  // השדרוג: "מי איתי בשולחן"
   const [showMates, setShowMates] = useState(false);
   const [tableMates, setTableMates] = useState([]);
   const [loadingMates, setLoadingMates] = useState(false);
 
   // התראות דייטליין
   const [hasUnreadDating, setHasUnreadDating] = useState(false);
+
+  // חלון קופץ להסבר על המודולים
+  const [infoModal, setInfoModal] = useState(null);
 
   useEffect(() => {
     const savedName = localStorage.getItem('guest_name');
@@ -51,7 +86,6 @@ const Home = () => {
     if (id) fetchEvent();
   }, [id]);
 
-  // בדיקת הודעות שלא נקראו בדייטליין
   useEffect(() => {
     const checkUnreadMessages = async () => {
       const guestId = localStorage.getItem('guest_id');
@@ -76,7 +110,6 @@ const Home = () => {
     }
   }, [isRegistered, eventData, id]);
 
-  // אנימציות GSAP בכניסה למסך הראשי
   useEffect(() => {
     if (isRegistered && eventData && !loading) {
       gsap.fromTo(".header-anim", 
@@ -107,7 +140,6 @@ const Home = () => {
     setShowTableModal(false);
   };
 
-  // חיפוש שולחן
   const findMyTable = async () => {
     setIsSearchingTable(true);
     setShowTableModal(true);
@@ -127,20 +159,13 @@ const Home = () => {
     }
   };
 
-  // משיכת השותפים לאותו שולחן
   const fetchTableMates = async (tableNum) => {
     setLoadingMates(true);
     setShowMates(true);
     try {
       const guestName = localStorage.getItem('guest_name');
-      const { data, error } = await supabase
-        .from('seating')
-        .select('guest_name')
-        .eq('event_id', eventData.id)
-        .eq('table_number', tableNum);
-      
+      const { data, error } = await supabase.from('seating').select('guest_name').eq('event_id', eventData.id).eq('table_number', tableNum);
       if (error) throw error;
-      
       const others = data.filter(g => g.guest_name.toLowerCase() !== guestName.toLowerCase());
       setTableMates(others);
     } catch (error) {
@@ -148,6 +173,11 @@ const Home = () => {
     } finally {
       setLoadingMates(false);
     }
+  };
+
+  const openInfo = (e, moduleKey) => {
+    e.stopPropagation(); // מונע לחיצה כפולה (כדי שלא ניכנס למודול במקום לפתוח את ההסבר)
+    setInfoModal(MODULES_INFO[moduleKey]);
   };
 
   if (loading) return <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center"><Loader2 className="animate-spin text-indigo-500" size={48} /></div>;
@@ -186,54 +216,84 @@ const Home = () => {
         </header>
 
         <div className="grid grid-cols-2 gap-4">
+          
           {active_modules.photo && (
-            <div className="module-card-anim opacity-0">
-              <ModuleCard title="כל אחד צלם" icon={Camera} color="bg-orange-500" onClick={() => navigate(`/photos?event=${id}`)} />
+            <div className="module-card-anim opacity-0 relative group">
+              <ModuleCard title={MODULES_INFO.photo.title} icon={Camera} color="bg-orange-500" onClick={() => navigate(`/photos?event=${id}`)} />
+              <button onClick={(e) => openInfo(e, 'photo')} className="absolute top-3 left-3 bg-white/20 hover:bg-white/40 backdrop-blur-md text-white p-1.5 rounded-full transition-colors z-10" aria-label="מידע">
+                <Info size={18} />
+              </button>
             </div>
           )}
           
           {active_modules.seating && (
-            <div className="module-card-anim opacity-0">
-              <ModuleCard title="איפה אני יושב?" icon={MapPin} color="bg-emerald-500" onClick={findMyTable} />
+            <div className="module-card-anim opacity-0 relative group">
+              <ModuleCard title={MODULES_INFO.seating.title} icon={MapPin} color="bg-emerald-500" onClick={findMyTable} />
+              <button onClick={(e) => openInfo(e, 'seating')} className="absolute top-3 left-3 bg-white/20 hover:bg-white/40 backdrop-blur-md text-white p-1.5 rounded-full transition-colors z-10" aria-label="מידע">
+                <Info size={18} />
+              </button>
             </div>
           )}
 
           {active_modules.dating && (
-            <div className="module-card-anim opacity-0 relative">
+            <div className="module-card-anim opacity-0 relative group">
               {hasUnreadDating && (
                 <span className="absolute -top-2 -right-2 flex h-5 w-5 z-20">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-5 w-5 bg-rose-500 border-2 border-slate-900 shadow-lg"></span>
                 </span>
               )}
-              <ModuleCard title="דייט-ליין" icon={Heart} color="bg-rose-500" onClick={() => navigate(`/dating?event=${id}`)} />
+              <ModuleCard title={MODULES_INFO.dating.title} icon={Heart} color="bg-rose-500" onClick={() => navigate(`/dating?event=${id}`)} />
+              <button onClick={(e) => openInfo(e, 'dating')} className="absolute top-3 left-3 bg-white/20 hover:bg-white/40 backdrop-blur-md text-white p-1.5 rounded-full transition-colors z-10" aria-label="מידע">
+                <Info size={18} />
+              </button>
             </div>
           )}
 
           {active_modules.icebreaker && (
-            <div className="module-card-anim opacity-0">
-              <ModuleCard 
-                title="שובר קרח" 
-                icon={Zap} 
-                color="bg-cyan-500" 
-                onClick={() => navigate(`/icebreaker?event=${id}`)} 
-              />
+            <div className="module-card-anim opacity-0 relative group">
+              <ModuleCard title={MODULES_INFO.icebreaker.title} icon={Zap} color="bg-cyan-500" onClick={() => navigate(`/icebreaker?event=${id}`)} />
+              <button onClick={(e) => openInfo(e, 'icebreaker')} className="absolute top-3 left-3 bg-white/20 hover:bg-white/40 backdrop-blur-md text-white p-1.5 rounded-full transition-colors z-10" aria-label="מידע">
+                <Info size={18} />
+              </button>
             </div>
           )}
 
-          {/* לוח טרמפים */}
           {active_modules.rideshare && (
-            <div className="module-card-anim opacity-0">
-              <ModuleCard 
-                title="לוח טרמפים" 
-                icon={Car} 
-                color="bg-amber-500" 
-                onClick={() => navigate(`/rideshare?event=${id}`)} 
-              />
+            <div className="module-card-anim opacity-0 relative group">
+              <ModuleCard title={MODULES_INFO.rideshare.title} icon={Car} color="bg-amber-500" onClick={() => navigate(`/rideshare?event=${id}`)} />
+              <button onClick={(e) => openInfo(e, 'rideshare')} className="absolute top-3 left-3 bg-white/20 hover:bg-white/40 backdrop-blur-md text-white p-1.5 rounded-full transition-colors z-10" aria-label="מידע">
+                <Info size={18} />
+              </button>
             </div>
           )}
+          
         </div>
       </div>
+
+      {/* --- פופ-אפ הסבר למודול (Info Modal) --- */}
+      {infoModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-in fade-in" onClick={() => setInfoModal(null)}>
+          <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl relative animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setInfoModal(null)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-800 bg-slate-100 p-2 rounded-full transition-colors">
+              <X size={20} />
+            </button>
+            
+            <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-6 shadow-inner ${infoModal.color}`}>
+              <infoModal.icon size={40} className="text-white" />
+            </div>
+            
+            <h3 className="text-2xl font-black text-slate-800 mb-3">{infoModal.title}</h3>
+            <p className="text-slate-600 font-medium leading-relaxed mb-8 text-lg">
+              {infoModal.description}
+            </p>
+            
+            <button onClick={() => setInfoModal(null)} className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-4 rounded-2xl transition-colors text-lg">
+              הבנתי, תודה!
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* פופ-אפ התוצאה: איפה אני יושב? + מי איתי בשולחן */}
       {showTableModal && (
