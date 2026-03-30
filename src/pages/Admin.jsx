@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { 
   Settings, Plus, Calendar, LogOut, Loader2, X, 
-  Save, Image as ImageIcon, Trash2, DownloadCloud, Share2, Check, Users, QrCode, Heart, ChevronRight, Camera, User, Sparkles, Edit2, Zap, Target, ListPlus, Wine, Briefcase, Music, PartyPopper, Gem, Link, UploadCloud, Car, CheckCircle2, Download
+  Save, Image as ImageIcon, Trash2, DownloadCloud, Share2, Check, Users, QrCode, Heart, ChevronRight, Camera, User, Sparkles, Edit2, Zap, Target, ListPlus, Wine, Briefcase, Music, PartyPopper, Gem, Link, UploadCloud, Car, CheckCircle2, Download, Info
 } from 'lucide-react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
@@ -12,6 +12,34 @@ const MISSION_PRESETS = {
   wedding_young: ["שוט טקילה ביחד! תוכיחו בתמונה", "תצטלמו רוקדים על שולחן (או כיסא)", "סלפי עם החתן/כלה", "תעשו פרצוף הכי מכוער שלכם", "סלפי מצחיק בשירותים", "שוט כפול עם מישהו שרוקד כמו משוגע"],
   corporate: ["סלפי עם המנכ\"ל", "תמונה עם מישהו ממחלקת HR", "תעשו הרמת כוסית עם מישהו ממחלקה אחרת", "צלמו מישהו מדבר על עבודה", "סלפי עם מתכנת/ת", "תמונה של שניכם בפוזה של 'עובדי החודש'"],
   //... 
+};
+
+// טקסטים להסבר על המודולים
+const MODULE_INFO = {
+  rsvp: {
+    title: 'אישורי הגעה (RSVP)',
+    description: 'מערכת קצה-לקצה חכמה המחליפה את הצורך בחברת אישורי הגעה חיצונית. האורחים מקבלים טופס מעוצב שדרכו הם מזינים כמה יגיעו, את שמותיהם והערות למנות (צמחוני/טבעוני). המערכת מסדרת הכל בטבלה שניתן לייצא לאקסל בקליק.'
+  },
+  photo: {
+    title: 'כל אחד צלם',
+    description: 'גלריה שיתופית דיגיטלית! במקום שהאורחים יצלמו תמונות וישמרו אצלם בטלפון, הם יכולים להעלות את כל התמונות והסרטונים ישירות לאלבום המשותף של האירוע. בסוף האירוע תוכלו להוריד קובץ ZIP עם כל הזכרונות היפים.'
+  },
+  seating: {
+    title: 'סידור הושבה',
+    description: 'הסוף לפקקים בכניסה לאולם מול הדיילות. האורח מזין את שמו ומקבל מיד את מספר השולחן שלו. בנוסף, המערכת מציגה לו אילו אורחים נוספים יושבים איתו בשולחן, כדי להתחיל לשבור את הקרח עוד לפני שהתיישב.'
+  },
+  dating: {
+    title: 'Daitline (דייטליין)',
+    description: 'רשת חברתית פנימית ודיסקרטית לאירוע בלבד. מושלם לחתונות עם חבר\'ה צעירים! מאפשר לאורחים רווקים (ופנויים בלבד) לראות פרופילים של אורחים אחרים, לשלוח קריצות ולהתחיל שיחה בקלות.'
+  },
+  icebreaker: {
+    title: 'שובר קרח (IceBreaker)',
+    description: 'משחק משימות חברתי שמרים את האווירה! המערכת מגרילה לאורח משימה מצחיקה (למשל "תצטלם עושה שוט עם החתן") ומשדכת לו אורח אחר כדי לבצע אותה. האורחים מעלים הוכחות לקיר תהילה מרכזי.'
+  },
+  rideshare: {
+    title: 'לוח טרמפים',
+    description: 'פותרים את כאב הראש הלוגיסטי. לוח חכם שבו אורחים עם מקום פנוי ברכב מפרסמים טרמפ הלוך או חזור, ואורחים שצריכים הסעה יכולים למצוא אותם. המערכת עושה התאמות (Match) חכמות בין נהגים לנוסעים באותו כיוון ומחברת ביניהם ישירות בוואטסאפ.'
+  }
 };
 
 const Admin = () => {
@@ -65,6 +93,9 @@ const Admin = () => {
   const [editingRsvpId, setEditingRsvpId] = useState(null);
   const [editRsvpName, setEditRsvpName] = useState('');
 
+  // פופ-אפ הסבר על מודול
+  const [infoModal, setInfoModal] = useState(null);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => { setSession(session); setAuthLoading(false); if (session) fetchEvents(); });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => { setSession(session); if (session) fetchEvents(); });
@@ -80,7 +111,6 @@ const Admin = () => {
     setFormData({ 
       name: event.name, 
       event_date: event.event_date || '', 
-      // ברירת מחדל הכל כבוי, ואז דורסים עם מה שנשמר במסד הנתונים
       active_modules: { photo: false, seating: false, dating: false, icebreaker: false, rideshare: false, rsvp: false, ...event.active_modules }, 
       design_config: {
         template: event.design_config?.template || 'glass',
@@ -95,7 +125,6 @@ const Admin = () => {
     setSelectedEvent({ id: null, isNew: true }); 
     setFormData({ 
       name: '', event_date: '', 
-      // כאן שינינו הכל ל-FALSE כברירת מחדל באירוע חדש
       active_modules: { photo: false, seating: false, dating: false, icebreaker: false, rideshare: false, rsvp: false }, 
       design_config: { 
         template: 'glass', 
@@ -258,9 +287,53 @@ const Admin = () => {
                 <div className="space-y-2"><label className="text-sm font-bold text-slate-700">שם האירוע</label><input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none" /></div>
                 <div className="space-y-2"><label className="text-sm font-bold text-slate-700">תאריך</label><input type="date" value={formData.event_date} onChange={e => setFormData({...formData, event_date: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none" /></div>
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2"><label className="text-sm font-bold text-slate-700 text-center block">צבע מיתוג</label><input type="color" value={formData.design_config.colors.primary} onChange={e => setFormData({...formData, design_config: {...formData.design_config, colors: {...formData.design_config.colors, primary: e.target.value}}})} className="w-full h-12 rounded-xl cursor-pointer border-2 border-slate-100" /></div>
-                  <div className="space-y-2"><label className="text-sm font-bold text-slate-700 text-center block">צבע רקע</label><input type="color" value={formData.design_config.colors.background} onChange={e => setFormData({...formData, design_config: {...formData.design_config, colors: {...formData.design_config.colors, background: e.target.value}}})} className="w-full h-12 rounded-xl cursor-pointer border-2 border-slate-100" /></div>
+                {/* --- אזור בחירת הצבעים החדש שמשלב תיבת טקסט יחד עם Color Picker --- */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 block">צבע מיתוג עיקרי (Primary)</label>
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-slate-200 shrink-0 shadow-sm transition-colors" style={{ backgroundColor: formData.design_config.colors.primary }}>
+                        <input 
+                          type="color" 
+                          value={/^#[0-9A-F]{6}$/i.test(formData.design_config.colors.primary) ? formData.design_config.colors.primary : '#3b82f6'} 
+                          onChange={e => setFormData({...formData, design_config: {...formData.design_config, colors: {...formData.design_config.colors, primary: e.target.value}}})} 
+                          className="opacity-0 w-full h-full cursor-pointer absolute inset-0" 
+                          title="בחר צבע" 
+                        />
+                      </div>
+                      <input 
+                        type="text" 
+                        value={formData.design_config.colors.primary} 
+                        onChange={e => setFormData({...formData, design_config: {...formData.design_config, colors: {...formData.design_config.colors, primary: e.target.value}}})} 
+                        placeholder="למשל: #3b82f6 / rgb()" 
+                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-left text-sm" 
+                        dir="ltr" 
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 block">צבע רקע (Background)</label>
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-slate-200 shrink-0 shadow-sm transition-colors" style={{ backgroundColor: formData.design_config.colors.background }}>
+                        <input 
+                          type="color" 
+                          value={/^#[0-9A-F]{6}$/i.test(formData.design_config.colors.background) ? formData.design_config.colors.background : '#020617'} 
+                          onChange={e => setFormData({...formData, design_config: {...formData.design_config, colors: {...formData.design_config.colors, background: e.target.value}}})} 
+                          className="opacity-0 w-full h-full cursor-pointer absolute inset-0" 
+                          title="בחר צבע" 
+                        />
+                      </div>
+                      <input 
+                        type="text" 
+                        value={formData.design_config.colors.background} 
+                        onChange={e => setFormData({...formData, design_config: {...formData.design_config, colors: {...formData.design_config.colors, background: e.target.value}}})} 
+                        placeholder="למשל: #020617 / rgb()" 
+                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-left text-sm" 
+                        dir="ltr" 
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="pt-4 border-t border-slate-100 space-y-4">
