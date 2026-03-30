@@ -111,7 +111,7 @@ const Admin = () => {
     setFormData({ 
       name: event.name, 
       event_date: event.event_date || '', 
-      location: event.location || '', // <-- נוסף שדה מיקום
+      location: event.location || '',
       active_modules: { photo: false, seating: false, dating: false, icebreaker: false, rideshare: false, rsvp: false, ...event.active_modules }, 
       design_config: {
         template: event.design_config?.template || 'glass',
@@ -125,7 +125,7 @@ const Admin = () => {
   const handleCreateNew = () => { 
     setSelectedEvent({ id: null, isNew: true }); 
     setFormData({ 
-      name: '', event_date: '', location: '', // <-- נוסף שדה מיקום
+      name: '', event_date: '', location: '',
       active_modules: { photo: false, seating: false, dating: false, icebreaker: false, rideshare: false, rsvp: false }, 
       design_config: { 
         template: 'glass', 
@@ -137,7 +137,37 @@ const Admin = () => {
   };
 
   const handleSave = async () => { if (!formData.name) return alert("יש להזין שם אירוע"); setSaving(true); try { if (selectedEvent.id) { await supabase.from('events').update(formData).eq('id', selectedEvent.id); } else { await supabase.from('events').insert([formData]); } setSelectedEvent(null); fetchEvents(); } catch (error) { alert(error.message); } finally { setSaving(false); } };
-  const handleDelete = async () => { if (!window.confirm(`האם אתה בטוח שברצונך למחוק את האירוע "${formData.name}"?`)) return; setSaving(true); try { await supabase.from('events').delete().eq('id', selectedEvent.id); setSelectedEvent(null); fetchEvents(); } catch (error) { alert("שגיאה במחיקה"); } finally { setSaving(false); } };
+  
+  // פונקציית המחיקה החדשה והעוצמתית 
+  const handleDelete = async () => { 
+    if (!window.confirm(`האם אתה בטוח שברצונך למחוק את האירוע "${formData.name}" לחלוטין?`)) return; 
+    setSaving(true); 
+    try { 
+      // 1. שאיבת כל הנתונים המקושרים כדי שמסד הנתונים לא יחסום את המחיקה
+      await Promise.all([
+        supabase.from('photos').delete().eq('event_id', selectedEvent.id),
+        supabase.from('seating').delete().eq('event_id', selectedEvent.id),
+        supabase.from('dating_profiles').delete().eq('event_id', selectedEvent.id),
+        supabase.from('dating_messages').delete().eq('event_id', selectedEvent.id),
+        supabase.from('icebreaker_missions').delete().eq('event_id', selectedEvent.id),
+        supabase.from('icebreaker_profiles').delete().eq('event_id', selectedEvent.id),
+        supabase.from('rsvps').delete().eq('event_id', selectedEvent.id),
+        supabase.from('rideshares').delete().eq('event_id', selectedEvent.id)
+      ]);
+
+      // 2. מחיקת האירוע ווידוא שהפעולה הצליחה
+      const { error } = await supabase.from('events').delete().eq('id', selectedEvent.id); 
+      if (error) throw error;
+      
+      setSelectedEvent(null); 
+      fetchEvents(); 
+    } catch (error) { 
+      console.error(error);
+      alert("שגיאה במחיקה. נסו שוב."); 
+    } finally { 
+      setSaving(false); 
+    } 
+  };
 
   const copyEventLink = async (eventId) => { const url = `${window.location.origin}/event/${eventId}`; try { await navigator.clipboard.writeText(url); setCopiedEventId(eventId); setTimeout(() => setCopiedEventId(null), 2000); } catch (err) { alert("הקישור הוא: " + url); } };
   const copyInviteLink = async (eventId) => { const url = `${window.location.origin}/invite/${eventId}`; try { await navigator.clipboard.writeText(url); setCopiedInviteId(eventId); setTimeout(() => setCopiedInviteId(null), 2000); } catch (err) { alert("הקישור הוא: " + url); } };
@@ -288,9 +318,8 @@ const Admin = () => {
                 <div className="space-y-2"><label className="text-sm font-bold text-slate-700">שם האירוע</label><input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none" /></div>
                 <div className="space-y-2"><label className="text-sm font-bold text-slate-700">תאריך</label><input type="date" value={formData.event_date} onChange={e => setFormData({...formData, event_date: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none" /></div>
                 
-                {/* --- אזור המיקום עבור הניווט בוויז --- */}
                 <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700 block">כתובת האולם (לניווט ב-Waze)</label>
+                  <label className="text-sm font-bold text-slate-700">מיקום / כתובת האולם (לניווט ב-Waze)</label>
                   <input type="text" value={formData.location || ''} onChange={e => setFormData({...formData, location: e.target.value})} placeholder="לדוגמה: אולמי שושנים, תל אביב" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
                 </div>
 
