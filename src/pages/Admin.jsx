@@ -111,6 +111,7 @@ const Admin = () => {
     setFormData({ 
       name: event.name, 
       event_date: event.event_date || '', 
+      location: event.location || '', // <-- נוסף שדה מיקום
       active_modules: { photo: false, seating: false, dating: false, icebreaker: false, rideshare: false, rsvp: false, ...event.active_modules }, 
       design_config: {
         template: event.design_config?.template || 'glass',
@@ -124,7 +125,7 @@ const Admin = () => {
   const handleCreateNew = () => { 
     setSelectedEvent({ id: null, isNew: true }); 
     setFormData({ 
-      name: '', event_date: '', 
+      name: '', event_date: '', location: '', // <-- נוסף שדה מיקום
       active_modules: { photo: false, seating: false, dating: false, icebreaker: false, rideshare: false, rsvp: false }, 
       design_config: { 
         template: 'glass', 
@@ -287,28 +288,20 @@ const Admin = () => {
                 <div className="space-y-2"><label className="text-sm font-bold text-slate-700">שם האירוע</label><input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none" /></div>
                 <div className="space-y-2"><label className="text-sm font-bold text-slate-700">תאריך</label><input type="date" value={formData.event_date} onChange={e => setFormData({...formData, event_date: e.target.value})} className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none" /></div>
                 
-                {/* --- אזור בחירת הצבעים החדש שמשלב תיבת טקסט יחד עם Color Picker --- */}
+                {/* --- אזור המיקום עבור הניווט בוויז --- */}
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700 block">כתובת האולם (לניווט ב-Waze)</label>
+                  <input type="text" value={formData.location || ''} onChange={e => setFormData({...formData, location: e.target.value})} placeholder="לדוגמה: אולמי שושנים, תל אביב" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
+                </div>
+
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-700 block">צבע מיתוג עיקרי (Primary)</label>
                     <div className="flex items-center gap-3">
                       <div className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-slate-200 shrink-0 shadow-sm transition-colors" style={{ backgroundColor: formData.design_config.colors.primary }}>
-                        <input 
-                          type="color" 
-                          value={/^#[0-9A-F]{6}$/i.test(formData.design_config.colors.primary) ? formData.design_config.colors.primary : '#3b82f6'} 
-                          onChange={e => setFormData({...formData, design_config: {...formData.design_config, colors: {...formData.design_config.colors, primary: e.target.value}}})} 
-                          className="opacity-0 w-full h-full cursor-pointer absolute inset-0" 
-                          title="בחר צבע" 
-                        />
+                        <input type="color" value={/^#[0-9A-F]{6}$/i.test(formData.design_config.colors.primary) ? formData.design_config.colors.primary : '#3b82f6'} onChange={e => setFormData({...formData, design_config: {...formData.design_config, colors: {...formData.design_config.colors, primary: e.target.value}}})} className="opacity-0 w-full h-full cursor-pointer absolute inset-0" title="בחר צבע" />
                       </div>
-                      <input 
-                        type="text" 
-                        value={formData.design_config.colors.primary} 
-                        onChange={e => setFormData({...formData, design_config: {...formData.design_config, colors: {...formData.design_config.colors, primary: e.target.value}}})} 
-                        placeholder="למשל: #3b82f6 / rgb()" 
-                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-left text-sm" 
-                        dir="ltr" 
-                      />
+                      <input type="text" value={formData.design_config.colors.primary} onChange={e => setFormData({...formData, design_config: {...formData.design_config, colors: {...formData.design_config.colors, primary: e.target.value}}})} placeholder="למשל: #3b82f6 / rgb()" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-left text-sm" dir="ltr" />
                     </div>
                   </div>
 
@@ -316,22 +309,9 @@ const Admin = () => {
                     <label className="text-sm font-bold text-slate-700 block">צבע רקע (Background)</label>
                     <div className="flex items-center gap-3">
                       <div className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-slate-200 shrink-0 shadow-sm transition-colors" style={{ backgroundColor: formData.design_config.colors.background }}>
-                        <input 
-                          type="color" 
-                          value={/^#[0-9A-F]{6}$/i.test(formData.design_config.colors.background) ? formData.design_config.colors.background : '#020617'} 
-                          onChange={e => setFormData({...formData, design_config: {...formData.design_config, colors: {...formData.design_config.colors, background: e.target.value}}})} 
-                          className="opacity-0 w-full h-full cursor-pointer absolute inset-0" 
-                          title="בחר צבע" 
-                        />
+                        <input type="color" value={/^#[0-9A-F]{6}$/i.test(formData.design_config.colors.background) ? formData.design_config.colors.background : '#020617'} onChange={e => setFormData({...formData, design_config: {...formData.design_config, colors: {...formData.design_config.colors, background: e.target.value}}})} className="opacity-0 w-full h-full cursor-pointer absolute inset-0" title="בחר צבע" />
                       </div>
-                      <input 
-                        type="text" 
-                        value={formData.design_config.colors.background} 
-                        onChange={e => setFormData({...formData, design_config: {...formData.design_config, colors: {...formData.design_config.colors, background: e.target.value}}})} 
-                        placeholder="למשל: #020617 / rgb()" 
-                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-left text-sm" 
-                        dir="ltr" 
-                      />
+                      <input type="text" value={formData.design_config.colors.background} onChange={e => setFormData({...formData, design_config: {...formData.design_config, colors: {...formData.design_config.colors, background: e.target.value}}})} placeholder="למשל: #020617 / rgb()" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-left text-sm" dir="ltr" />
                     </div>
                   </div>
                 </div>
@@ -371,7 +351,6 @@ const Admin = () => {
                 <h3 className="text-xl font-black text-slate-800 border-b pb-4">מודולים ופיצ'רים</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   
-                  {/* --- מודול RSVP --- */}
                   <div className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.rsvp ? 'border-blue-500 bg-blue-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
                     <div className="flex justify-between items-start mb-6">
                       <div className="flex items-center gap-3">
@@ -396,31 +375,26 @@ const Admin = () => {
                     )}
                   </div>
 
-                  {/* צילום */}
                   <div className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.photo ? 'border-orange-500 bg-orange-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
                     <div className="flex justify-between items-start mb-6"><div className="flex items-center gap-3"><div className={`p-3 rounded-xl ${formData.active_modules.photo ? 'bg-orange-500 text-white' : 'bg-slate-200 text-slate-500'}`}><Camera size={24} /></div><h4 className="font-black text-lg text-slate-800">כל אחד צלם</h4></div><label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={formData.active_modules.photo} onChange={e => setFormData({...formData, active_modules: {...formData.active_modules, photo: e.target.checked}})} /><div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div></label></div>
                     {formData.active_modules.photo && !selectedEvent.isNew && (<div className="space-y-3 animate-in fade-in"><button onClick={openGallery} className="w-full py-3 bg-white border border-orange-200 text-orange-600 font-bold rounded-xl hover:bg-orange-50 transition-colors flex justify-center items-center gap-2"><ImageIcon size={18} /> ניהול תמונות (הורדת ZIP)</button><button onClick={() => window.open(`/album/${selectedEvent.id}`, '_blank')} className="w-full py-3 bg-gradient-to-r from-orange-400 to-orange-500 text-white font-black rounded-xl hover:from-orange-500 hover:to-orange-600 transition-all flex justify-center items-center gap-2 shadow-lg shadow-orange-500/30"><Sparkles size={18} /> צפייה באלבום הדיגיטלי</button></div>)}
                   </div>
 
-                  {/* הושבה */}
                   <div className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.seating ? 'border-emerald-500 bg-emerald-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
                     <div className="flex justify-between items-start mb-6"><div className="flex items-center gap-3"><div className={`p-3 rounded-xl ${formData.active_modules.seating ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'}`}><Users size={24} /></div><h4 className="font-black text-lg text-slate-800">סידור הושבה</h4></div><label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={formData.active_modules.seating} onChange={e => setFormData({...formData, active_modules: {...formData.active_modules, seating: e.target.checked}})} /><div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div></label></div>
                     {formData.active_modules.seating && !selectedEvent.isNew && (<div className="space-y-3 animate-in fade-in"><button onClick={openSeatingManager} className="w-full py-3 bg-white border border-emerald-200 text-emerald-600 font-bold rounded-xl hover:bg-emerald-50 transition-colors flex justify-center items-center gap-2"><Settings size={18} /> ניהול רשימת הושבה</button></div>)}
                   </div>
 
-                  {/* דייטליין */}
                   <div className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.dating ? 'border-rose-500 bg-rose-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
                     <div className="flex justify-between items-start mb-6"><div className="flex items-center gap-3"><div className={`p-3 rounded-xl ${formData.active_modules.dating ? 'bg-rose-500 text-white' : 'bg-slate-200 text-slate-500'}`}><Heart size={24} /></div><div><h4 className="font-black text-lg text-slate-800">Daitline (דייטליין)</h4></div></div><label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={formData.active_modules.dating} onChange={e => setFormData({...formData, active_modules: {...formData.active_modules, dating: e.target.checked}})} /><div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div></label></div>
                     {formData.active_modules.dating && !selectedEvent.isNew && (<div className="animate-in fade-in"><button onClick={openDatingManager} className="w-full py-3 bg-white border border-rose-200 text-rose-600 font-bold rounded-xl hover:bg-rose-50 transition-colors flex justify-center items-center gap-2 shadow-sm"><Users size={18} /> ניהול משתמשי דייטליין</button></div>)}
                   </div>
 
-                  {/* שובר קרח */}
                   <div className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.icebreaker ? 'border-cyan-500 bg-cyan-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
                     <div className="flex justify-between items-start mb-6"><div className="flex items-center gap-3"><div className={`p-3 rounded-xl ${formData.active_modules.icebreaker ? 'bg-cyan-500 text-white' : 'bg-slate-200 text-slate-500'}`}><Zap size={24} /></div><div><h4 className="font-black text-lg text-slate-800">שובר קרח (IceBreaker)</h4></div></div><label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={formData.active_modules.icebreaker || false} onChange={e => setFormData({...formData, active_modules: {...formData.active_modules, icebreaker: e.target.checked}})} /><div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div></label></div>
                     {formData.active_modules.icebreaker && !selectedEvent.isNew && (<div className="flex flex-col md:flex-row gap-3 animate-in fade-in"><button onClick={openIcebreakerManager} className="flex-1 py-3 bg-white border border-cyan-200 text-cyan-600 font-bold rounded-xl hover:bg-cyan-50 transition-colors flex justify-center items-center gap-2 shadow-sm"><Target size={18} /> בנק המשימות</button><button onClick={openIcebreakerUserManager} className="flex-1 py-3 bg-white border border-cyan-200 text-cyan-600 font-bold rounded-xl hover:bg-cyan-50 transition-colors flex justify-center items-center gap-2 shadow-sm"><Users size={18} /> משתמשים</button></div>)}
                   </div>
 
-                  {/* טרמפים */}
                   <div className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.rideshare ? 'border-amber-500 bg-amber-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
                     <div className="flex justify-between items-start mb-6"><div className="flex items-center gap-3"><div className={`p-3 rounded-xl ${formData.active_modules.rideshare ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-500'}`}><Car size={24} /></div><div><h4 className="font-black text-lg text-slate-800">לוח טרמפים</h4></div></div><label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={formData.active_modules.rideshare || false} onChange={e => setFormData({...formData, active_modules: {...formData.active_modules, rideshare: e.target.checked}})} /><div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div></label></div>
                   </div>

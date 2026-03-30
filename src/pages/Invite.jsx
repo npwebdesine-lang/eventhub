@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Loader2, CalendarHeart, Clock, Sparkles, Car, PartyPopper, Briefcase, CheckCircle2, X, Send, AlertTriangle, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, CalendarHeart, Clock, Sparkles, Car, PartyPopper, Briefcase, CheckCircle2, X, Send, AlertTriangle, Users, ChevronLeft, ChevronRight, Navigation } from 'lucide-react';
 import gsap from 'gsap';
 
 const Invite = () => {
@@ -107,34 +107,52 @@ const Invite = () => {
   if (loading) return <div className="min-h-screen bg-slate-900 flex items-center justify-center"><Loader2 className="animate-spin text-white" size={48} /></div>;
   if (!eventData) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white text-xl font-bold">ההזמנה לא נמצאה :(</div>;
 
-  const { name, event_date, design_config, active_modules } = eventData;
+  const { name, event_date, location, design_config, active_modules } = eventData;
   const primaryColor = design_config?.colors?.primary || '#1e293b'; 
   const template = design_config?.invite_template || 'modern';
   const inviteImage = design_config?.invite_image;
 
   const isHappeningNow = timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0;
 
-  // כפתורי פעולה לאירוע (מעוצבים בסגנון החדש)
+  // כפתורי פעולה לאירוע 
   const ActionButtons = ({ theme }) => {
     const isLight = theme === 'light';
     return (
       <div className="mt-8 pt-8 border-t border-opacity-20 animate-in fade-in duration-1000 space-y-4" style={{ borderColor: isLight ? '#000000' : '#ffffff' }}>
+        
         {active_modules?.rsvp !== false && (
           <button onClick={() => { setShowRsvp(true); setRsvpStep(1); }} className="w-full flex items-center justify-center gap-3 text-white font-black py-4 rounded-[1.5rem] text-lg shadow-lg hover:scale-[1.02] transition-transform" style={{ backgroundColor: primaryColor }}>
             <CheckCircle2 size={24} /> אישור הגעה (RSVP)
           </button>
         )}
-        {active_modules?.rideshare && (
-          <button onClick={() => navigate(`/rideshare?event=${id}`)} className={`w-full flex items-center justify-center gap-2 font-bold py-4 rounded-[1.5rem] text-lg transition-all active:scale-95 ${isLight ? 'bg-slate-100 text-slate-800 hover:bg-slate-200' : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'}`}>
-            <Car size={20} /> לוח טרמפים לאירוע
-          </button>
-        )}
+        
+        <div className="flex flex-col md:flex-row gap-3">
+          {/* כפתור הניווט בוויז */}
+          {location && (
+            <a 
+              href={`https://waze.com/ul?q=${encodeURIComponent(location)}&navigate=yes`} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className={`flex-1 flex items-center justify-center gap-2 font-bold py-4 rounded-[1.5rem] text-sm transition-all active:scale-95 ${isLight ? 'bg-[#e5f0ff] text-[#007ee5] hover:bg-[#d0e6ff]' : 'bg-[#007ee5]/20 text-[#3399ff] border border-[#007ee5]/30 hover:bg-[#007ee5]/30'}`} 
+              title={`ניווט אל: ${location}`}
+            >
+              <Navigation size={18} /> נווט לאירוע 
+            </a>
+          )}
+          
+          {/* כפתור הטרמפים */}
+          {active_modules?.rideshare && (
+            <button onClick={() => navigate(`/rideshare?event=${id}`)} className={`flex-1 flex items-center justify-center gap-2 font-bold py-4 rounded-[1.5rem] text-sm transition-all active:scale-95 ${isLight ? 'bg-slate-100 text-slate-800 hover:bg-slate-200' : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'}`}>
+              <Car size={18} /> לוח טרמפים
+            </button>
+          )}
+        </div>
+
       </div>
     );
   };
 
   const renderTemplate = () => {
-    // טמפלט אלגנטי נשאר כמו שהוא
     if (template === 'elegant') {
       return (
         <div className="min-h-screen bg-[#ffffff] flex flex-col items-center p-6 text-center" dir="rtl">
@@ -161,7 +179,6 @@ const Invite = () => {
       );
     }
 
-    // טמפלט קורפורייט נשאר כמו שהוא
     if (template === 'corporate') {
       return (
         <div className="min-h-screen bg-slate-50 flex flex-col items-center p-6 text-center relative" dir="rtl">
@@ -192,10 +209,8 @@ const Invite = () => {
       );
     }
 
-    // --- טמפלט מודרני מותאם לעיצוב ה-Modychat UI ---
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col font-sans" dir="rtl">
-        {/* חלק עליון כהה ומעוגל */}
         <div className="bg-slate-900 rounded-b-[3rem] pt-12 pb-24 px-6 flex flex-col items-center text-center relative z-10 shadow-lg">
           <div className="w-20 h-20 rounded-[1.5rem] flex items-center justify-center mb-6 bg-slate-800/50 border border-slate-700 shadow-inner">
             {inviteImage ? <img src={inviteImage} className="w-full h-full object-cover rounded-[1.5rem] p-1" alt="Event" /> : <PartyPopper size={32} className="text-rose-400" />}
@@ -207,7 +222,6 @@ const Invite = () => {
           </p>
         </div>
 
-        {/* כרטיס ספירה לאחור שצף על הגבול */}
         <div className="px-6 -mt-12 relative z-20 w-full max-w-md mx-auto flex-1 flex flex-col pb-10">
           {!isHappeningNow ? (
             <div className="bg-white rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-slate-100">
@@ -240,7 +254,6 @@ const Invite = () => {
     <>
       {renderTemplate()}
 
-      {/* פופ-אפ אישורי הגעה רב שלבי - ללא שינוי לוגיקה, רק תואם לפינות ה-1.5rem */}
       {showRsvp && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-end md:items-center justify-center animate-in fade-in" dir="rtl">
           <div className="bg-white w-full max-w-lg md:rounded-[2.5rem] rounded-t-[2.5rem] p-6 md:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto hide-scrollbar">
