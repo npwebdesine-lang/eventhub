@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Loader2, CalendarHeart, Clock, Sparkles, Car, PartyPopper, Briefcase, CheckCircle2, X, Send, AlertTriangle, Users, ChevronLeft, ChevronRight, Navigation } from 'lucide-react';
@@ -21,6 +21,10 @@ const Invite = () => {
   const [submitterPhone, setSubmitterPhone] = useState('');
   const [duplicateWarnings, setDuplicateWarnings] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // אנימציות רקע
+  const bgDecor1 = useRef(null);
+  const bgDecor2 = useRef(null);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -52,12 +56,73 @@ const Invite = () => {
     return () => clearInterval(timer);
   }, [eventData]);
 
+  // --- קסם האנימציות של GSAP ---
+  useEffect(() => {
+    if (loading || !eventData) return;
+
+    const template = eventData.design_config?.invite_template || 'modern';
+
+    // 1. אנימציית כניסה מדורגת לכל האלמנטים בדף
+    gsap.fromTo(".fade-up-item", 
+      { y: 40, opacity: 0 }, 
+      { y: 0, opacity: 1, duration: 1, stagger: 0.1, ease: "power3.out", delay: 0.1 }
+    );
+
+    // 2. אנימציות רקע דינמיות לפי תבנית
+    if (template === 'modern') {
+      // ענני צבע זזים ונושמים
+      gsap.to([bgDecor1.current, bgDecor2.current], {
+        x: "random(-60, 60)",
+        y: "random(-60, 60)",
+        scale: "random(0.8, 1.2)",
+        duration: "random(4, 7)",
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut"
+      });
+    } else if (template === 'elegant') {
+      // חלקיקים מרחפים
+      gsap.to(".elegant-particle", {
+        y: "random(-80, 80)",
+        x: "random(-40, 40)",
+        scale: "random(0.6, 1.4)",
+        opacity: "random(0.1, 0.5)",
+        duration: "random(5, 10)",
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+        stagger: { amount: 2, from: "random" }
+      });
+      // פעימה לתמונה המרכזית
+      gsap.to(".pulse-ring", {
+        scale: 1.05,
+        opacity: 0.5,
+        duration: 2,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut"
+      });
+    } else if (template === 'corporate') {
+      // סיבוב איטי של הגיאומטריה ברקע
+      gsap.to(bgDecor1.current, {
+        rotation: 360,
+        duration: 60,
+        repeat: -1,
+        ease: "linear"
+      });
+    }
+  }, [loading, eventData]);
+
+  // אנימציית פופ-אפ ה-RSVP
   useEffect(() => {
     if (showRsvp) {
       gsap.fromTo(".step-anim", { opacity: 0, x: 20 }, { opacity: 1, x: 0, duration: 0.4, ease: "power2.out" });
     }
   }, [rsvpStep, showRsvp]);
 
+  // ----------------------------------------
+  // RSVP Logic
+  // ----------------------------------------
   const handleCountNext = () => {
     const newNames = [...guestNames];
     while (newNames.length < guestCount) newNames.push('');
@@ -83,7 +148,7 @@ const Invite = () => {
       if (error) throw error;
       if (data && data.length > 0) {
         setDuplicateWarnings(data);
-        setRsvpStep(3);
+        setRsvpStep(3); 
       } else {
         await executeSubmit();
       }
@@ -94,13 +159,25 @@ const Invite = () => {
     setIsSubmitting(true);
     try {
       const groupId = `group_${Math.random().toString(36).substr(2, 9)}`;
-      const submitterName = guestNames[0].trim();
-      const inserts = guestNames.map(name => ({ event_id: id, group_id: groupId, submitter_name: submitterName, submitter_phone: submitterPhone, guest_name: name.trim() }));
+      const submitterName = guestNames[0].trim(); 
+      const inserts = guestNames.map(name => ({
+        event_id: id,
+        group_id: groupId,
+        submitter_name: submitterName,
+        submitter_phone: submitterPhone,
+        guest_name: name.trim()
+      }));
       const { error } = await supabase.from('rsvps').insert(inserts);
       if (error) throw error;
       
-      setRsvpStep(4);
-      setTimeout(() => { setShowRsvp(false); setRsvpStep(1); setGuestCount(1); setGuestNames(['']); setSubmitterPhone(''); }, 4000);
+      setRsvpStep(4); 
+      setTimeout(() => {
+        setShowRsvp(false);
+        setRsvpStep(1);
+        setGuestCount(1);
+        setGuestNames(['']);
+        setSubmitterPhone('');
+      }, 4000);
     } catch (err) { alert("שגיאה בשמירת אישור ההגעה."); } finally { setIsSubmitting(false); }
   };
 
@@ -108,90 +185,125 @@ const Invite = () => {
   if (!eventData) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white text-xl font-bold">ההזמנה לא נמצאה :(</div>;
 
   const { name, event_date, location, design_config, active_modules } = eventData;
-  const primaryColor = design_config?.colors?.primary || '#1e293b'; 
+  const primaryColor = design_config?.colors?.primary || '#3b82f6';
+  const bgColor = design_config?.colors?.background || '#020617';
   const template = design_config?.invite_template || 'modern';
   const inviteImage = design_config?.invite_image;
 
   const isHappeningNow = timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0;
 
-  // כפתורי פעולה לאירוע 
+  // כפתורי פעולה משותפים (RSVP + טרמפים + ניווט)
   const ActionButtons = ({ theme }) => {
     const isLight = theme === 'light';
     return (
-      <div className="mt-8 pt-8 border-t border-opacity-20 animate-in fade-in duration-1000 space-y-4" style={{ borderColor: isLight ? '#000000' : '#ffffff' }}>
+      <div className="fade-up-item mt-8 pt-8 border-t border-opacity-20 space-y-4 relative z-20" style={{ borderColor: isLight ? '#000000' : '#ffffff' }}>
         
         {active_modules?.rsvp !== false && (
-          <button onClick={() => { setShowRsvp(true); setRsvpStep(1); }} className="w-full flex items-center justify-center gap-3 text-white font-black py-4 rounded-[1.5rem] text-lg shadow-lg hover:scale-[1.02] transition-transform" style={{ backgroundColor: primaryColor }}>
+          <button 
+            onClick={() => { setShowRsvp(true); setRsvpStep(1); }}
+            className="w-full flex items-center justify-center gap-3 text-white font-black py-4 rounded-2xl text-xl shadow-lg hover:scale-105 transition-transform"
+            style={{ backgroundColor: primaryColor }}
+          >
             <CheckCircle2 size={24} /> אישור הגעה (RSVP)
           </button>
         )}
-        
-        <div className="flex flex-col md:flex-row gap-3">
-          {/* כפתור הניווט בוויז */}
+
+        <div className="grid grid-cols-2 gap-3">
           {location && (
             <a 
-              href={`https://waze.com/ul?q=${encodeURIComponent(location)}&navigate=yes`} 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className={`flex-1 flex items-center justify-center gap-2 font-bold py-4 rounded-[1.5rem] text-sm transition-all active:scale-95 ${isLight ? 'bg-[#e5f0ff] text-[#007ee5] hover:bg-[#d0e6ff]' : 'bg-[#007ee5]/20 text-[#3399ff] border border-[#007ee5]/30 hover:bg-[#007ee5]/30'}`} 
-              title={`ניווט אל: ${location}`}
+              href={`https://waze.com/ul?q=${encodeURIComponent(location)}&navigate=yes`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`w-full flex items-center justify-center gap-2 font-bold py-3.5 rounded-2xl text-sm transition-all hover:scale-[1.03] active:scale-95 shadow-sm ${isLight ? 'bg-blue-50 text-blue-600 hover:bg-blue-100' : 'bg-[#007ee5]/20 text-[#3399ff] border border-[#007ee5]/30 hover:bg-[#007ee5]/30'}`}
             >
               <Navigation size={18} /> נווט לאירוע 
             </a>
           )}
-          
-          {/* כפתור הטרמפים */}
+
           {active_modules?.rideshare && (
-            <button onClick={() => navigate(`/rideshare?event=${id}`)} className={`flex-1 flex items-center justify-center gap-2 font-bold py-4 rounded-[1.5rem] text-sm transition-all active:scale-95 ${isLight ? 'bg-slate-100 text-slate-800 hover:bg-slate-200' : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'}`}>
+            <button 
+              onClick={() => navigate(`/rideshare?event=${id}`)}
+              className={`w-full flex items-center justify-center gap-2 font-bold py-3.5 rounded-2xl text-sm transition-all hover:scale-[1.03] active:scale-95 shadow-sm ${isLight ? 'bg-slate-100 text-slate-800 hover:bg-slate-200' : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'}`}
+            >
               <Car size={18} /> לוח טרמפים
             </button>
           )}
         </div>
-
       </div>
     );
   };
 
   const renderTemplate = () => {
+    // --- תבנית אלגנטית (עודכנה עם אנימציות רקע ופעימה) ---
     if (template === 'elegant') {
       return (
-        <div className="min-h-screen bg-[#ffffff] flex flex-col items-center p-6 text-center" dir="rtl">
-          <div className="w-full max-w-md mx-auto pt-8 pb-20">
-            <h1 className="text-4xl md:text-5xl font-serif font-bold mb-2" style={{ color: primaryColor }}>{name}</h1>
-            <p className="text-slate-400 font-medium uppercase tracking-widest text-sm mb-10">מתרגשים להזמין אתכם</p>
-            <div className="relative w-64 h-64 mx-auto mb-12 animate-in zoom-in duration-700">
-              <div className="absolute inset-[-6px] rounded-full opacity-30" style={{ backgroundColor: primaryColor }}></div>
+        <div className="min-h-screen bg-[#ffffff] flex flex-col items-center p-6 text-center relative overflow-hidden" dir="rtl">
+          
+          {/* אנימציית רקע - חלקיקים מרחפים */}
+          <div className="absolute inset-0 pointer-events-none z-0">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="elegant-particle absolute rounded-full opacity-20 blur-[2px]" style={{
+                backgroundColor: primaryColor,
+                width: `${Math.random() * 20 + 10}px`, height: `${Math.random() * 20 + 10}px`,
+                top: `${[10, 20, 70, 80, 40, 60][i]}%`, left: `${[10, 80, 20, 90, 50, 70][i]}%`
+              }}></div>
+            ))}
+          </div>
+
+          <div className="w-full max-w-md mx-auto pt-8 pb-20 relative z-10">
+            <h1 className="fade-up-item text-4xl md:text-5xl font-serif font-bold mb-2" style={{ color: primaryColor }}>{name}</h1>
+            <p className="fade-up-item text-slate-400 font-medium uppercase tracking-widest text-sm mb-10">מתרגשים להזמין אתכם</p>
+            
+            <div className="fade-up-item relative w-64 h-64 mx-auto mb-12">
+              {/* טבעת פועמת מאחורי התמונה */}
+              <div className="pulse-ring absolute inset-[-8px] rounded-full opacity-20" style={{ backgroundColor: primaryColor }}></div>
+              <div className="absolute inset-[-4px] rounded-full border-[2px] border-dashed opacity-40 animate-[spin_30s_linear_infinite]" style={{ borderColor: primaryColor }}></div>
               <div className="absolute inset-0 rounded-full border-[6px]" style={{ borderColor: primaryColor }}></div>
-              {inviteImage ? <img src={inviteImage} className="w-full h-full object-cover rounded-full p-1" alt="Event Cover" /> : <div className="w-full h-full rounded-full bg-slate-100 flex items-center justify-center p-1"><CalendarHeart size={48} className="text-slate-300" /></div>}
+              
+              {inviteImage ? (
+                <img src={inviteImage} className="w-full h-full object-cover rounded-full p-1 bg-white relative z-10 shadow-lg" alt="Event Cover" />
+              ) : (
+                <div className="w-full h-full rounded-full bg-slate-50 flex items-center justify-center p-1 relative z-10 shadow-lg"><CalendarHeart size={48} className="text-slate-300" /></div>
+              )}
             </div>
+
             {!isHappeningNow ? (
-              <div className="flex justify-center items-center gap-4 mb-10" dir="ltr">
+              <div className="fade-up-item flex justify-center items-center gap-4 mb-10" dir="ltr">
                 <div className="flex flex-col items-center"><span className="text-3xl font-bold" style={{ color: primaryColor }}>{timeLeft.seconds.toString().padStart(2, '0')}</span><span className="text-xs font-bold text-slate-400">שניות</span></div><div className="h-8 w-[1px] bg-slate-200"></div>
                 <div className="flex flex-col items-center"><span className="text-3xl font-bold" style={{ color: primaryColor }}>{timeLeft.minutes.toString().padStart(2, '0')}</span><span className="text-xs font-bold text-slate-400">דקות</span></div><div className="h-8 w-[1px] bg-slate-200"></div>
                 <div className="flex flex-col items-center"><span className="text-3xl font-bold" style={{ color: primaryColor }}>{timeLeft.hours.toString().padStart(2, '0')}</span><span className="text-xs font-bold text-slate-400">שעות</span></div><div className="h-8 w-[1px] bg-slate-200"></div>
                 <div className="flex flex-col items-center"><span className="text-3xl font-bold" style={{ color: primaryColor }}>{timeLeft.days.toString().padStart(2, '0')}</span><span className="text-xs font-bold text-slate-400">ימים</span></div>
               </div>
-            ) : (<h2 className="text-3xl font-bold mb-10" style={{ color: primaryColor }}>היום זה קורה!</h2>)}
-            <p className="text-slate-500 font-medium mb-8">ב- {new Date(event_date).toLocaleDateString('he-IL')}</p>
+            ) : (<h2 className="fade-up-item text-3xl font-bold mb-10" style={{ color: primaryColor }}>היום זה קורה!</h2>)}
+            
+            <p className="fade-up-item text-slate-500 font-medium mb-8">ב- {new Date(event_date).toLocaleDateString('he-IL')}</p>
+            
             <ActionButtons theme="light" />
           </div>
         </div>
       );
     }
 
+    // --- תבנית קורפורייט (עודכנה עם גיאומטריה מסתובבת) ---
     if (template === 'corporate') {
       return (
-        <div className="min-h-screen bg-slate-50 flex flex-col items-center p-6 text-center relative" dir="rtl">
-          <div className="w-full max-w-md mx-auto mt-12 relative z-10 animate-in fade-in duration-700 pb-20">
-            <div className="h-24 flex items-center justify-center mb-8">
+        <div className="min-h-screen bg-slate-50 flex flex-col items-center p-6 text-center relative overflow-hidden" dir="rtl">
+          
+          {/* גיאומטריה מסתובבת ברקע */}
+          <div ref={bgDecor1} className="absolute -top-40 -left-40 w-96 h-96 rounded-[40%] opacity-5 pointer-events-none" style={{ border: `10px solid ${primaryColor}` }}></div>
+
+          <div className="w-full max-w-md mx-auto mt-12 relative z-10 pb-20">
+            <div className="fade-up-item h-24 flex items-center justify-center mb-8">
               {inviteImage ? <img src={inviteImage} className="max-h-full max-w-full object-contain" alt="Company Logo" /> : <div className="w-16 h-16 bg-slate-200 rounded-xl flex items-center justify-center"><Briefcase className="text-slate-400" size={32}/></div>}
             </div>
-            <div className="bg-white rounded-t-2xl shadow-sm pt-8 pb-16 px-6" style={{ borderTop: `4px solid ${primaryColor}` }}>
+            
+            <div className="fade-up-item bg-white rounded-t-2xl shadow-sm pt-8 pb-16 px-6" style={{ borderTop: `4px solid ${primaryColor}` }}>
               <p className="text-slate-400 text-sm font-bold uppercase tracking-widest mb-2">Countdown Until</p>
               <h1 className="text-3xl font-black text-slate-800 mb-2">{name}</h1>
               <p className="text-slate-500 font-medium text-sm flex justify-center items-center gap-2"><Clock size={16}/> {new Date(event_date).toLocaleDateString('he-IL')}</p>
             </div>
-            <div className="bg-slate-800 rounded-2xl shadow-xl -mt-8 mx-4 p-6 relative z-20 text-white" style={{ backgroundColor: primaryColor }}>
+            
+            <div className="fade-up-item bg-slate-800 rounded-2xl shadow-2xl -mt-8 mx-4 p-6 relative z-20 text-white transform hover:scale-[1.02] transition-transform" style={{ backgroundColor: primaryColor }}>
               {!isHappeningNow ? (
                 <div className="flex justify-between items-center" dir="ltr">
                   <div className="flex flex-col items-center flex-1"><span className="text-4xl font-black tracking-tight">{timeLeft.days.toString().padStart(2, '0')}</span><span className="text-[10px] font-bold uppercase opacity-80 mt-1">Days</span></div><span className="text-2xl font-bold opacity-50 mb-4">:</span>
@@ -201,7 +313,8 @@ const Invite = () => {
                 </div>
               ) : (<div className="py-4"><h2 className="text-2xl font-black">האירוע מתחיל היום!</h2></div>)}
             </div>
-            <div className="mt-8 bg-white p-6 rounded-2xl shadow-sm">
+            
+            <div className="fade-up-item mt-8 bg-white p-6 rounded-2xl shadow-sm relative z-30">
               <ActionButtons theme="light" />
             </div>
           </div>
@@ -209,42 +322,38 @@ const Invite = () => {
       );
     }
 
+    // --- תבנית מודרנית / מסיבה (עודכנה עם Blobs זזים) ---
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col font-sans" dir="rtl">
-        <div className="bg-slate-900 rounded-b-[3rem] pt-12 pb-24 px-6 flex flex-col items-center text-center relative z-10 shadow-lg">
-          <div className="w-20 h-20 rounded-[1.5rem] flex items-center justify-center mb-6 bg-slate-800/50 border border-slate-700 shadow-inner">
-            {inviteImage ? <img src={inviteImage} className="w-full h-full object-cover rounded-[1.5rem] p-1" alt="Event" /> : <PartyPopper size={32} className="text-rose-400" />}
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden text-center" style={{ backgroundColor: bgColor }} dir="rtl">
+        
+        {/* Blobs חיים וזזים */}
+        <div ref={bgDecor1} className="absolute top-[-10%] left-[-10%] w-96 h-96 blur-[120px] rounded-full pointer-events-none opacity-60" style={{ backgroundColor: primaryColor }}></div>
+        <div ref={bgDecor2} className="absolute bottom-[-10%] right-[-10%] w-80 h-80 blur-[100px] rounded-full pointer-events-none opacity-40" style={{ backgroundColor: primaryColor }}></div>
+        
+        <div className="relative z-10 w-full max-w-lg mx-auto pb-20">
+          <div className="fade-up-item mx-auto w-24 h-24 rounded-[2rem] flex items-center justify-center mb-8 shadow-2xl backdrop-blur-md" style={{ backgroundColor: `${primaryColor}30`, border: `1px solid ${primaryColor}50` }}>
+            {inviteImage ? <img src={inviteImage} className="w-full h-full object-cover rounded-[2rem] p-1 shadow-inner" alt="Event Cover" /> : <PartyPopper size={40} style={{ color: primaryColor }} />}
           </div>
-          <p className="text-slate-400 font-bold tracking-widest uppercase text-xs mb-2">Save The Date</p>
-          <h1 className="text-4xl md:text-5xl font-black text-white mb-4 leading-tight">{name}</h1>
-          <p className="text-slate-300 font-medium flex items-center justify-center gap-2 bg-slate-800/50 px-5 py-2.5 rounded-full text-sm border border-slate-700/50">
-            <Clock size={16} className="text-rose-400" /> {new Date(event_date).toLocaleDateString('he-IL')}
-          </p>
-        </div>
-
-        <div className="px-6 -mt-12 relative z-20 w-full max-w-md mx-auto flex-1 flex flex-col pb-10">
+          
+          <div className="fade-up-item mb-2 text-white/70 font-medium tracking-widest uppercase text-sm">Save The Date</div>
+          <h1 className="fade-up-item text-5xl md:text-6xl font-black text-white mb-6 leading-tight drop-shadow-2xl">{name}</h1>
+          <p className="fade-up-item text-xl text-white/80 mb-12 font-medium flex items-center justify-center gap-2"><Clock size={20} /> {new Date(event_date).toLocaleDateString('he-IL')}</p>
+          
           {!isHappeningNow ? (
-            <div className="bg-white rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-slate-100">
-              <div className="flex justify-between items-center" dir="ltr">
-                <div className="flex flex-col items-center flex-1"><span className="text-3xl font-black text-slate-800">{timeLeft.days.toString().padStart(2, '0')}</span><span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Days</span></div>
-                <span className="text-slate-200 font-black text-2xl">:</span>
-                <div className="flex flex-col items-center flex-1"><span className="text-3xl font-black text-slate-800">{timeLeft.hours.toString().padStart(2, '0')}</span><span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Hours</span></div>
-                <span className="text-slate-200 font-black text-2xl">:</span>
-                <div className="flex flex-col items-center flex-1"><span className="text-3xl font-black text-slate-800">{timeLeft.minutes.toString().padStart(2, '0')}</span><span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Min</span></div>
-                <span className="text-slate-200 font-black text-2xl">:</span>
-                <div className="flex flex-col items-center flex-1"><span className="text-3xl font-black text-slate-800">{timeLeft.seconds.toString().padStart(2, '0')}</span><span className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Sec</span></div>
-              </div>
+            <div className="fade-up-item flex justify-center gap-3 md:gap-4 mb-12" dir="ltr">
+              <div className="flex flex-col items-center"><div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center text-2xl md:text-3xl font-black text-white shadow-2xl backdrop-blur-lg border border-white/10 bg-white/10 hover:bg-white/20 transition-colors">{timeLeft.seconds.toString().padStart(2, '0')}</div><span className="text-xs font-bold mt-3" style={{ color: primaryColor }}>שניות</span></div>
+              <div className="flex flex-col items-center"><div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center text-2xl md:text-3xl font-black text-white shadow-2xl backdrop-blur-lg border border-white/10 bg-white/10 hover:bg-white/20 transition-colors">{timeLeft.minutes.toString().padStart(2, '0')}</div><span className="text-xs font-bold mt-3" style={{ color: primaryColor }}>דקות</span></div>
+              <div className="flex flex-col items-center"><div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center text-2xl md:text-3xl font-black text-white shadow-2xl backdrop-blur-lg border border-white/10 bg-white/10 hover:bg-white/20 transition-colors">{timeLeft.hours.toString().padStart(2, '0')}</div><span className="text-xs font-bold mt-3" style={{ color: primaryColor }}>שעות</span></div>
+              <div className="flex flex-col items-center"><div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center text-2xl md:text-3xl font-black text-white shadow-2xl backdrop-blur-lg border border-white/10 bg-white/10 hover:bg-white/20 transition-colors">{timeLeft.days.toString().padStart(2, '0')}</div><span className="text-xs font-bold mt-3" style={{ color: primaryColor }}>ימים</span></div>
             </div>
           ) : (
-            <div className="bg-white rounded-[2rem] p-8 shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-slate-100 text-center">
-              <Sparkles className="mx-auto mb-3 text-amber-400 animate-pulse" size={40} />
-              <h2 className="text-2xl font-black text-slate-800">היום זה קורה!</h2>
+            <div className="fade-up-item mb-12 bg-white/10 p-6 rounded-3xl border border-white/20 backdrop-blur-xl shadow-2xl">
+              <Sparkles className="mx-auto mb-3 text-yellow-400 animate-pulse" size={48} />
+              <h2 className="text-3xl font-black text-white mb-2">היום זה קורה!</h2><p className="text-white/70">ההמתנה הסתיימה. נתראה בקרוב.</p>
             </div>
           )}
-
-          <div className="mt-auto bg-white rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
-            <ActionButtons theme="light" />
-          </div>
+          
+          <ActionButtons theme="dark" />
         </div>
       </div>
     );
@@ -254,18 +363,19 @@ const Invite = () => {
     <>
       {renderTemplate()}
 
+      {/* פופ-אפ אישורי הגעה (RSVP) */}
       {showRsvp && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-end md:items-center justify-center animate-in fade-in" dir="rtl">
           <div className="bg-white w-full max-w-lg md:rounded-[2.5rem] rounded-t-[2.5rem] p-6 md:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto hide-scrollbar">
             
             {rsvpStep !== 4 && (
-              <button onClick={() => setShowRsvp(false)} className="absolute top-6 right-6 p-2 bg-slate-50 hover:bg-slate-100 rounded-full text-slate-600 z-10"><X size={20} /></button>
+              <button onClick={() => setShowRsvp(false)} className="absolute top-6 right-6 p-2 bg-slate-50 hover:bg-slate-100 rounded-full text-slate-600 z-10 transition-colors"><X size={20} /></button>
             )}
 
             {rsvpStep === 1 && (
               <div className="step-anim pt-4">
-                <div className="w-16 h-16 bg-slate-100 rounded-[1.2rem] flex items-center justify-center mx-auto mb-4">
-                  <Users size={32} className="text-slate-700" />
+                <div className="w-16 h-16 bg-blue-50 rounded-[1.2rem] flex items-center justify-center mx-auto mb-4 border border-blue-100">
+                  <Users size={32} className="text-blue-500" />
                 </div>
                 <h2 className="text-2xl font-black text-slate-800 mb-2 text-center">אישור הגעה</h2>
                 <p className="text-slate-500 font-medium text-center mb-8 text-sm">כמה תגיעו סך הכל? (כולל אותך)</p>
@@ -284,7 +394,7 @@ const Invite = () => {
 
             {rsvpStep === 2 && (
               <form onSubmit={handleVerifyBeforeSubmit} className="step-anim pt-4">
-                <button type="button" onClick={() => setRsvpStep(1)} className="flex items-center gap-1 text-slate-400 hover:text-slate-600 font-bold mb-6 text-sm"><ChevronRight size={16}/> חזור</button>
+                <button type="button" onClick={() => setRsvpStep(1)} className="flex items-center gap-1 text-slate-400 hover:text-slate-600 font-bold mb-6 text-sm transition-colors"><ChevronRight size={16}/> חזור</button>
                 <h2 className="text-2xl font-black text-slate-800 mb-6">פרטי המגיעים</h2>
                 
                 <div className="space-y-4 mb-8">
@@ -321,14 +431,14 @@ const Invite = () => {
 
             {rsvpStep === 3 && (
               <div className="step-anim pt-4 text-center">
-                <div className="w-20 h-20 bg-amber-50 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6">
+                <div className="w-20 h-20 bg-amber-50 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6 border border-amber-100">
                   <AlertTriangle size={40} className="text-amber-500" />
                 </div>
                 <h2 className="text-2xl font-black text-slate-800 mb-2">שימו לב!</h2>
                 <p className="text-slate-600 text-sm font-medium mb-6 leading-snug">
                   המערכת זיהתה שחלק מהשמות שהזנתם כבר אישרו הגעה בעבר:
                 </p>
-                <div className="bg-amber-50 rounded-[1.2rem] p-4 mb-8 text-right space-y-2 border border-amber-100/50">
+                <div className="bg-amber-50/50 rounded-[1.2rem] p-4 mb-8 text-right space-y-2 border border-amber-100/50">
                   {duplicateWarnings.map((dup, idx) => (
                     <p key={idx} className="text-sm font-bold text-amber-800 flex items-center gap-2">
                       <span className="w-1.5 h-1.5 bg-amber-400 rounded-full shrink-0"></span>
@@ -337,7 +447,7 @@ const Invite = () => {
                   ))}
                 </div>
                 <div className="flex gap-3">
-                  <button onClick={() => setRsvpStep(2)} className="flex-1 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold py-4 rounded-[1.2rem] transition-colors">
+                  <button onClick={() => setRsvpStep(2)} className="flex-1 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold py-4 rounded-[1.2rem] transition-colors border border-slate-200">
                     חזור לתיקון
                   </button>
                   <button onClick={executeSubmit} disabled={isSubmitting} className="flex-1 bg-slate-900 text-white font-bold py-4 rounded-[1.2rem] shadow-lg hover:opacity-90 transition-colors flex justify-center items-center">
@@ -349,7 +459,7 @@ const Invite = () => {
 
             {rsvpStep === 4 && (
               <div className="step-anim py-12 text-center">
-                <div className="w-24 h-24 bg-emerald-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-inner">
+                <div className="w-24 h-24 bg-emerald-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-inner border border-emerald-100">
                   <CheckCircle2 size={48} className="text-emerald-500" />
                 </div>
                 <h2 className="text-3xl font-black text-slate-800 mb-2">איזה כיף!</h2>
