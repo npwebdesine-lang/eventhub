@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { 
   Settings, Plus, Calendar, LogOut, Loader2, X, 
-  Save, Image as ImageIcon, Trash2, DownloadCloud, Share2, Check, Users, QrCode, Heart, ChevronRight, Camera, User, Sparkles, Edit2, Zap, Target, ListPlus, Wine, Briefcase, Music, PartyPopper, Gem, Link, UploadCloud, Car, CheckCircle2, Download, Info
+  Save, Image as ImageIcon, Trash2, DownloadCloud, Share2, Check, Users, QrCode, Heart, ChevronRight, Camera, User, Sparkles, Edit2, Zap, Target, ListPlus, Wine, Briefcase, Music, PartyPopper, Gem, Link, UploadCloud, Car, CheckCircle2, Download, Info, Palette
 } from 'lucide-react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
@@ -13,6 +13,15 @@ const MISSION_PRESETS = {
   corporate: ["סלפי עם המנכ\"ל", "תמונה עם מישהו ממחלקת HR", "תעשו הרמת כוסית עם מישהו ממחלקה אחרת", "צלמו מישהו מדבר על עבודה", "סלפי עם מתכנת/ת", "תמונה של שניכם בפוזה של 'עובדי החודש'"],
   //... 
 };
+
+// ערכות נושא מוכנות מראש (צבעים)
+const COLOR_PRESETS = [
+  { name: "קפוצ'ינו", primary: "#4e342e", background: "#fff8e7" },
+  { name: "מי ים", primary: "#003f5c", background: "#a8d8c8" },
+  { name: "יונה מדברית", primary: "#7a2e00", background: "#ffdcc2" },
+  { name: "היער הקסום", primary: "#1e4d2b", background: "#d0f0c0" },
+  { name: "לוליפופ", primary: "#7a0050", background: "#ffd1e8" }
+];
 
 // טקסטים להסבר על המודולים
 const MODULE_INFO = {
@@ -138,12 +147,10 @@ const Admin = () => {
 
   const handleSave = async () => { if (!formData.name) return alert("יש להזין שם אירוע"); setSaving(true); try { if (selectedEvent.id) { await supabase.from('events').update(formData).eq('id', selectedEvent.id); } else { await supabase.from('events').insert([formData]); } setSelectedEvent(null); fetchEvents(); } catch (error) { alert(error.message); } finally { setSaving(false); } };
   
-  // פונקציית המחיקה החדשה והעוצמתית 
   const handleDelete = async () => { 
     if (!window.confirm(`האם אתה בטוח שברצונך למחוק את האירוע "${formData.name}" לחלוטין?`)) return; 
     setSaving(true); 
     try { 
-      // 1. שאיבת כל הנתונים המקושרים כדי שמסד הנתונים לא יחסום את המחיקה
       await Promise.all([
         supabase.from('photos').delete().eq('event_id', selectedEvent.id),
         supabase.from('seating').delete().eq('event_id', selectedEvent.id),
@@ -155,7 +162,6 @@ const Admin = () => {
         supabase.from('rideshares').delete().eq('event_id', selectedEvent.id)
       ]);
 
-      // 2. מחיקת האירוע ווידוא שהפעולה הצליחה
       const { error } = await supabase.from('events').delete().eq('id', selectedEvent.id); 
       if (error) throw error;
       
@@ -186,11 +192,24 @@ const Admin = () => {
     } catch (error) { alert("שגיאה בהעלאת התמונה"); console.error(error); } finally { setUploadingAsset(false); }
   };
 
+  // בחירת ערכת צבעים (Preset)
+  const applyColorPreset = (preset) => {
+    setFormData({
+      ...formData,
+      design_config: {
+        ...formData.design_config,
+        colors: {
+          primary: preset.primary,
+          background: preset.background
+        }
+      }
+    });
+  };
+
   const openGallery = async () => { setIsGalleryOpen(true); const { data } = await supabase.from('photos').select('*').eq('event_id', selectedEvent.id).order('created_at', { ascending: false }); setGalleryPhotos(data || []); };
   const downloadAlbum = async () => { setDownloadingZip(true); try { const zip = new JSZip(); const imgFolder = zip.folder(`Album_${formData.name}`); await Promise.all(galleryPhotos.map(async (p, i) => { const res = await fetch(p.image_url); const blob = await res.blob(); imgFolder.file(`${p.guest_name}_${i+1}.jpg`, blob); })); const content = await zip.generateAsync({ type: 'blob' }); saveAs(content, `${formData.name}_Photos.zip`); } catch (error) { console.error(error); } finally { setDownloadingZip(false); } };
   const handleDeletePhoto = async (photo) => { if (!window.confirm(`למחוק את התמונה של ${photo.guest_name}?`)) return; try { await supabase.from('photos').delete().eq('id', photo.id); setGalleryPhotos(prev => prev.filter(p => p.id !== photo.id)); } catch (error) { alert(error.message); } };
   
-  // הושבה
   const openSeatingManager = async () => { setSeatingText(''); setIsSeatingModalOpen(true); setSeatingLoading(true); try { const { data, count, error } = await supabase.from('seating').select('*', { count: 'exact' }).eq('event_id', selectedEvent.id).order('guest_name', { ascending: true }); if (error) throw error; setSeatingGuests(data || []); setSavedGuestsCount(count || 0); } catch (error) { console.error(error); } finally { setSeatingLoading(false); } };
   const handleSaveSeating = async () => { if (!seatingText.trim()) return alert("אנא הדבק רשימה"); setSeatingLoading(true); try { const parsedGuests = seatingText.split('\n').map(line => { const match = line.trim().match(/^(.*?)[-,\s]*(\d+)\s*$/); return match ? { event_id: selectedEvent.id, guest_name: match[1].trim(), table_number: match[2].trim() } : null; }).filter(Boolean); if (parsedGuests.length === 0) throw new Error("לא זיהינו שמות בפורמט תקין"); await supabase.from('seating').insert(parsedGuests); openSeatingManager(); alert(`נוספו בהצלחה ${parsedGuests.length} מוזמנים.`); } catch (error) { alert(error.message); } finally { setSeatingLoading(false); } };
   const handleDeleteGuest = async (guestId, name) => { if (!window.confirm(`למחוק את ${name}?`)) return; try { await supabase.from('seating').delete().eq('id', guestId); setSeatingGuests(prev => prev.filter(g => g.id !== guestId)); setSavedGuestsCount(prev => prev - 1); } catch (error) { alert("שגיאה במחיקת האורח"); } };
@@ -206,59 +225,11 @@ const Admin = () => {
   const openIcebreakerUserManager = async () => { setIsIcebreakerUserManagerOpen(true); setIcebreakerUsersLoading(true); try { const { data } = await supabase.from('icebreaker_profiles').select('*').eq('event_id', selectedEvent.id).order('created_at', { ascending: false }); setIcebreakerProfiles(data || []); } catch (error) { console.error(error); } finally { setIcebreakerUsersLoading(false); } };
   const handleDeleteIcebreakerProfile = async (profileId, name) => { if (!window.confirm(`למחוק את ${name} מהמשחק?`)) return; try { await supabase.from('icebreaker_profiles').delete().eq('id', profileId); setIcebreakerProfiles(prev => prev.filter(p => p.id !== profileId)); } catch (error) { alert("תקלה במחיקה"); } };
 
-  // === פונקציות RSVP ===
-  const openRsvpManager = async () => {
-    setIsRsvpManagerOpen(true);
-    setRsvpLoading(true);
-    try {
-      const { data, error } = await supabase.from('rsvps').select('*').eq('event_id', selectedEvent.id).order('created_at', { ascending: false });
-      if (error) throw error;
-      setRsvpList(data || []);
-    } catch (error) { console.error(error); } finally { setRsvpLoading(false); }
-  };
-
-  const handleDeleteRsvp = async (rsvpId, name) => {
-    if (!window.confirm(`למחוק את אישור ההגעה של ${name}?`)) return;
-    try {
-      await supabase.from('rsvps').delete().eq('id', rsvpId);
-      setRsvpList(prev => prev.filter(r => r.id !== rsvpId));
-    } catch (error) { alert("שגיאה במחיקה"); }
-  };
-
-  const startEditingRsvp = (rsvp) => {
-    setEditingRsvpId(rsvp.id);
-    setEditRsvpName(rsvp.guest_name);
-  };
-
-  const saveRsvpEdit = async (rsvpId) => {
-    if (!editRsvpName.trim()) return alert("חובה להזין שם");
-    try {
-      const { error } = await supabase.from('rsvps').update({ guest_name: editRsvpName }).eq('id', rsvpId);
-      if (error) throw error;
-      setRsvpList(prev => prev.map(r => r.id === rsvpId ? { ...r, guest_name: editRsvpName } : r));
-      setEditingRsvpId(null);
-    } catch (error) { alert("שגיאה בעדכון"); }
-  };
-
-  const exportRsvpToCSV = () => {
-    const sorted = [...rsvpList].sort((a, b) => a.group_id.localeCompare(b.group_id));
-    let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-    csvContent += "שם האורח,מי מילא את הטופס,טלפון,תאריך רישום\n";
-    
-    sorted.forEach(row => {
-      const date = new Date(row.created_at).toLocaleDateString('he-IL');
-      csvContent += `"${row.guest_name}","${row.submitter_name}","${row.submitter_phone}","${date}"\n`;
-    });
-    
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `RSVP_${formData.name}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
+  const openRsvpManager = async () => { setIsRsvpManagerOpen(true); setRsvpLoading(true); try { const { data, error } = await supabase.from('rsvps').select('*').eq('event_id', selectedEvent.id).order('created_at', { ascending: false }); if (error) throw error; setRsvpList(data || []); } catch (error) { console.error(error); } finally { setRsvpLoading(false); } };
+  const handleDeleteRsvp = async (rsvpId, name) => { if (!window.confirm(`למחוק את אישור ההגעה של ${name}?`)) return; try { await supabase.from('rsvps').delete().eq('id', rsvpId); setRsvpList(prev => prev.filter(r => r.id !== rsvpId)); } catch (error) { alert("שגיאה במחיקה"); } };
+  const startEditingRsvp = (rsvp) => { setEditingRsvpId(rsvp.id); setEditRsvpName(rsvp.guest_name); };
+  const saveRsvpEdit = async (rsvpId) => { if (!editRsvpName.trim()) return alert("חובה להזין שם"); try { const { error } = await supabase.from('rsvps').update({ guest_name: editRsvpName }).eq('id', rsvpId); if (error) throw error; setRsvpList(prev => prev.map(r => r.id === rsvpId ? { ...r, guest_name: editRsvpName } : r)); setEditingRsvpId(null); } catch (error) { alert("שגיאה בעדכון"); } };
+  const exportRsvpToCSV = () => { const sorted = [...rsvpList].sort((a, b) => a.group_id.localeCompare(b.group_id)); let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; csvContent += "שם האורח,מי מילא את הטופס,טלפון,תאריך רישום\n"; sorted.forEach(row => { const date = new Date(row.created_at).toLocaleDateString('he-IL'); csvContent += `"${row.guest_name}","${row.submitter_name}","${row.submitter_phone}","${date}"\n`; }); const encodedUri = encodeURI(csvContent); const link = document.createElement("a"); link.setAttribute("href", encodedUri); link.setAttribute("download", `RSVP_${formData.name}.csv`); document.body.appendChild(link); link.click(); document.body.removeChild(link); };
 
   if (authLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="animate-spin text-indigo-600" size={48} /></div>;
   if (!session) { return ( <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4" dir="rtl"><form onSubmit={handleLogin} className="bg-white p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-slate-200"><div className="text-center mb-8"><h1 className="text-3xl font-black text-slate-800">EventHub Admin</h1><p className="text-slate-500 mt-2">ניהול מערכת האירועים שלך</p></div><div className="space-y-4"><input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="אימייל" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all" dir="ltr" /><input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="סיסמה" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all" dir="ltr" /><button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all">התחבר למערכת</button></div></form></div> ); }
@@ -306,7 +277,7 @@ const Admin = () => {
             <div className="p-8 md:p-10 border-b border-slate-100 bg-slate-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
               <div><h2 className="text-3xl font-black text-slate-900">{selectedEvent.isNew ? 'יצירת אירוע חדש' : `ניהול: ${formData.name}`}</h2><p className="text-slate-500 mt-2">הגדרות כלליות, עיצוב ומודולים</p></div>
               <div className="flex gap-3 w-full md:w-auto">
-                {!selectedEvent.isNew && (<button onClick={handleDelete} disabled={saving} className="p-4 bg-rose-50 text-rose-600 rounded-2xl hover:bg-rose-100 transition-all border border-rose-100" title="מחק אירוע"><Trash2 size={22} /></button>)}
+                {!selectedEvent.isNew && (<button onClick={handleDelete} disabled={saving} className="p-4 bg-rose-50 text-rose-600 rounded-2xl hover:bg-rose-100 transition-all border border-rose-100" title="מחק אירוע לחלוטין"><Trash2 size={22} /></button>)}
                 <button onClick={handleSave} disabled={saving} className="flex-1 md:flex-none bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black flex justify-center items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200">{saving ? <Loader2 className="animate-spin" /> : <><Save size={22} /> שמור שינויים</>}</button>
               </div>
             </div>
@@ -323,7 +294,7 @@ const Admin = () => {
                   <input type="text" value={formData.location || ''} onChange={e => setFormData({...formData, location: e.target.value})} placeholder="לדוגמה: אולמי שושנים, תל אביב" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-4 pt-2">
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-700 block">צבע מיתוג עיקרי (Primary)</label>
                     <div className="flex items-center gap-3">
@@ -341,6 +312,27 @@ const Admin = () => {
                         <input type="color" value={/^#[0-9A-F]{6}$/i.test(formData.design_config.colors.background) ? formData.design_config.colors.background : '#020617'} onChange={e => setFormData({...formData, design_config: {...formData.design_config, colors: {...formData.design_config.colors, background: e.target.value}}})} className="opacity-0 w-full h-full cursor-pointer absolute inset-0" title="בחר צבע" />
                       </div>
                       <input type="text" value={formData.design_config.colors.background} onChange={e => setFormData({...formData, design_config: {...formData.design_config, colors: {...formData.design_config.colors, background: e.target.value}}})} placeholder="למשל: #020617 / rgb()" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-left text-sm" dir="ltr" />
+                    </div>
+                  </div>
+                  
+                  {/* --- ערכות נושא (Presets) --- */}
+                  <div className="pt-4 border-t border-slate-100">
+                    <label className="text-sm font-bold text-slate-700 flex items-center gap-2 mb-3"><Palette size={16} className="text-indigo-500"/> ערכות צבעים מוכנות</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {COLOR_PRESETS.map(preset => (
+                        <button
+                          key={preset.name}
+                          type="button"
+                          onClick={() => applyColorPreset(preset)}
+                          className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/50 transition-all bg-white text-right group"
+                        >
+                          <div className="w-8 h-8 rounded-full flex overflow-hidden border border-slate-200 shrink-0 group-hover:scale-105 transition-transform shadow-sm">
+                            <div className="w-1/2 h-full" style={{ backgroundColor: preset.primary }}></div>
+                            <div className="w-1/2 h-full" style={{ backgroundColor: preset.background }}></div>
+                          </div>
+                          <span className="text-xs font-bold text-slate-700 leading-tight">{preset.name}</span>
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -380,6 +372,7 @@ const Admin = () => {
                 <h3 className="text-xl font-black text-slate-800 border-b pb-4">מודולים ופיצ'רים</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   
+                  {/* --- מודול RSVP --- */}
                   <div className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.rsvp ? 'border-blue-500 bg-blue-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
                     <div className="flex justify-between items-start mb-6">
                       <div className="flex items-center gap-3">
@@ -404,26 +397,31 @@ const Admin = () => {
                     )}
                   </div>
 
+                  {/* צילום */}
                   <div className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.photo ? 'border-orange-500 bg-orange-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
                     <div className="flex justify-between items-start mb-6"><div className="flex items-center gap-3"><div className={`p-3 rounded-xl ${formData.active_modules.photo ? 'bg-orange-500 text-white' : 'bg-slate-200 text-slate-500'}`}><Camera size={24} /></div><h4 className="font-black text-lg text-slate-800">כל אחד צלם</h4></div><label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={formData.active_modules.photo} onChange={e => setFormData({...formData, active_modules: {...formData.active_modules, photo: e.target.checked}})} /><div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div></label></div>
                     {formData.active_modules.photo && !selectedEvent.isNew && (<div className="space-y-3 animate-in fade-in"><button onClick={openGallery} className="w-full py-3 bg-white border border-orange-200 text-orange-600 font-bold rounded-xl hover:bg-orange-50 transition-colors flex justify-center items-center gap-2"><ImageIcon size={18} /> ניהול תמונות (הורדת ZIP)</button><button onClick={() => window.open(`/album/${selectedEvent.id}`, '_blank')} className="w-full py-3 bg-gradient-to-r from-orange-400 to-orange-500 text-white font-black rounded-xl hover:from-orange-500 hover:to-orange-600 transition-all flex justify-center items-center gap-2 shadow-lg shadow-orange-500/30"><Sparkles size={18} /> צפייה באלבום הדיגיטלי</button></div>)}
                   </div>
 
+                  {/* הושבה */}
                   <div className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.seating ? 'border-emerald-500 bg-emerald-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
                     <div className="flex justify-between items-start mb-6"><div className="flex items-center gap-3"><div className={`p-3 rounded-xl ${formData.active_modules.seating ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'}`}><Users size={24} /></div><h4 className="font-black text-lg text-slate-800">סידור הושבה</h4></div><label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={formData.active_modules.seating} onChange={e => setFormData({...formData, active_modules: {...formData.active_modules, seating: e.target.checked}})} /><div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div></label></div>
                     {formData.active_modules.seating && !selectedEvent.isNew && (<div className="space-y-3 animate-in fade-in"><button onClick={openSeatingManager} className="w-full py-3 bg-white border border-emerald-200 text-emerald-600 font-bold rounded-xl hover:bg-emerald-50 transition-colors flex justify-center items-center gap-2"><Settings size={18} /> ניהול רשימת הושבה</button></div>)}
                   </div>
 
+                  {/* דייטליין */}
                   <div className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.dating ? 'border-rose-500 bg-rose-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
                     <div className="flex justify-between items-start mb-6"><div className="flex items-center gap-3"><div className={`p-3 rounded-xl ${formData.active_modules.dating ? 'bg-rose-500 text-white' : 'bg-slate-200 text-slate-500'}`}><Heart size={24} /></div><div><h4 className="font-black text-lg text-slate-800">Daitline (דייטליין)</h4></div></div><label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={formData.active_modules.dating} onChange={e => setFormData({...formData, active_modules: {...formData.active_modules, dating: e.target.checked}})} /><div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div></label></div>
                     {formData.active_modules.dating && !selectedEvent.isNew && (<div className="animate-in fade-in"><button onClick={openDatingManager} className="w-full py-3 bg-white border border-rose-200 text-rose-600 font-bold rounded-xl hover:bg-rose-50 transition-colors flex justify-center items-center gap-2 shadow-sm"><Users size={18} /> ניהול משתמשי דייטליין</button></div>)}
                   </div>
 
+                  {/* שובר קרח */}
                   <div className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.icebreaker ? 'border-cyan-500 bg-cyan-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
                     <div className="flex justify-between items-start mb-6"><div className="flex items-center gap-3"><div className={`p-3 rounded-xl ${formData.active_modules.icebreaker ? 'bg-cyan-500 text-white' : 'bg-slate-200 text-slate-500'}`}><Zap size={24} /></div><div><h4 className="font-black text-lg text-slate-800">שובר קרח (IceBreaker)</h4></div></div><label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={formData.active_modules.icebreaker || false} onChange={e => setFormData({...formData, active_modules: {...formData.active_modules, icebreaker: e.target.checked}})} /><div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div></label></div>
                     {formData.active_modules.icebreaker && !selectedEvent.isNew && (<div className="flex flex-col md:flex-row gap-3 animate-in fade-in"><button onClick={openIcebreakerManager} className="flex-1 py-3 bg-white border border-cyan-200 text-cyan-600 font-bold rounded-xl hover:bg-cyan-50 transition-colors flex justify-center items-center gap-2 shadow-sm"><Target size={18} /> בנק המשימות</button><button onClick={openIcebreakerUserManager} className="flex-1 py-3 bg-white border border-cyan-200 text-cyan-600 font-bold rounded-xl hover:bg-cyan-50 transition-colors flex justify-center items-center gap-2 shadow-sm"><Users size={18} /> משתמשים</button></div>)}
                   </div>
 
+                  {/* טרמפים */}
                   <div className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.rideshare ? 'border-amber-500 bg-amber-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
                     <div className="flex justify-between items-start mb-6"><div className="flex items-center gap-3"><div className={`p-3 rounded-xl ${formData.active_modules.rideshare ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-500'}`}><Car size={24} /></div><div><h4 className="font-black text-lg text-slate-800">לוח טרמפים</h4></div></div><label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={formData.active_modules.rideshare || false} onChange={e => setFormData({...formData, active_modules: {...formData.active_modules, rideshare: e.target.checked}})} /><div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div></label></div>
                   </div>
