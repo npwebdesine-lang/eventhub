@@ -6,10 +6,10 @@ import gsap from 'gsap';
 
 const MODULES_INFO = {
   photo: { title: 'כל אחד צלם', description: 'העלו לכאן את התמונות והסרטונים שלכם מהאירוע! כל התמונות יישמרו באלבום דיגיטלי משותף.', icon: Camera, color: 'text-orange-500', bg: 'bg-orange-50' },
-  seating: { title: 'איפה אני יושב?', description: 'הזינו את השם שלכם ותגלו באיזה שולחן אתם יושבים, ומי עוד יושב איתכם!', icon: MapPin, color: 'text-emerald-500', bg: 'bg-emerald-50' },
   dating: { title: 'דייט-ליין', description: 'הרשת החברתית של האירוע לרווקים ורווקות בלבד! פתחו פרופיל ושלחו קריצות.', icon: Heart, color: 'text-rose-500', bg: 'bg-rose-50' },
   icebreaker: { title: 'שובר קרח', description: 'משחק משימות חברתי! המערכת תגריל לכם משימה ואורח אחר לביצוע. צלמו והעלו לקיר התהילה.', icon: Zap, color: 'text-cyan-500', bg: 'bg-cyan-50' },
-  rideshare: { title: 'לוח טרמפים', description: 'צריכים טרמפ הביתה? או שיש לכם מקום פנוי ברכב? היכנסו ללוח ליצירת קשר עם אורחים אחרים.', icon: Car, color: 'text-amber-500', bg: 'bg-amber-50' }
+  rideshare: { title: 'לוח טרמפים', description: 'צריכים טרמפ הביתה? או שיש לכם מקום פנוי ברכב? היכנסו ללוח ליצירת קשר עם אורחים אחרים.', icon: Car, color: 'text-amber-500', bg: 'bg-amber-50' },
+  seating: { title: 'סידור הושבה', description: 'המקום שלכם באירוע. המערכת מאתרת אוטומטית את השולחן שלכם ומראה מי עוד חוגג איתכם בשולחן.', icon: MapPin, color: 'text-emerald-500', bg: 'bg-emerald-50' }
 };
 
 const Home = () => {
@@ -21,10 +21,9 @@ const Home = () => {
   const [isRegistered, setIsRegistered] = useState(false);
   const [nameInput, setNameInput] = useState('');
 
-  const [showTableModal, setShowTableModal] = useState(false);
-  const [isSearchingTable, setIsSearchingTable] = useState(false);
-  const [tableResult, setTableResult] = useState(null);
-  const [showMates, setShowMates] = useState(false);
+  // סטייטים חדשים להושבה האוטומטית
+  const [myTable, setMyTable] = useState(null); // null = טוען, {found: false}, {found: true, number: X}
+  const [showMatesModal, setShowMatesModal] = useState(false);
   const [tableMates, setTableMates] = useState([]);
   const [loadingMates, setLoadingMates] = useState(false);
 
@@ -45,6 +44,27 @@ const Home = () => {
     };
     if (id) fetchEvent();
   }, [id]);
+
+  // משיכה אוטומטית של השולחן ברגע שהמשתמש מחובר
+  useEffect(() => {
+    if (isRegistered && eventData?.active_modules?.seating) {
+      const fetchMyTable = async () => {
+        const guestName = localStorage.getItem('guest_name');
+        try {
+          const { data, error } = await supabase.from('seating').select('table_number').eq('event_id', id).ilike('guest_name', `%${guestName.trim()}%`).limit(1);
+          if (error) throw error;
+          if (data && data.length > 0) {
+            setMyTable({ found: true, number: data[0].table_number });
+          } else {
+            setMyTable({ found: false });
+          }
+        } catch (error) {
+          setMyTable({ found: false });
+        }
+      };
+      fetchMyTable();
+    }
+  }, [isRegistered, eventData, id]);
 
   useEffect(() => {
     const checkUnreadMessages = async () => {
@@ -77,22 +97,13 @@ const Home = () => {
     localStorage.removeItem('guest_name');
     localStorage.removeItem('guest_id');
     setNameInput('');
+    setMyTable(null); // איפוס השולחן לקראת החיפוש מחדש
     setIsRegistered(false);
-    setShowTableModal(false);
-  };
-
-  const findMyTable = async () => {
-    setIsSearchingTable(true); setShowTableModal(true); setTableResult(null); setShowMates(false); setTableMates([]);
-    try {
-      const guestName = localStorage.getItem('guest_name');
-      const { data, error } = await supabase.from('seating').select('table_number').eq('event_id', eventData.id).ilike('guest_name', `%${guestName.trim()}%`).limit(1);
-      if (error) throw error;
-      setTableResult(data && data.length > 0 ? { found: true, number: data[0].table_number } : { found: false });
-    } catch (error) { setTableResult({ found: false }); } finally { setIsSearchingTable(false); }
   };
 
   const fetchTableMates = async (tableNum) => {
-    setLoadingMates(true); setShowMates(true);
+    setLoadingMates(true); 
+    setShowMatesModal(true);
     try {
       const guestName = localStorage.getItem('guest_name');
       const { data, error } = await supabase.from('seating').select('guest_name').eq('event_id', eventData.id).eq('table_number', tableNum);
@@ -107,7 +118,6 @@ const Home = () => {
   if (!eventData) return <div className="min-h-screen flex items-center justify-center text-slate-500">לא נמצא אירוע.</div>;
 
   const { name, active_modules, design_config } = eventData;
-  // שאיבת הצבעים מהמסד
   const { background, primary } = design_config.colors;
   const guestName = localStorage.getItem('guest_name');
 
@@ -119,7 +129,7 @@ const Home = () => {
           <h1 className="text-3xl font-black text-slate-800 mb-2">ברוכים הבאים!</h1>
           <p className="text-slate-500 mb-8 font-medium">ל-{name}.<br/>כדי להתחיל בחגיגה, איך קוראים לכם?</p>
           <form onSubmit={handleRegister} className="space-y-4">
-            <input type="text" value={nameInput} onChange={(e) => setNameInput(e.target.value)} placeholder="לדוגמה: דודה תקווה" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-[1.2rem] focus:ring-2 focus:ring-slate-400 outline-none text-center text-lg font-bold transition-all" required />
+            <input type="text" value={nameInput} onChange={(e) => setNameInput(e.target.value)} placeholder="לדוגמה: דודה תקווה" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-[1.2rem] focus:ring-2 outline-none text-center text-lg font-bold transition-all" style={{ '--tw-ring-color': primary }} required />
             <button type="submit" className="w-full text-white font-black py-4 rounded-[1.2rem] text-lg shadow-lg hover:scale-[1.02] transition-transform" style={{ backgroundColor: primary }}>היכנסו לאירוע</button>
           </form>
         </div>
@@ -143,13 +153,11 @@ const Home = () => {
   return (
     <div className="min-h-screen flex flex-col font-sans pb-10 transition-colors duration-1000" style={{ backgroundColor: background }} dir="rtl">
       
-      {/* Header כהה עם חיתוך מעוגל שמושפע מצבע ה-Primary */}
+      {/* Header כהה */}
       <div className="rounded-b-[3rem] pt-12 pb-24 px-6 relative z-10 shadow-lg text-center flex flex-col items-center transition-colors duration-1000" style={{ backgroundColor: primary }}>
         <div className="max-w-md w-full header-anim">
           <p className="text-white/70 font-bold text-xs uppercase tracking-widest mb-2">אפליקציית האירוע</p>
           <h1 className="text-3xl md:text-4xl font-black text-white mb-6 leading-tight drop-shadow-md">{name}</h1>
-          
-          {/* התיבה השקופה - עובדת מושלם על כל צבע מותג */}
           <div className="bg-black/20 rounded-[1.5rem] p-4 flex items-center justify-between border border-white/10 backdrop-blur-sm">
             <div className="flex flex-col text-right">
               <span className="text-white/60 text-xs font-bold">מחובר כ:</span>
@@ -160,18 +168,50 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Grid של המודולים שצף על ההדר */}
-      <div className="px-6 -mt-10 relative z-20 w-full max-w-md mx-auto flex-1">
+      {/* אזור המודולים שצף על ההדר */}
+      <div className="px-6 -mt-10 relative z-20 w-full max-w-md mx-auto flex-1 flex flex-col gap-4">
+        
+        {/* כרטיסיית ההושבה המורחבת (מופיעה למעלה) */}
+        {active_modules.seating && (
+          <div className="module-card-anim relative bg-white rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-slate-100 flex flex-col items-center text-center">
+            <button onClick={(e) => openInfo(e, 'seating')} className="absolute top-5 left-5 text-slate-300 hover:text-slate-500 z-10 p-1"><Info size={20} /></button>
+            
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 mt-1`} style={{ backgroundColor: `${primary}15` }}>
+              <MapPin size={22} style={{ color: primary }} />
+            </div>
+
+            {myTable === null ? (
+              <div className="py-6"><Loader2 className="animate-spin" size={32} style={{ color: primary }} /></div>
+            ) : myTable.found ? (
+              <>
+                <p className="text-slate-500 font-bold mb-1 text-sm">השולחן שלך</p>
+                <div className="text-6xl font-black mb-5 drop-shadow-sm" style={{ color: primary }}>{myTable.number}</div>
+                <button onClick={() => fetchTableMates(myTable.number)} className="w-full font-bold py-3.5 rounded-[1.2rem] transition-colors flex justify-center items-center gap-2 hover:opacity-80" style={{ backgroundColor: `${primary}15`, color: primary }}>
+                  <Users size={18} /> מי איתי בשולחן?
+                </button>
+              </>
+            ) : (
+              <div className="py-2">
+                <h3 className="text-xl font-black text-slate-800 mb-1">לא נמצא שולחן</h3>
+                <p className="text-slate-500 text-sm font-medium mb-5">לא מצאנו את השם "{guestName}".</p>
+                <button onClick={handleChangeName} className="w-full bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold py-3.5 px-6 rounded-[1.2rem] transition-colors flex justify-center items-center gap-2">
+                  <RefreshCw size={16} /> נסו שם אחר
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* שאר המודולים ב-Grid רגיל */}
         <div className="grid grid-cols-2 gap-4">
           {active_modules.photo && <CustomModuleCard mKey="photo" onClick={() => navigate(`/photos?event=${id}`)} />}
-          {active_modules.seating && <CustomModuleCard mKey="seating" onClick={findMyTable} />}
           {active_modules.dating && <CustomModuleCard mKey="dating" onClick={() => navigate(`/dating?event=${id}`)} hasBadge={hasUnreadDating} />}
           {active_modules.icebreaker && <CustomModuleCard mKey="icebreaker" onClick={() => navigate(`/icebreaker?event=${id}`)} />}
           {active_modules.rideshare && <CustomModuleCard mKey="rideshare" onClick={() => navigate(`/rideshare?event=${id}`)} />}
         </div>
       </div>
 
-      {/* פופ-אפ הסבר (Info Modal) בעיצוב תואם */}
+      {/* פופ-אפ הסבר (Info Modal) */}
       {infoModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-in fade-in" onClick={() => setInfoModal(null)}>
           <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl relative animate-in zoom-in-95" onClick={e => e.stopPropagation()}>
@@ -184,49 +224,38 @@ const Home = () => {
         </div>
       )}
 
-      {/* פופ-אפ הושבה (מותאם לחיתוכים החדשים ולצבעים) */}
-      {showTableModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center animate-in fade-in">
-          <div className="bg-white rounded-t-[2.5rem] md:rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl relative animate-in slide-in-from-bottom-8 max-h-[90vh] flex flex-col">
-            <button onClick={() => setShowTableModal(false)} className="absolute top-4 right-4 text-slate-400 bg-slate-50 hover:bg-slate-100 p-2 rounded-full transition-colors z-10"><X size={20} /></button>
+      {/* פופ-אפ שותפים לשולחן (מי איתי בשולחן) */}
+      {showMatesModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in" onClick={() => setShowMatesModal(false)}>
+          <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl relative animate-in zoom-in-95 max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setShowMatesModal(false)} className="absolute top-4 right-4 text-slate-400 bg-slate-50 hover:bg-slate-100 p-2 rounded-full transition-colors z-10"><X size={20} /></button>
             
-            <div className="overflow-y-auto hide-scrollbar pt-4 pb-2">
-              {isSearchingTable ? (
-                <div className="py-8"><Loader2 className="animate-spin mx-auto mb-4" size={48} style={{ color: primary }} /><p className="text-slate-600 font-bold text-lg">מחפש את השולחן...</p></div>
-              ) : tableResult?.found ? (
-                <div className="py-2">
-                  <div className="w-24 h-24 rounded-[1.5rem] flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: `${primary}15` }}>
-                    <span className="text-5xl font-black" style={{ color: primary }}>{tableResult.number}</span>
-                  </div>
-                  <h3 className="text-2xl font-black text-slate-800 mb-2">מצאנו אותך!</h3>
-                  <p className="text-slate-500 text-lg font-medium mb-6">את/ה יושב/ת בשולחן <strong className="text-slate-800">{tableResult.number}</strong>.</p>
-                  
-                  {!showMates ? (
-                    <button onClick={() => fetchTableMates(tableResult.number)} className="w-full font-bold py-4 rounded-[1.2rem] transition-colors flex justify-center items-center gap-2" style={{ backgroundColor: `${primary}10`, color: primary }}>
-                      <Users size={20} /> מי עוד יושב בשולחן?
-                    </button>
-                  ) : (
-                    <div className="bg-slate-50 rounded-[1.2rem] p-5 text-right animate-in slide-in-from-top-4 border border-slate-100">
-                      <h4 className="font-bold text-slate-700 mb-3 border-b border-slate-200 pb-2">השותפים שלך לשולחן:</h4>
-                      {loadingMates ? (
-                        <div className="flex justify-center py-4"><Loader2 className="animate-spin" size={24} style={{ color: primary }} /></div>
-                      ) : tableMates.length > 0 ? (
-                        <ul className="space-y-3 pr-1">
-                          {tableMates.map((mate, idx) => (<li key={idx} className="text-slate-600 font-medium flex items-center gap-2"><div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: primary }}></div><span>{mate.guest_name}</span></li>))}
-                        </ul>
-                      ) : (<p className="text-slate-500 text-sm text-center py-4">נראה שאת/ה לבד בשולחן הזה כרגע 😉</p>)}
-                    </div>
-                  )}
-                </div>
+            <div className="w-20 h-20 rounded-[1.5rem] flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: `${primary}15` }}>
+              <Users size={36} style={{ color: primary }} />
+            </div>
+            <h3 className="text-2xl font-black text-slate-800 mb-1">השותפים לשולחן</h3>
+            <p className="text-slate-500 font-medium mb-6">שולחן מספר {myTable?.number}</p>
+
+            <div className="overflow-y-auto hide-scrollbar bg-slate-50 rounded-[1.5rem] p-5 text-right border border-slate-100">
+              {loadingMates ? (
+                <div className="flex justify-center py-6"><Loader2 className="animate-spin" size={28} style={{ color: primary }} /></div>
+              ) : tableMates.length > 0 ? (
+                <ul className="space-y-3.5 pr-2">
+                  {tableMates.map((mate, idx) => (
+                    <li key={idx} className="text-slate-700 font-bold flex items-center gap-3">
+                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: primary }}></div>
+                      <span className="text-lg">{mate.guest_name}</span>
+                    </li>
+                  ))}
+                </ul>
               ) : (
-                <div className="py-4">
-                  <div className="bg-rose-50 w-20 h-20 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6"><MapPin size={40} className="text-rose-500" /></div>
-                  <h3 className="text-2xl font-black text-slate-800 mb-2">אופס...</h3>
-                  <p className="text-slate-500 font-medium mb-6">לא מצאנו את השם כפי שהוקלד.</p>
-                  <button onClick={handleChangeName} className="w-full bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold py-4 rounded-[1.2rem] transition-colors flex justify-center items-center gap-2"><RefreshCw size={20} /> נסה/י שם אחר</button>
-                </div>
+                <p className="text-slate-500 text-center py-4 font-medium leading-relaxed">נראה שאת/ה לבד בשולחן הזה כרגע.<br/>אולי זה זמן טוב להכיר אנשים חדשים 😉</p>
               )}
             </div>
+            
+            <button onClick={() => setShowMatesModal(false)} className="w-full mt-4 text-white font-bold py-4 rounded-[1.2rem] transition-colors" style={{ backgroundColor: primary }}>
+              סגור
+            </button>
           </div>
         </div>
       )}
