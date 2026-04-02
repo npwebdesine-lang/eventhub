@@ -22,7 +22,9 @@ const Photos = () => {
   const eventId = searchParams.get('event');
   const navigate = useNavigate();
 
+  // מושך גם את השם וגם את ה-ID הייחודי של האורח
   const guestName = localStorage.getItem('guest_name') || '';
+  const guestId = localStorage.getItem('guest_id') || ''; 
   
   const [loading, setLoading] = useState(true);
   const [eventData, setEventData] = useState(null); 
@@ -51,12 +53,13 @@ const Photos = () => {
       if (photosError) throw photosError;
       setPhotos(photosData || []);
 
-      if (guestName) {
+      // סופר כמה תמונות המשתמש העלה - לפי ה-ID שלו
+      if (guestId) {
         const { count, error: countError } = await supabase
           .from('photos')
           .select('*', { count: 'exact', head: true })
           .eq('event_id', eventId)
-          .eq('guest_name', guestName);
+          .eq('guest_id', guestId);
         if (!countError) setMyUploadCount(count || 0);
       }
 
@@ -81,13 +84,12 @@ const Photos = () => {
     if (!file) return;
 
     if (myUploadCount >= MAX_PHOTOS_PER_GUEST) {
-      e.target.value = null; // איפוס 
+      e.target.value = null; 
       return alert("הגעת למגבלת ההעלאות המותרת (3 תמונות).");
     }
 
     setUploading(true);
     try {
-      // אבטחת שם הקובץ (במובייל לפעמים file.name חסר אקסטנשן)
       const fileExt = file.name ? file.name.split('.').pop() : 'jpg';
       const fileName = `photo_${eventId}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
       
@@ -99,8 +101,10 @@ const Photos = () => {
 
       const { data: { publicUrl } } = supabase.storage.from('event-assets').getPublicUrl(`photos/${fileName}`);
 
+      // התיקון: שליחת ה-guest_id למסד הנתונים כדי לעבור את חסימת ה-not-null
       const { error: dbError } = await supabase.from('photos').insert([{ 
         event_id: eventId, 
+        guest_id: guestId, // <--- התיקון כאן
         guest_name: guestName || 'אורח', 
         image_url: publicUrl 
       }]);
@@ -114,11 +118,10 @@ const Photos = () => {
 
     } catch (err) {
       console.error("Upload error details:", err);
-      // הצגת השגיאה האמיתית למשתמש (יעזור לנו להבין אם זה RLS)
       alert("שגיאה בהעלאה: " + (err.message || "נסו שוב."));
     } finally {
       setUploading(false);
-      e.target.value = null; // פתרון הבאג: איפוס הטופס כדי לאפשר העלאה חוזרת במקרה של כישלון
+      e.target.value = null; 
     }
   };
 
