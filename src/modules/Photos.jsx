@@ -25,7 +25,7 @@ const Photos = () => {
   const guestName = localStorage.getItem('guest_name') || '';
   
   const [loading, setLoading] = useState(true);
-  const [eventData, setEventData] = useState(null); // נוסף סטייט לאירוע
+  const [eventData, setEventData] = useState(null); 
   const [photos, setPhotos] = useState([]);
   
   const [uploading, setUploading] = useState(false);
@@ -39,12 +39,10 @@ const Photos = () => {
 
   const fetchData = async () => {
     try {
-      // 1. משיכת נתוני האירוע (בשביל הצבעים)
       const { data: event, error: eventError } = await supabase.from('events').select('*').eq('id', eventId).single();
       if (eventError) throw eventError;
       setEventData(event);
 
-      // 2. משיכת התמונות לגלריה
       const { data: photosData, error: photosError } = await supabase
         .from('photos')
         .select('*')
@@ -53,14 +51,14 @@ const Photos = () => {
       if (photosError) throw photosError;
       setPhotos(photosData || []);
 
-      // 3. משיכת כמות התמונות של האורח לאבטחה
-      const { count, error: countError } = await supabase
-        .from('photos')
-        .select('*', { count: 'exact', head: true })
-        .eq('event_id', eventId)
-        .eq('guest_name', guestName);
-      if (countError) throw countError;
-      setMyUploadCount(count || 0);
+      if (guestName) {
+        const { count, error: countError } = await supabase
+          .from('photos')
+          .select('*', { count: 'exact', head: true })
+          .eq('event_id', eventId)
+          .eq('guest_name', guestName);
+        if (!countError) setMyUploadCount(count || 0);
+      }
 
     } catch (err) {
       console.error(err);
@@ -83,32 +81,44 @@ const Photos = () => {
     if (!file) return;
 
     if (myUploadCount >= MAX_PHOTOS_PER_GUEST) {
+      e.target.value = null; // איפוס 
       return alert("הגעת למגבלת ההעלאות המותרת (3 תמונות).");
     }
 
     setUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${eventId}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+      // אבטחת שם הקובץ (במובייל לפעמים file.name חסר אקסטנשן)
+      const fileExt = file.name ? file.name.split('.').pop() : 'jpg';
+      const fileName = `photo_${eventId}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
       
-      const { error: uploadError } = await supabase.storage.from('event-assets').upload(`photos/${fileName}`, file);
+      const { error: uploadError } = await supabase.storage.from('event-assets').upload(`photos/${fileName}`, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage.from('event-assets').getPublicUrl(`photos/${fileName}`);
 
-      const { error: dbError } = await supabase.from('photos').insert([{ event_id: eventId, guest_name: guestName, image_url: publicUrl }]);
+      const { error: dbError } = await supabase.from('photos').insert([{ 
+        event_id: eventId, 
+        guest_name: guestName || 'אורח', 
+        image_url: publicUrl 
+      }]);
       if (dbError) throw dbError;
 
-      setPhotos([{ id: Date.now(), guest_name: guestName, image_url: publicUrl }, ...photos]);
+      setPhotos([{ id: Date.now(), guest_name: guestName || 'אורח', image_url: publicUrl }, ...photos]);
       setMyUploadCount(prev => prev + 1);
       
       setUploadSuccess(true);
       setTimeout(() => setUploadSuccess(false), 3000);
 
     } catch (err) {
-      alert("שגיאה בהעלאת התמונה. נסו שוב.");
+      console.error("Upload error details:", err);
+      // הצגת השגיאה האמיתית למשתמש (יעזור לנו להבין אם זה RLS)
+      alert("שגיאה בהעלאה: " + (err.message || "נסו שוב."));
     } finally {
       setUploading(false);
+      e.target.value = null; // פתרון הבאג: איפוס הטופס כדי לאפשר העלאה חוזרת במקרה של כישלון
     }
   };
 
@@ -116,16 +126,15 @@ const Photos = () => {
 
   const canUploadMore = myUploadCount < MAX_PHOTOS_PER_GUEST;
   
-  // --- שאיבת צבעים דינמיים וחישוב בהירות ---
   const primaryColor = eventData.design_config?.colors?.primary || '#3b82f6';
   const bgColor = eventData.design_config?.colors?.background || '#f8fafc';
   const isLightPrimary = getLuminance(primaryColor) > 150;
-  const primaryTextColor = isLightPrimary ? '#1e293b' : '#ffffff'; // טקסט שחור אם הרקע בהיר, לבן אם כהה
+  const primaryTextColor = isLightPrimary ? '#1e293b' : '#ffffff';
 
   return (
     <div className="min-h-screen font-sans pb-20 transition-colors duration-1000" style={{ backgroundColor: bgColor }} dir="rtl">
       
-      {/* Header - משתמש בצבע ה-Primary הדינמי */}
+      {/* Header */}
       <div className="rounded-b-[3rem] pt-10 pb-16 px-6 relative z-10 shadow-lg flex justify-between items-start transition-colors duration-1000" style={{ backgroundColor: primaryColor }}>
         <button onClick={() => navigate(-1)} className="p-2 rounded-full bg-black/10 hover:bg-black/20 transition-colors backdrop-blur-md" style={{ color: primaryTextColor }}>
           <ChevronLeft size={20} />
