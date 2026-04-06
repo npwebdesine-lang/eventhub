@@ -11,10 +11,8 @@ import AdminQRGenerator from './AdminQRGenerator';
 const MISSION_PRESETS = {
   wedding_young: ["שוט טקילה ביחד! תוכיחו בתמונה", "תצטלמו רוקדים על שולחן (או כיסא)", "סלפי עם החתן/כלה", "תעשו פרצוף הכי מכוער שלכם", "סלפי מצחיק בשירותים", "שוט כפול עם מישהו שרוקד כמו משוגע"],
   corporate: ["סלפי עם המנכ\"ל", "תמונה עם מישהו ממחלקת HR", "תעשו הרמת כוסית עם מישהו ממחלקה אחרת", "צלמו מישהו מדבר על עבודה", "סלפי עם מתכנת/ת", "תמונה של שניכם בפוזה של 'עובדי החודש'"],
-  //... 
 };
 
-// ערכות נושא מוכנות מראש (צבעים)
 const COLOR_PRESETS = [
   { name: "קפוצ'ינו", primary: "#4e342e", background: "#fff8e7" },
   { name: "מי ים", primary: "#003f5c", background: "#a8d8c8" },
@@ -22,34 +20,6 @@ const COLOR_PRESETS = [
   { name: "היער הקסום", primary: "#1e4d2b", background: "#d0f0c0" },
   { name: "לוליפופ", primary: "#7a0050", background: "#ffd1e8" }
 ];
-
-// טקסטים להסבר על המודולים
-const MODULE_INFO = {
-  rsvp: {
-    title: 'אישורי הגעה (RSVP)',
-    description: 'מערכת קצה-לקצה חכמה המחליפה את הצורך בחברת אישורי הגעה חיצונית. האורחים מקבלים טופס מעוצב שדרכו הם מזינים כמה יגיעו, את שמותיהם והערות למנות (צמחוני/טבעוני). המערכת מסדרת הכל בטבלה שניתן לייצא לאקסל בקליק.'
-  },
-  photo: {
-    title: 'כל אחד צלם',
-    description: 'גלריה שיתופית דיגיטלית! במקום שהאורחים יצלמו תמונות וישמרו אצלם בטלפון, הם יכולים להעלות את כל התמונות והסרטונים ישירות לאלבום המשותף של האירוע. בסוף האירוע תוכלו להוריד קובץ ZIP עם כל הזכרונות היפים.'
-  },
-  seating: {
-    title: 'סידור הושבה',
-    description: 'הסוף לפקקים בכניסה לאולם מול הדיילות. האורח מזין את שמו ומקבל מיד את מספר השולחן שלו. בנוסף, המערכת מציגה לו אילו אורחים נוספים יושבים איתו בשולחן, כדי להתחיל לשבור את הקרח עוד לפני שהתיישב.'
-  },
-  dating: {
-    title: 'Daitline (דייטליין)',
-    description: 'רשת חברתית פנימית ודיסקרטית לאירוע בלבד. מושלם לחתונות עם חבר\'ה צעירים! מאפשר לאורחים רווקים (ופנויים בלבד) לראות פרופילים של אורחים אחרים, לשלוח קריצות ולהתחיל שיחה בקלות.'
-  },
-  icebreaker: {
-    title: 'שובר קרח (IceBreaker)',
-    description: 'משחק משימות חברתי שמרים את האווירה! המערכת מגרילה לאורח משימה מצחיקה (למשל "תצטלם עושה שוט עם החתן") ומשדכת לו אורח אחר כדי לבצע אותה. האורחים מעלים הוכחות לקיר תהילה מרכזי.'
-  },
-  rideshare: {
-    title: 'לוח טרמפים',
-    description: 'פותרים את כאב הראש הלוגיסטי. לוח חכם שבו אורחים עם מקום פנוי ברכב מפרסמים טרמפ הלוך או חזור, ואורחים שצריכים הסעה יכולים למצוא אותם. המערכת עושה התאמות (Match) חכמות בין נהגים לנוסעים באותו כיוון ומחברת ביניהם ישירות בוואטסאפ.'
-  }
-};
 
 const Admin = () => {
   const [session, setSession] = useState(null);
@@ -71,7 +41,6 @@ const Admin = () => {
   const [copiedEventId, setCopiedEventId] = useState(null);
   const [copiedInviteId, setCopiedInviteId] = useState(null);
   
-  // הושבה
   const [isSeatingModalOpen, setIsSeatingModalOpen] = useState(false);
   const [seatingText, setSeatingText] = useState('');
   const [seatingLoading, setSeatingLoading] = useState(false);
@@ -81,7 +50,6 @@ const Admin = () => {
   const [editGuestName, setEditGuestName] = useState('');
   const [editGuestTable, setEditGuestTable] = useState('');
 
-  // מודולים אחרים
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isDatingManagerOpen, setIsDatingManagerOpen] = useState(false);
   const [datingProfiles, setDatingProfiles] = useState([]);
@@ -95,15 +63,11 @@ const Admin = () => {
   const [icebreakerProfiles, setIcebreakerProfiles] = useState([]);
   const [icebreakerUsersLoading, setIcebreakerUsersLoading] = useState(false);
 
-  // === מודול RSVP (אישורי הגעה) ===
   const [isRsvpManagerOpen, setIsRsvpManagerOpen] = useState(false);
   const [rsvpList, setRsvpList] = useState([]);
   const [rsvpLoading, setRsvpLoading] = useState(false);
   const [editingRsvpId, setEditingRsvpId] = useState(null);
   const [editRsvpName, setEditRsvpName] = useState('');
-
-  // פופ-אפ הסבר על מודול
-  const [infoModal, setInfoModal] = useState(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => { setSession(session); setAuthLoading(false); if (session) fetchEvents(); });
@@ -121,6 +85,7 @@ const Admin = () => {
       name: event.name, 
       event_date: event.event_date || '', 
       location: event.location || '',
+      short_code: event.short_code || '', // <--- שדה חדש
       active_modules: { photo: false, seating: false, dating: false, icebreaker: false, rideshare: false, rsvp: false, ...event.active_modules }, 
       design_config: {
         template: event.design_config?.template || 'glass',
@@ -134,7 +99,7 @@ const Admin = () => {
   const handleCreateNew = () => { 
     setSelectedEvent({ id: null, isNew: true }); 
     setFormData({ 
-      name: '', event_date: '', location: '',
+      name: '', event_date: '', location: '', short_code: '', // <--- שדה חדש
       active_modules: { photo: false, seating: false, dating: false, icebreaker: false, rideshare: false, rsvp: false }, 
       design_config: { 
         template: 'glass', 
@@ -145,7 +110,35 @@ const Admin = () => {
     }); 
   };
 
-  const handleSave = async () => { if (!formData.name) return alert("יש להזין שם אירוע"); setSaving(true); try { if (selectedEvent.id) { await supabase.from('events').update(formData).eq('id', selectedEvent.id); } else { await supabase.from('events').insert([formData]); } setSelectedEvent(null); fetchEvents(); } catch (error) { alert(error.message); } finally { setSaving(false); } };
+  const handleSave = async () => { 
+    if (!formData.name) return alert("יש להזין שם אירוע"); 
+    // וידוא שהקוד קצר אותיות גדולות בלבד וללא רווחים
+    const payloadToSave = {
+      ...formData,
+      short_code: formData.short_code ? formData.short_code.trim().toUpperCase() : null
+    };
+
+    setSaving(true); 
+    try { 
+      if (selectedEvent.id) { 
+        const { error } = await supabase.from('events').update(payloadToSave).eq('id', selectedEvent.id); 
+        if (error) throw error;
+      } else { 
+        const { error } = await supabase.from('events').insert([payloadToSave]); 
+        if (error) throw error;
+      } 
+      setSelectedEvent(null); 
+      fetchEvents(); 
+    } catch (error) { 
+      if (error.code === '23505') { // Code for unique constraint violation
+        alert('הקוד הקצר הזה כבר תפוס על ידי אירוע אחר. אנא בחרו קוד אחר.');
+      } else {
+        alert(error.message); 
+      }
+    } finally { 
+      setSaving(false); 
+    } 
+  };
   
   const handleDelete = async () => { 
     if (!window.confirm(`האם אתה בטוח שברצונך למחוק את האירוע "${formData.name}" לחלוטין?`)) return; 
@@ -161,18 +154,11 @@ const Admin = () => {
         supabase.from('rsvps').delete().eq('event_id', selectedEvent.id),
         supabase.from('rideshares').delete().eq('event_id', selectedEvent.id)
       ]);
-
       const { error } = await supabase.from('events').delete().eq('id', selectedEvent.id); 
       if (error) throw error;
-      
       setSelectedEvent(null); 
       fetchEvents(); 
-    } catch (error) { 
-      console.error(error);
-      alert("שגיאה במחיקה. נסו שוב."); 
-    } finally { 
-      setSaving(false); 
-    } 
+    } catch (error) { console.error(error); alert("שגיאה במחיקה. נסו שוב."); } finally { setSaving(false); } 
   };
 
   const copyEventLink = async (eventId) => { const url = `${window.location.origin}/event/${eventId}`; try { await navigator.clipboard.writeText(url); setCopiedEventId(eventId); setTimeout(() => setCopiedEventId(null), 2000); } catch (err) { alert("הקישור הוא: " + url); } };
@@ -192,17 +178,10 @@ const Admin = () => {
     } catch (error) { alert("שגיאה בהעלאת התמונה"); console.error(error); } finally { setUploadingAsset(false); }
   };
 
-  // בחירת ערכת צבעים (Preset)
   const applyColorPreset = (preset) => {
     setFormData({
       ...formData,
-      design_config: {
-        ...formData.design_config,
-        colors: {
-          primary: preset.primary,
-          background: preset.background
-        }
-      }
+      design_config: { ...formData.design_config, colors: { primary: preset.primary, background: preset.background } }
     });
   };
 
@@ -232,7 +211,7 @@ const Admin = () => {
   const exportRsvpToCSV = () => { const sorted = [...rsvpList].sort((a, b) => a.group_id.localeCompare(b.group_id)); let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; csvContent += "שם האורח,מי מילא את הטופס,טלפון,תאריך רישום\n"; sorted.forEach(row => { const date = new Date(row.created_at).toLocaleDateString('he-IL'); csvContent += `"${row.guest_name}","${row.submitter_name}","${row.submitter_phone}","${date}"\n`; }); const encodedUri = encodeURI(csvContent); const link = document.createElement("a"); link.setAttribute("href", encodedUri); link.setAttribute("download", `RSVP_${formData.name}.csv`); document.body.appendChild(link); link.click(); document.body.removeChild(link); };
 
   if (authLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="animate-spin text-indigo-600" size={48} /></div>;
-  if (!session) { return ( <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4" dir="rtl"><form onSubmit={handleLogin} className="bg-white p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-slate-200"><div className="text-center mb-8"><h1 className="text-3xl font-black text-slate-800">EventHub Admin</h1><p className="text-slate-500 mt-2">ניהול מערכת האירועים שלך</p></div><div className="space-y-4"><input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="אימייל" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all" dir="ltr" /><input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="סיסמה" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all" dir="ltr" /><button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all">התחבר למערכת</button></div></form></div> ); }
+  if (!session) { return ( <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4" dir="rtl"><form onSubmit={handleLogin} className="bg-white p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-slate-200"><div className="text-center mb-8"><h1 className="text-3xl font-black text-slate-800">Event Manager</h1><p className="text-slate-500 mt-2">ניהול מערכת האירועים שלך</p></div><div className="space-y-4"><input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="אימייל" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all" dir="ltr" /><input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="סיסמה" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all" dir="ltr" /><button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all">התחבר למערכת</button></div></form></div> ); }
 
   return (
     <div className="min-h-screen bg-[#f8fafc] p-4 md:p-8" dir="rtl">
@@ -250,8 +229,17 @@ const Admin = () => {
                   <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
                   <div className="flex items-center gap-4 mb-6">
                     <div className="bg-indigo-100 p-4 rounded-2xl text-indigo-600"><Calendar size={28} /></div>
-                    <div><h3 className="font-black text-2xl text-slate-800 line-clamp-1">{event.name}</h3><p className="text-slate-500 font-medium">{new Date(event.event_date).toLocaleDateString('he-IL')}</p></div>
+                    <div>
+                      <h3 className="font-black text-2xl text-slate-800 line-clamp-1">{event.name}</h3>
+                      <p className="text-slate-500 font-medium">{new Date(event.event_date).toLocaleDateString('he-IL')}</p>
+                    </div>
                   </div>
+                  {event.short_code && (
+                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 mb-4 text-center">
+                      <span className="text-xs text-slate-400 font-bold block mb-1">קוד לאורחים:</span>
+                      <span className="font-mono text-xl font-black text-indigo-600 tracking-widest">{event.short_code}</span>
+                    </div>
+                  )}
                   
                   <div className="grid grid-cols-2 gap-2 mt-auto">
                     <button onClick={() => handleManageEvent(event)} className="col-span-2 bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl font-bold transition-all flex justify-center items-center gap-2"><Settings size={18} /> ניהול אירוע</button>
@@ -294,6 +282,30 @@ const Admin = () => {
                   <input type="text" value={formData.location || ''} onChange={e => setFormData({...formData, location: e.target.value})} placeholder="לדוגמה: אולמי שושנים, תל אביב" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
                 </div>
 
+                {/* אזור קוד האירוע */}
+                <div className="space-y-2 bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100">
+                  <label className="text-sm font-bold text-indigo-900 block">קוד כניסה לאורחים (אופציונלי)</label>
+                  <p className="text-xs text-indigo-700/70 mb-3">יאפשר לאורחים להיכנס לאפליקציה על ידי הקלדת קוד במקום סריקת QR.</p>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      value={formData.short_code || ''} 
+                      onChange={e => setFormData({...formData, short_code: e.target.value})} 
+                      placeholder="למשל: DANI26 או 123456" 
+                      className="w-full p-4 bg-white border border-indigo-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm font-black tracking-widest text-center uppercase" 
+                      dir="ltr" 
+                      maxLength={10} 
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setFormData({...formData, short_code: Math.floor(100000 + Math.random() * 900000).toString()})} 
+                      className="bg-indigo-600 text-white px-4 rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-sm"
+                    >
+                      הגרל
+                    </button>
+                  </div>
+                </div>
+
                 <div className="space-y-4 pt-2">
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-700 block">צבע מיתוג עיקרי (Primary)</label>
@@ -315,7 +327,6 @@ const Admin = () => {
                     </div>
                   </div>
                   
-                  {/* --- ערכות נושא (Presets) --- */}
                   <div className="pt-4 border-t border-slate-100">
                     <label className="text-sm font-bold text-slate-700 flex items-center gap-2 mb-3"><Palette size={16} className="text-indigo-500"/> ערכות צבעים מוכנות</label>
                     <div className="grid grid-cols-2 gap-2">
@@ -372,7 +383,6 @@ const Admin = () => {
                 <h3 className="text-xl font-black text-slate-800 border-b pb-4">מודולים ופיצ'רים</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   
-                  {/* --- מודול RSVP --- */}
                   <div className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.rsvp ? 'border-blue-500 bg-blue-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
                     <div className="flex justify-between items-start mb-6">
                       <div className="flex items-center gap-3">
@@ -397,31 +407,26 @@ const Admin = () => {
                     )}
                   </div>
 
-                  {/* צילום */}
                   <div className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.photo ? 'border-orange-500 bg-orange-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
                     <div className="flex justify-between items-start mb-6"><div className="flex items-center gap-3"><div className={`p-3 rounded-xl ${formData.active_modules.photo ? 'bg-orange-500 text-white' : 'bg-slate-200 text-slate-500'}`}><Camera size={24} /></div><h4 className="font-black text-lg text-slate-800">כל אחד צלם</h4></div><label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={formData.active_modules.photo} onChange={e => setFormData({...formData, active_modules: {...formData.active_modules, photo: e.target.checked}})} /><div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div></label></div>
                     {formData.active_modules.photo && !selectedEvent.isNew && (<div className="space-y-3 animate-in fade-in"><button onClick={openGallery} className="w-full py-3 bg-white border border-orange-200 text-orange-600 font-bold rounded-xl hover:bg-orange-50 transition-colors flex justify-center items-center gap-2"><ImageIcon size={18} /> ניהול תמונות (הורדת ZIP)</button><button onClick={() => window.open(`/album/${selectedEvent.id}`, '_blank')} className="w-full py-3 bg-gradient-to-r from-orange-400 to-orange-500 text-white font-black rounded-xl hover:from-orange-500 hover:to-orange-600 transition-all flex justify-center items-center gap-2 shadow-lg shadow-orange-500/30"><Sparkles size={18} /> צפייה באלבום הדיגיטלי</button></div>)}
                   </div>
 
-                  {/* הושבה */}
                   <div className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.seating ? 'border-emerald-500 bg-emerald-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
                     <div className="flex justify-between items-start mb-6"><div className="flex items-center gap-3"><div className={`p-3 rounded-xl ${formData.active_modules.seating ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'}`}><Users size={24} /></div><h4 className="font-black text-lg text-slate-800">סידור הושבה</h4></div><label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={formData.active_modules.seating} onChange={e => setFormData({...formData, active_modules: {...formData.active_modules, seating: e.target.checked}})} /><div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div></label></div>
                     {formData.active_modules.seating && !selectedEvent.isNew && (<div className="space-y-3 animate-in fade-in"><button onClick={openSeatingManager} className="w-full py-3 bg-white border border-emerald-200 text-emerald-600 font-bold rounded-xl hover:bg-emerald-50 transition-colors flex justify-center items-center gap-2"><Settings size={18} /> ניהול רשימת הושבה</button></div>)}
                   </div>
 
-                  {/* דייטליין */}
                   <div className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.dating ? 'border-rose-500 bg-rose-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
                     <div className="flex justify-between items-start mb-6"><div className="flex items-center gap-3"><div className={`p-3 rounded-xl ${formData.active_modules.dating ? 'bg-rose-500 text-white' : 'bg-slate-200 text-slate-500'}`}><Heart size={24} /></div><div><h4 className="font-black text-lg text-slate-800">Daitline (דייטליין)</h4></div></div><label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={formData.active_modules.dating} onChange={e => setFormData({...formData, active_modules: {...formData.active_modules, dating: e.target.checked}})} /><div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div></label></div>
                     {formData.active_modules.dating && !selectedEvent.isNew && (<div className="animate-in fade-in"><button onClick={openDatingManager} className="w-full py-3 bg-white border border-rose-200 text-rose-600 font-bold rounded-xl hover:bg-rose-50 transition-colors flex justify-center items-center gap-2 shadow-sm"><Users size={18} /> ניהול משתמשי דייטליין</button></div>)}
                   </div>
 
-                  {/* שובר קרח */}
                   <div className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.icebreaker ? 'border-cyan-500 bg-cyan-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
                     <div className="flex justify-between items-start mb-6"><div className="flex items-center gap-3"><div className={`p-3 rounded-xl ${formData.active_modules.icebreaker ? 'bg-cyan-500 text-white' : 'bg-slate-200 text-slate-500'}`}><Zap size={24} /></div><div><h4 className="font-black text-lg text-slate-800">שובר קרח (IceBreaker)</h4></div></div><label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={formData.active_modules.icebreaker || false} onChange={e => setFormData({...formData, active_modules: {...formData.active_modules, icebreaker: e.target.checked}})} /><div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div></label></div>
                     {formData.active_modules.icebreaker && !selectedEvent.isNew && (<div className="flex flex-col md:flex-row gap-3 animate-in fade-in"><button onClick={openIcebreakerManager} className="flex-1 py-3 bg-white border border-cyan-200 text-cyan-600 font-bold rounded-xl hover:bg-cyan-50 transition-colors flex justify-center items-center gap-2 shadow-sm"><Target size={18} /> בנק המשימות</button><button onClick={openIcebreakerUserManager} className="flex-1 py-3 bg-white border border-cyan-200 text-cyan-600 font-bold rounded-xl hover:bg-cyan-50 transition-colors flex justify-center items-center gap-2 shadow-sm"><Users size={18} /> משתמשים</button></div>)}
                   </div>
 
-                  {/* טרמפים */}
                   <div className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.rideshare ? 'border-amber-500 bg-amber-50/30' : 'border-slate-100 opacity-60 grayscale'}`}>
                     <div className="flex justify-between items-start mb-6"><div className="flex items-center gap-3"><div className={`p-3 rounded-xl ${formData.active_modules.rideshare ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-500'}`}><Car size={24} /></div><div><h4 className="font-black text-lg text-slate-800">לוח טרמפים</h4></div></div><label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={formData.active_modules.rideshare || false} onChange={e => setFormData({...formData, active_modules: {...formData.active_modules, rideshare: e.target.checked}})} /><div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div></label></div>
                   </div>

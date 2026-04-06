@@ -6,7 +6,6 @@ import gsap from 'gsap';
 
 const MAX_PHOTOS_PER_GUEST = 3;
 
-// פונקציה לחישוב בהירות הצבע
 const getLuminance = (hex) => {
   if (!hex) return 0;
   let color = hex.replace('#', '');
@@ -22,7 +21,6 @@ const Photos = () => {
   const eventId = searchParams.get('event');
   const navigate = useNavigate();
 
-  // מושך גם את השם וגם את ה-ID הייחודי של האורח
   const guestName = localStorage.getItem('guest_name') || '';
   const guestId = localStorage.getItem('guest_id') || ''; 
   
@@ -45,37 +43,20 @@ const Photos = () => {
       if (eventError) throw eventError;
       setEventData(event);
 
-      const { data: photosData, error: photosError } = await supabase
-        .from('photos')
-        .select('*')
-        .eq('event_id', eventId)
-        .order('created_at', { ascending: false });
+      const { data: photosData, error: photosError } = await supabase.from('photos').select('*').eq('event_id', eventId).order('created_at', { ascending: false });
       if (photosError) throw photosError;
       setPhotos(photosData || []);
 
-      // סופר כמה תמונות המשתמש העלה - לפי ה-ID שלו
       if (guestId) {
-        const { count, error: countError } = await supabase
-          .from('photos')
-          .select('*', { count: 'exact', head: true })
-          .eq('event_id', eventId)
-          .eq('guest_id', guestId);
+        const { count, error: countError } = await supabase.from('photos').select('*', { count: 'exact', head: true }).eq('event_id', eventId).eq('guest_id', guestId);
         if (!countError) setMyUploadCount(count || 0);
       }
-
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error(err); } finally { setLoading(false); }
   };
 
   useEffect(() => {
     if (!loading && eventData) {
-      gsap.fromTo(".fade-up-item", 
-        { y: 30, opacity: 0 }, 
-        { y: 0, opacity: 1, duration: 0.6, stagger: 0.1, ease: "power2.out" }
-      );
+      gsap.fromTo(".fade-up-item", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, stagger: 0.1, ease: "power2.out" });
     }
   }, [loading, eventData]);
 
@@ -93,20 +74,13 @@ const Photos = () => {
       const fileExt = file.name ? file.name.split('.').pop() : 'jpg';
       const fileName = `photo_${eventId}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
       
-      const { error: uploadError } = await supabase.storage.from('event-assets').upload(`photos/${fileName}`, file, {
-        cacheControl: '3600',
-        upsert: false
-      });
+      const { error: uploadError } = await supabase.storage.from('event-assets').upload(`photos/${fileName}`, file, { cacheControl: '3600', upsert: false });
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage.from('event-assets').getPublicUrl(`photos/${fileName}`);
 
-      // התיקון: שליחת ה-guest_id למסד הנתונים כדי לעבור את חסימת ה-not-null
       const { error: dbError } = await supabase.from('photos').insert([{ 
-        event_id: eventId, 
-        guest_id: guestId, // <--- התיקון כאן
-        guest_name: guestName || 'אורח', 
-        image_url: publicUrl 
+        event_id: eventId, guest_id: guestId, guest_name: guestName || 'אורח', image_url: publicUrl 
       }]);
       if (dbError) throw dbError;
 
@@ -116,19 +90,22 @@ const Photos = () => {
       setUploadSuccess(true);
       setTimeout(() => setUploadSuccess(false), 3000);
 
-    } catch (err) {
-      console.error("Upload error details:", err);
-      alert("שגיאה בהעלאה: " + (err.message || "נסו שוב."));
-    } finally {
-      setUploading(false);
-      e.target.value = null; 
-    }
+    } catch (err) { alert("שגיאה בהעלאה: " + (err.message || "נסו שוב.")); } finally { setUploading(false); e.target.value = null; }
+  };
+
+  const handleReport = async (photoId, reportedName) => {
+    if (!window.confirm(`האם לדווח על התמונה של ${reportedName} כתוכן פוגעני?`)) return;
+    try {
+      await supabase.from('reports').insert([{ 
+        event_id: eventId, reported_item_id: photoId, item_type: 'photo', reporter_id: guestId 
+      }]);
+      alert("הדיווח התקבל וייבדק על ידי מנהלי האירוע.");
+    } catch(e) { console.error(e); }
   };
 
   if (loading || !eventData) return <div className="min-h-screen bg-slate-900 flex items-center justify-center"><Loader2 className="animate-spin text-white" size={48} /></div>;
 
   const canUploadMore = myUploadCount < MAX_PHOTOS_PER_GUEST;
-  
   const primaryColor = eventData.design_config?.colors?.primary || '#3b82f6';
   const bgColor = eventData.design_config?.colors?.background || '#f8fafc';
   const isLightPrimary = getLuminance(primaryColor) > 150;
@@ -136,70 +113,39 @@ const Photos = () => {
 
   return (
     <div className="min-h-screen font-sans pb-20 transition-colors duration-1000" style={{ backgroundColor: bgColor }} dir="rtl">
-      
-      {/* Header */}
       <div className="rounded-b-[3rem] pt-10 pb-16 px-6 relative z-10 shadow-lg flex justify-between items-start transition-colors duration-1000" style={{ backgroundColor: primaryColor }}>
-        <button onClick={() => navigate(-1)} className="p-2 rounded-full bg-black/10 hover:bg-black/20 transition-colors backdrop-blur-md" style={{ color: primaryTextColor }}>
-          <ChevronLeft size={20} />
-        </button>
-        <h1 className="text-xl font-black flex items-center gap-2" style={{ color: primaryTextColor }}>
-          כל אחד צלם <Camera size={20} style={{ color: primaryTextColor, opacity: 0.8 }} />
-        </h1>
+        <button onClick={() => navigate(-1)} className="p-2 rounded-full bg-black/10 hover:bg-black/20 transition-colors backdrop-blur-md" style={{ color: primaryTextColor }}><ChevronLeft size={20} /></button>
+        <h1 className="text-xl font-black flex items-center gap-2" style={{ color: primaryTextColor }}>כל אחד צלם <Camera size={20} style={{ color: primaryTextColor, opacity: 0.8 }} /></h1>
         <div className="w-9"></div>
       </div>
 
       <div className="px-6 -mt-8 relative z-20 max-w-md mx-auto">
-        
-        {/* כרטיסיית העלאת תמונה */}
         <div className="fade-up-item bg-white p-6 rounded-[2rem] shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-slate-100 mb-8 text-center">
           {uploadSuccess ? (
             <div className="py-6 animate-in zoom-in">
-              <div className="w-16 h-16 bg-emerald-50 rounded-[1.2rem] flex items-center justify-center mx-auto mb-3">
-                <CheckCircle2 size={32} className="text-emerald-500" />
-              </div>
+              <div className="w-16 h-16 bg-emerald-50 rounded-[1.2rem] flex items-center justify-center mx-auto mb-3"><CheckCircle2 size={32} className="text-emerald-500" /></div>
               <h3 className="font-black text-slate-800 text-lg">התמונה הועלתה!</h3>
               <p className="text-sm text-slate-500 font-medium">היא נוספה בהצלחה לאלבום המשותף.</p>
             </div>
           ) : (
             <>
-              <div className="w-16 h-16 rounded-[1.2rem] flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: `${primaryColor}15` }}>
-                <UploadCloud size={28} style={{ color: primaryColor }} />
-              </div>
+              <div className="w-16 h-16 rounded-[1.2rem] flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: `${primaryColor}15` }}><UploadCloud size={28} style={{ color: primaryColor }} /></div>
               <h2 className="text-xl font-black text-slate-800 mb-2">צלמו או העלו תמונה</h2>
-              <p className="text-slate-500 font-medium text-sm mb-6 leading-relaxed">
-                שתפו את הרגעים היפים שלכם איתנו!<br/>
-                <span className={`font-bold ${myUploadCount >= MAX_PHOTOS_PER_GUEST ? 'text-rose-500' : 'text-slate-700'}`}>
-                  העליתם {myUploadCount} מתוך {MAX_PHOTOS_PER_GUEST} תמונות.
-                </span>
-              </p>
-              
+              <p className="text-slate-500 font-medium text-sm mb-6 leading-relaxed">שתפו את הרגעים היפים שלכם איתנו!<br/><span className={`font-bold ${myUploadCount >= MAX_PHOTOS_PER_GUEST ? 'text-rose-500' : 'text-slate-700'}`}>העליתם {myUploadCount} מתוך {MAX_PHOTOS_PER_GUEST} תמונות.</span></p>
               {canUploadMore ? (
                 <label className="w-full font-bold py-4 rounded-[1.2rem] flex justify-center items-center gap-2 cursor-pointer transition-all shadow-lg active:scale-95" style={{ backgroundColor: primaryColor, color: primaryTextColor }}>
                   {uploading ? <Loader2 className="animate-spin" size={20} /> : <><Camera size={20} /> פתח מצלמה / גלריה</>}
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    capture="environment" 
-                    onChange={handleFileUpload} 
-                    disabled={uploading} 
-                    className="hidden" 
-                  />
+                  <input type="file" accept="image/*" capture="environment" onChange={handleFileUpload} disabled={uploading} className="hidden" />
                 </label>
               ) : (
-                <div className="bg-rose-50 text-rose-600 font-bold py-3.5 rounded-[1.2rem] flex justify-center items-center gap-2 border border-rose-100">
-                  <AlertCircle size={18} /> הגעתם למכסה המקסימלית
-                </div>
+                <div className="bg-rose-50 text-rose-600 font-bold py-3.5 rounded-[1.2rem] flex justify-center items-center gap-2 border border-rose-100"><AlertCircle size={18} /> הגעתם למכסה המקסימלית</div>
               )}
             </>
           )}
         </div>
 
-        {/* גלריה צפה */}
         <div className="fade-up-item">
-          <h3 className="font-black text-slate-800 mb-4 flex items-center gap-2">
-            הפיד של האירוע <Sparkles size={16} style={{ color: primaryColor }} />
-          </h3>
-          
+          <h3 className="font-black text-slate-800 mb-4 flex items-center gap-2">הפיד של האירוע <Sparkles size={16} style={{ color: primaryColor }} /></h3>
           {photos.length === 0 ? (
             <div className="text-center py-10 bg-white rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
               <ImageIcon size={40} className="mx-auto mb-3 text-slate-200" />
@@ -209,23 +155,16 @@ const Photos = () => {
             <div className="grid grid-cols-2 gap-3">
               {photos.map((photo) => (
                 <div key={photo.id} className="relative group bg-white rounded-[1.5rem] overflow-hidden shadow-sm border border-slate-100 aspect-square">
-                  <img 
-                    src={photo.image_url} 
-                    alt="Event" 
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-900/80 to-transparent p-3 pt-6">
-                    <p className="text-white text-xs font-bold truncate flex items-center gap-1.5">
-                      <Heart size={10} style={{ fill: primaryColor, color: primaryColor }} /> {photo.guest_name}
-                    </p>
+                  <img src={photo.image_url} alt="Event" className="w-full h-full object-cover" loading="lazy" />
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-900/90 to-transparent p-3 pt-8 flex justify-between items-end">
+                    <p className="text-white text-xs font-bold truncate flex items-center gap-1.5"><Heart size={10} style={{ fill: primaryColor, color: primaryColor }} /> {photo.guest_name}</p>
+                    <button onClick={(e) => { e.stopPropagation(); handleReport(photo.id, photo.guest_name); }} className="text-white/50 hover:text-white p-1 transition-colors" title="דווח על תוכן פוגעני"><AlertCircle size={14} /></button>
                   </div>
                 </div>
               ))}
             </div>
           )}
         </div>
-
       </div>
     </div>
   );

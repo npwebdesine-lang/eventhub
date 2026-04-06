@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Loader2, Camera, ChevronLeft, Zap, Target, ImagePlus, User, CheckCircle2, LogOut, Sparkles } from 'lucide-react';
+import { Loader2, Camera, ChevronLeft, Zap, Target, ImagePlus, User, CheckCircle2, LogOut, Sparkles, AlertCircle } from 'lucide-react';
 import gsap from 'gsap';
 
-// חישוב בהירות הצבע
 const getLuminance = (hex) => {
   if (!hex) return 0;
   let color = hex.replace('#', '');
@@ -53,15 +52,7 @@ const Icebreaker = () => {
       }
       setMyProfile(profile);
 
-      const { data: activeMatch } = await supabase
-        .from('icebreaker_matches')
-        .select('*')
-        .eq('event_id', eventId)
-        .eq('status', 'pending')
-        .or(`guest1_id.eq.${guestId},guest2_id.eq.${guestId}`)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+      const { data: activeMatch } = await supabase.from('icebreaker_matches').select('*').eq('event_id', eventId).eq('status', 'pending').or(`guest1_id.eq.${guestId},guest2_id.eq.${guestId}`).order('created_at', { ascending: false }).limit(1).single();
 
       if (activeMatch) {
         const partnerId = activeMatch.guest1_id === guestId ? activeMatch.guest2_id : activeMatch.guest1_id;
@@ -80,7 +71,6 @@ const Icebreaker = () => {
     setFeed(data || []);
   };
 
-  // אנימציות מעברים
   useEffect(() => {
     if (view === 'hub') {
       gsap.fromTo(".fade-up-item", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, stagger: 0.1, ease: "back.out(1.2)" });
@@ -101,9 +91,7 @@ const Icebreaker = () => {
 
   const handleJoinGame = async () => {
     try {
-      const { error } = await supabase.from('icebreaker_profiles').upsert({
-        event_id: eventId, guest_id: guestId, name: guestName, photo_url: photoUrl
-      });
+      const { error } = await supabase.from('icebreaker_profiles').upsert({ event_id: eventId, guest_id: guestId, name: guestName, photo_url: photoUrl });
       if (error) throw error;
       checkStatus();
     } catch (err) { alert("שגיאה בהצטרפות למשחק"); }
@@ -132,9 +120,7 @@ const Icebreaker = () => {
       gsap.to(rouletteRef.current, { scale: 1.1, duration: 0.2, yoyo: true, repeat: 10 });
       
       setTimeout(async () => {
-        const { data: matchData, error } = await supabase.from('icebreaker_matches').insert([{
-          event_id: eventId, guest1_id: guestId, guest2_id: randomPartner.guest_id, mission_text: randomMission.content, status: 'pending'
-        }]).select().single();
+        const { data: matchData, error } = await supabase.from('icebreaker_matches').insert([{ event_id: eventId, guest1_id: guestId, guest2_id: randomPartner.guest_id, mission_text: randomMission.content, status: 'pending' }]).select().single();
 
         if (!error) {
           setCurrentMatch({ ...matchData, partner: randomPartner });
@@ -155,14 +141,19 @@ const Icebreaker = () => {
       await supabase.storage.from('icebreaker-uploads').upload(fileName, file);
       const { data: { publicUrl } } = supabase.storage.from('icebreaker-uploads').getPublicUrl(fileName);
       
-      await supabase.from('icebreaker_matches').update({
-        photo_url: publicUrl, status: 'completed', completed_at: new Date().toISOString()
-      }).eq('id', currentMatch.id);
-
+      await supabase.from('icebreaker_matches').update({ photo_url: publicUrl, status: 'completed', completed_at: new Date().toISOString() }).eq('id', currentMatch.id);
       setCurrentMatch(null);
       fetchFeed();
       setView('hub');
     } catch (err) { alert("שגיאה בהעלאת ההוכחה"); } finally { setUploading(false); }
+  };
+
+  const handleReport = async (matchId) => {
+    if (!window.confirm(`האם לדווח על המשימה כתוכן פוגעני?`)) return;
+    try {
+      await supabase.from('reports').insert([{ event_id: eventId, reported_item_id: matchId, item_type: 'icebreaker', reporter_id: guestId }]);
+      alert("הדיווח התקבל וייבדק על ידי מנהלי האירוע.");
+    } catch(e) { console.error(e); }
   };
 
   if (view === 'loading' || !eventData) return <div className="min-h-screen bg-slate-900 flex justify-center items-center"><Loader2 className="animate-spin text-white" size={48} /></div>;
@@ -176,14 +167,12 @@ const Icebreaker = () => {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-1000" style={{ backgroundColor: bgColor }} dir="rtl">
         <button onClick={() => navigate(-1)} className="absolute right-6 top-8 p-2 bg-slate-200/50 hover:bg-slate-200 rounded-full z-10 transition-colors"><ChevronLeft size={24} className="text-slate-700" /></button>
-        
         <div className="w-full max-w-sm text-center relative z-10 animate-in zoom-in-95 duration-500">
           <div className="inline-flex p-5 rounded-[1.5rem] mb-6 shadow-sm border border-slate-100 bg-white" style={{ borderColor: `${primaryColor}30` }}>
             <Zap size={48} style={{ color: primaryColor }} />
           </div>
           <h1 className="text-4xl font-black mb-2 text-slate-800">IceBreaker</h1>
           <p className="text-slate-500 font-medium mb-8">המשימה שלכם: למצוא אנשים, לבצע משימות מצחיקות, ולתעד הכל.</p>
-
           <div className="bg-white border border-slate-100 p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.06)]">
             <h2 className="text-xl font-bold mb-6 text-slate-800">תמונת זיהוי (כדי שימצאו אתכם)</h2>
             <label className="relative cursor-pointer inline-block group mb-6">
@@ -223,14 +212,12 @@ const Icebreaker = () => {
             <Sparkles size={16} className="text-amber-500"/> משימה באוויר!
           </span>
         </header>
-
         <div className="flex-1 flex flex-col items-center justify-center text-center p-6 mission-reveal -mt-6">
           <h2 className="text-xl font-bold text-slate-500 mb-4 uppercase tracking-widest">המטרה שלך:</h2>
           <div className="w-36 h-36 rounded-full overflow-hidden bg-slate-100 border-[6px] shadow-2xl mb-4 mx-auto relative z-10" style={{ borderColor: primaryColor }}>
             {currentMatch.partner?.photo_url ? <img src={currentMatch.partner.photo_url} className="w-full h-full object-cover" /> : <User size={48} className="m-auto mt-10 text-slate-300" />}
           </div>
           <h1 className="text-4xl font-black text-slate-800 mb-8">{currentMatch.partner?.name}</h1>
-          
           <div className="bg-white border border-slate-100 p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.06)] w-full max-w-md relative z-20">
             <div className="absolute -top-6 -right-2 w-12 h-12 rounded-full flex items-center justify-center shadow-lg border-4 border-white" style={{ backgroundColor: primaryColor }}>
               <Target style={{ color: primaryTextColor }} size={20} />
@@ -238,7 +225,6 @@ const Icebreaker = () => {
             <p className="text-xs font-bold uppercase tracking-widest mb-3 opacity-60" style={{ color: primaryColor }}>פקודת מבצע</p>
             <p className="text-2xl font-black text-slate-800 leading-tight">{currentMatch.mission_text}</p>
           </div>
-
           <div className="mt-auto w-full max-w-md pt-12 pb-6">
             <input type="file" accept="image/*" capture="environment" ref={proofInputRef} onChange={handleProofUpload} className="hidden" />
             <button onClick={() => proofInputRef.current?.click()} disabled={uploading} className="w-full font-black py-5 rounded-[1.5rem] text-lg shadow-xl flex justify-center items-center gap-3 hover:scale-[1.02] transition-transform active:scale-95" style={{ backgroundColor: primaryColor, color: primaryTextColor }}>
@@ -251,24 +237,16 @@ const Icebreaker = () => {
     );
   }
 
-  // --- תצוגת Hub (המסך הראשי של המודול) ---
   return (
     <div className="min-h-screen font-sans transition-colors duration-1000 pb-10" style={{ backgroundColor: bgColor }} dir="rtl">
-      
-      {/* Header כהה מעוגל */}
       <div className="rounded-b-[3rem] pt-12 pb-24 px-6 relative z-10 shadow-lg flex justify-between items-start transition-colors duration-1000" style={{ backgroundColor: primaryColor }}>
         <button onClick={() => navigate(`/event/${eventId}`)} className="p-2 bg-black/10 hover:bg-black/20 rounded-full transition-colors backdrop-blur-md" style={{ color: primaryTextColor }}><ChevronLeft size={22} /></button>
-        <h1 className="text-2xl font-black flex items-center gap-2" style={{ color: primaryTextColor }}>
-          IceBreaker <Zap size={20} style={{ fill: primaryTextColor, opacity: 0.8 }} />
-        </h1>
+        <h1 className="text-2xl font-black flex items-center gap-2" style={{ color: primaryTextColor }}>IceBreaker <Zap size={20} style={{ fill: primaryTextColor, opacity: 0.8 }} /></h1>
         <div className="w-10 h-10 rounded-[1rem] overflow-hidden bg-black/10 shadow-inner">
           {myProfile?.photo_url ? <img src={myProfile.photo_url} className="w-full h-full object-cover" /> : <User size={20} className="m-auto mt-2 opacity-50" style={{ color: primaryTextColor }} />}
         </div>
       </div>
-
       <div className="px-6 -mt-14 relative z-20 max-w-md mx-auto flex-1 flex flex-col">
-        
-        {/* כפתור הגרלה ראשי צף */}
         <button onClick={startRoulette} className="fade-up-item w-full bg-white p-8 rounded-[2.5rem] text-center shadow-[0_15px_40px_rgb(0,0,0,0.08)] mb-8 transform-gpu hover:scale-[1.02] transition-transform active:scale-95 group border border-slate-50 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-2" style={{ backgroundColor: primaryColor }}></div>
           <div className="w-16 h-16 rounded-[1.2rem] flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: `${primaryColor}15` }}>
@@ -285,9 +263,7 @@ const Icebreaker = () => {
         <div className="space-y-5 pb-8 flex-1">
           {feed.length === 0 ? (
             <div className="fade-up-item text-center py-12 bg-white rounded-[2rem] shadow-sm border border-slate-100">
-              <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
-                <ImagePlus size={28} className="text-slate-300" />
-              </div>
+              <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3"><ImagePlus size={28} className="text-slate-300" /></div>
               <p className="text-slate-700 font-bold text-lg">הקיר ריק.</p>
               <p className="text-slate-400 font-medium text-sm mt-1">תהיו הראשונים לבצע משימה ולהופיע כאן!</p>
             </div>
@@ -304,7 +280,12 @@ const Icebreaker = () => {
                   </div>
                 )}
                 <div className="p-4 flex items-center justify-between text-xs text-slate-400 font-bold bg-white">
-                  <span>בוצע והוכח בשטח 🎯</span>
+                  <div className="flex items-center gap-2">
+                    <span>בוצע והוכח בשטח 🎯</span>
+                    <button onClick={(e) => { e.stopPropagation(); handleReport(match.id); }} className="text-slate-300 hover:text-rose-500 transition-colors mr-2" title="דווח על תוכן פוגעני">
+                      <AlertCircle size={14} />
+                    </button>
+                  </div>
                   <span dir="ltr">{new Date(match.completed_at).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
               </div>

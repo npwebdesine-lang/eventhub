@@ -1,13 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { 
-  Heart, Camera, Loader2, User, MessageCircle, Sparkles, 
-  Send, ChevronLeft, ChevronRight, MessageSquare
-} from 'lucide-react';
+import { Heart, Camera, Loader2, User, MessageCircle, Sparkles, Send, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
 import gsap from 'gsap';
 
-// חישוב בהירות הצבע
 const getLuminance = (hex) => {
   if (!hex) return 0;
   let color = hex.replace('#', '');
@@ -42,9 +38,7 @@ const Dating = () => {
   const formRef = useRef(null);
   const galleryRef = useRef(null);
 
-  const [formData, setFormData] = useState({
-    age: '', gender: 'זכר', seeking: 'נקבה', connection: '', location: '', bio: '', photo_url: ''
-  });
+  const [formData, setFormData] = useState({ age: '', gender: 'זכר', seeking: 'נקבה', connection: '', location: '', bio: '', photo_url: '' });
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
@@ -53,18 +47,9 @@ const Dating = () => {
   }, [eventId, guestId]);
 
   useEffect(() => {
-    if (view === 'register' && formRef.current) {
-      gsap.fromTo(formRef.current, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out' });
-    }
-    if (view === 'gallery' && galleryRef.current) {
-      gsap.fromTo('.profile-card', 
-        { opacity: 0, y: 40, scale: 0.95 }, 
-        { opacity: 1, y: 0, scale: 1, duration: 0.6, stagger: 0.1, ease: 'back.out(1.2)' }
-      );
-    }
-    if (view === 'chatList') {
-      gsap.fromTo(".chat-item", { opacity: 0, x: 20 }, { opacity: 1, x: 0, duration: 0.4, stagger: 0.05 });
-    }
+    if (view === 'register' && formRef.current) gsap.fromTo(formRef.current, { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out' });
+    if (view === 'gallery' && galleryRef.current) gsap.fromTo('.profile-card', { opacity: 0, y: 40, scale: 0.95 }, { opacity: 1, y: 0, scale: 1, duration: 0.6, stagger: 0.1, ease: 'back.out(1.2)' });
+    if (view === 'chatList') gsap.fromTo(".chat-item", { opacity: 0, x: 20 }, { opacity: 1, x: 0, duration: 0.4, stagger: 0.05 });
   }, [view, regStep, profiles]);
 
   const checkProfile = async () => {
@@ -92,8 +77,7 @@ const Dating = () => {
     const matchedProfiles = (others || []).filter(p => p.seeking === me.gender || p.seeking === 'הכל');
     setProfiles(matchedProfiles);
 
-    const { data: msgs } = await supabase.from('dating_messages').select('*').eq('event_id', eventId)
-      .or(`sender_id.eq.${guestId},receiver_id.eq.${guestId}`);
+    const { data: msgs } = await supabase.from('dating_messages').select('*').eq('event_id', eventId).or(`sender_id.eq.${guestId},receiver_id.eq.${guestId}`);
     
     if (msgs) {
       const historyIds = new Set();
@@ -138,9 +122,7 @@ const Dating = () => {
       setUnreadCounts(prev => ({ ...prev, [partner.guest_id]: 0 }));
     }
 
-    const { data } = await supabase.from('dating_messages').select('*').eq('event_id', eventId)
-      .or(`and(sender_id.eq.${guestId},receiver_id.eq.${partner.guest_id}),and(sender_id.eq.${partner.guest_id},receiver_id.eq.${guestId})`)
-      .order('created_at', { ascending: true });
+    const { data } = await supabase.from('dating_messages').select('*').eq('event_id', eventId).or(`and(sender_id.eq.${guestId},receiver_id.eq.${partner.guest_id}),and(sender_id.eq.${partner.guest_id},receiver_id.eq.${guestId})`).order('created_at', { ascending: true });
     setMessages(data || []);
     setTimeout(() => { const chatBox = document.getElementById('chat-box'); if (chatBox) chatBox.scrollTop = chatBox.scrollHeight; }, 100);
   };
@@ -159,7 +141,7 @@ const Dating = () => {
 
   if (view === 'loading' || !eventData) return <div className="min-h-screen bg-slate-900 flex justify-center items-center"><Loader2 className="animate-spin text-rose-500" size={48} /></div>;
 
-  const primaryColor = eventData.design_config?.colors?.primary || '#f43f5e'; // Rose-500 default
+  const primaryColor = eventData.design_config?.colors?.primary || '#f43f5e';
   const bgColor = eventData.design_config?.colors?.background || '#f8fafc';
   const isLightPrimary = getLuminance(primaryColor) > 150;
   const primaryTextColor = isLightPrimary ? '#1e293b' : '#ffffff';
@@ -169,13 +151,10 @@ const Dating = () => {
       <div className="min-h-screen flex flex-col font-sans transition-colors duration-1000 pb-10" style={{ backgroundColor: bgColor }} dir="rtl">
         <div className="rounded-b-[3rem] pt-12 pb-24 px-6 relative z-10 shadow-lg text-center" style={{ backgroundColor: primaryColor }}>
           <button onClick={() => navigate(-1)} className="absolute right-6 top-10 p-2 bg-black/10 hover:bg-black/20 rounded-full backdrop-blur-md transition-colors" style={{ color: primaryTextColor }}><ChevronLeft size={24} /></button>
-          <div className="inline-flex items-center justify-center p-4 bg-white/20 rounded-[1.2rem] mb-4 shadow-inner border border-white/20">
-            <Heart style={{ fill: primaryTextColor, color: primaryTextColor }} size={32} />
-          </div>
+          <div className="inline-flex items-center justify-center p-4 bg-white/20 rounded-[1.2rem] mb-4 shadow-inner border border-white/20"><Heart style={{ fill: primaryTextColor, color: primaryTextColor }} size={32} /></div>
           <h1 className="text-3xl font-black mb-1" style={{ color: primaryTextColor }}>היי {guestName}!</h1>
           <p className="font-medium opacity-80" style={{ color: primaryTextColor }}>רגע לפני שמתחילים להכיר...</p>
         </div>
-
         <div ref={formRef} className="px-6 -mt-12 relative z-20 w-full max-w-md mx-auto flex-1">
           <div className="bg-white p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-slate-100">
             {regStep === 1 && (
@@ -188,21 +167,16 @@ const Dating = () => {
                   </div>
                   <div>
                     <label className="text-xs font-bold mb-1 block opacity-70" style={{ color: primaryColor }}>אני</label>
-                    <select value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})} className="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl outline-none font-bold text-slate-800 focus:ring-2 transition-all" style={{ '--tw-ring-color': primaryColor }}>
-                      <option>זכר</option><option>נקבה</option>
-                    </select>
+                    <select value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})} className="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl outline-none font-bold text-slate-800 focus:ring-2 transition-all" style={{ '--tw-ring-color': primaryColor }}><option>זכר</option><option>נקבה</option></select>
                   </div>
                 </div>
                 <div>
                   <label className="text-xs font-bold mb-1 block opacity-70" style={{ color: primaryColor }}>ומחפש/ת פה...</label>
-                  <select value={formData.seeking} onChange={e => setFormData({...formData, seeking: e.target.value})} className="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl outline-none font-bold text-slate-800 focus:ring-2 transition-all" style={{ '--tw-ring-color': primaryColor }}>
-                    <option>נקבה</option><option>זכר</option><option>הכל</option>
-                  </select>
+                  <select value={formData.seeking} onChange={e => setFormData({...formData, seeking: e.target.value})} className="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl outline-none font-bold text-slate-800 focus:ring-2 transition-all" style={{ '--tw-ring-color': primaryColor }}><option>נקבה</option><option>זכר</option><option>הכל</option></select>
                 </div>
                 <button onClick={() => setRegStep(2)} className="w-full py-4 rounded-[1.2rem] font-black mt-4 hover:scale-[1.02] transition-transform shadow-lg" style={{ backgroundColor: primaryColor, color: primaryTextColor }}>המשך</button>
               </div>
             )}
-
             {regStep === 2 && (
               <div className="space-y-5">
                 <h2 className="text-xl font-bold mb-4 text-slate-800">איפה מוצאים אותך?</h2>
@@ -224,7 +198,6 @@ const Dating = () => {
                 </div>
               </div>
             )}
-
             {regStep === 3 && (
               <div className="space-y-6 text-center">
                 <h2 className="text-xl font-bold mb-2 text-slate-800">תמונה מנצחת</h2>
@@ -235,9 +208,7 @@ const Dating = () => {
                   </div>
                   <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
                 </label>
-                <button onClick={handleSaveProfile} className="w-full py-5 rounded-[1.5rem] font-black text-xl shadow-xl hover:scale-[1.02] transition-transform" style={{ backgroundColor: primaryColor, color: primaryTextColor }}>
-                  סיימתי, בואו נתחיל!
-                </button>
+                <button onClick={handleSaveProfile} className="w-full py-5 rounded-[1.5rem] font-black text-xl shadow-xl hover:scale-[1.02] transition-transform" style={{ backgroundColor: primaryColor, color: primaryTextColor }}>סיימתי, בואו נתחיל!</button>
               </div>
             )}
           </div>
@@ -246,28 +217,18 @@ const Dating = () => {
     );
   }
 
-  // --- תצוגת Hub: גלריה או רשימת שיחות ---
   if (view === 'gallery' || view === 'chatList') {
     return (
       <div className="min-h-screen flex flex-col font-sans transition-colors duration-1000 pb-10" style={{ backgroundColor: bgColor }} dir="rtl">
-        
-        {/* Header כהה מעוגל */}
         <div className="rounded-b-[3rem] pt-10 pb-20 px-6 relative z-10 shadow-lg transition-colors duration-1000" style={{ backgroundColor: primaryColor }}>
           <div className="flex justify-between items-center mb-6">
             <button onClick={() => navigate(-1)} className="p-2 bg-black/10 hover:bg-black/20 rounded-full transition-colors backdrop-blur-md" style={{ color: primaryTextColor }}><ChevronLeft size={20} /></button>
-            <h1 className="text-xl font-black flex items-center gap-2" style={{ color: primaryTextColor }}>
-              Daitline <Heart size={20} style={{ fill: primaryTextColor, color: primaryTextColor }} />
-            </h1>
+            <h1 className="text-xl font-black flex items-center gap-2" style={{ color: primaryTextColor }}>Daitline <Heart size={20} style={{ fill: primaryTextColor, color: primaryTextColor }} /></h1>
             <button onClick={() => setView('register')} className="p-2 bg-black/10 hover:bg-black/20 rounded-full transition-colors backdrop-blur-md" style={{ color: primaryTextColor }}><User size={20} /></button>
           </div>
-          
-          {/* Toggle Nav */}
           <div className="flex bg-white/20 p-1.5 rounded-2xl shadow-inner backdrop-blur-md border border-white/20 max-w-sm mx-auto">
             <button onClick={() => setView('gallery')} className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${view === 'gallery' ? 'bg-white shadow-md text-slate-900' : 'text-white hover:bg-white/10'}`}>התאמות</button>
-            <button onClick={() => setView('chatList')} className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all relative ${view === 'chatList' ? 'bg-white shadow-md text-slate-900' : 'text-white hover:bg-white/10'}`}>
-              הודעות
-              {Object.values(unreadCounts).some(c => c > 0) && <span className="absolute top-2 left-4 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>}
-            </button>
+            <button onClick={() => setView('chatList')} className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all relative ${view === 'chatList' ? 'bg-white shadow-md text-slate-900' : 'text-white hover:bg-white/10'}`}>הודעות {Object.values(unreadCounts).some(c => c > 0) && <span className="absolute top-2 left-4 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>}</button>
           </div>
         </div>
 
@@ -287,13 +248,8 @@ const Dating = () => {
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 p-6 flex flex-col gap-2">
                     <div className="flex justify-between items-end mb-1">
-                      <div>
-                        <h3 className="font-black text-3xl text-white drop-shadow-md">{p.name}, {p.age}</h3>
-                        <p className="font-bold drop-shadow-md" style={{ color: primaryColor }}>{p.connection}</p>
-                      </div>
-                      <button onClick={() => openChat(p)} className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform" style={{ backgroundColor: primaryColor, color: primaryTextColor }}>
-                        <MessageCircle size={24} fill="currentColor" />
-                      </button>
+                      <div><h3 className="font-black text-3xl text-white drop-shadow-md">{p.name}, {p.age}</h3><p className="font-bold drop-shadow-md" style={{ color: primaryColor }}>{p.connection}</p></div>
+                      <button onClick={() => openChat(p)} className="w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform" style={{ backgroundColor: primaryColor, color: primaryTextColor }}><MessageCircle size={24} fill="currentColor" /></button>
                     </div>
                     <p className="text-white/90 line-clamp-2 font-medium mb-3 text-sm">"{p.bio}"</p>
                     <span className="text-xs text-slate-800 bg-white/90 w-fit px-3 py-1.5 rounded-full font-bold shadow-sm">📍 {p.location}</span>
@@ -308,8 +264,7 @@ const Dating = () => {
           <div className="flex-1 px-6 -mt-8 relative z-20 space-y-3 max-w-md mx-auto w-full">
             {chatHistory.length === 0 ? (
               <div className="text-center py-16 bg-white rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-                <MessageSquare size={48} className="mx-auto mb-4 text-slate-200" />
-                <p className="font-bold text-slate-500">אין עדיין שיחות פעילות.</p>
+                <MessageSquare size={48} className="mx-auto mb-4 text-slate-200" /><p className="font-bold text-slate-500">אין עדיין שיחות פעילות.</p>
               </div>
             ) : (
               chatHistory.map(p => (
@@ -318,10 +273,7 @@ const Dating = () => {
                     {p.photo_url ? <img src={p.photo_url} className="w-full h-full object-cover" /> : <User size={24} className="absolute inset-0 m-auto text-slate-300" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-black text-lg text-slate-800 truncate flex items-center gap-2">
-                      {p.name}
-                      {unreadCounts[p.guest_id] > 0 && <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">{unreadCounts[p.guest_id]} חדשות</span>}
-                    </h3>
+                    <h3 className="font-black text-lg text-slate-800 truncate flex items-center gap-2">{p.name}{unreadCounts[p.guest_id] > 0 && <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">{unreadCounts[p.guest_id]} חדשות</span>}</h3>
                     <p className="text-sm text-slate-400 font-medium truncate">לחץ להמשך השיחה...</p>
                   </div>
                 </div>
@@ -336,7 +288,6 @@ const Dating = () => {
   if (view === 'chat') {
     return (
       <div className="min-h-screen flex flex-col h-[100dvh] font-sans" style={{ backgroundColor: bgColor }} dir="rtl">
-        {/* Chat Header */}
         <header className="p-4 rounded-b-[2rem] shadow-sm flex items-center gap-4 shrink-0 z-10 transition-colors" style={{ backgroundColor: primaryColor, color: primaryTextColor }}>
           <button onClick={() => { setView('chatList'); fetchProfilesAndMessages(myProfile); }} className="p-2 bg-black/10 hover:bg-black/20 rounded-full transition-colors"><ChevronLeft size={24} /></button>
           <div className="w-12 h-12 rounded-full overflow-hidden bg-black/10 border border-white/20">
@@ -346,9 +297,20 @@ const Dating = () => {
             <h2 className="font-black text-lg leading-tight">{activeChat.name}</h2>
             <span className="text-[11px] font-bold opacity-80">📍 {activeChat.location}</span>
           </div>
+          <div className="mr-auto">
+            <button 
+              onClick={() => {
+                if(window.confirm("לחסום משתמש זה? לא תוכלו לשלוח או לקבל ממנו הודעות.")) {
+                  alert("המשתמש נחסם.");
+                  setView('chatList');
+                }
+              }}
+              className="text-xs font-bold bg-black/10 hover:bg-black/20 px-3 py-1.5 rounded-lg transition-colors" style={{ color: primaryTextColor }}>
+              חסום
+            </button>
+          </div>
         </header>
 
-        {/* Messages */}
         <div id="chat-box" className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth">
           {messages.map((m, i) => (
             <div key={i} className={`flex ${m.sender_id === guestId ? 'justify-start' : 'justify-end'} animate-in slide-in-from-bottom-2`}>
@@ -360,7 +322,6 @@ const Dating = () => {
           ))}
         </div>
 
-        {/* Input */}
         <form onSubmit={sendMessage} className="p-4 bg-white border-t border-slate-100 flex gap-3 shrink-0 shadow-[0_-10px_40px_rgb(0,0,0,0.03)] pb-6">
           <input type="text" value={newMessage} onChange={e => setNewMessage(e.target.value)} placeholder="כתבו הודעה..." className="flex-1 bg-slate-50 border border-slate-200 p-4 rounded-full outline-none focus:ring-2 focus:ring-slate-300 text-slate-800 font-medium" />
           <button type="submit" disabled={!newMessage.trim()} className="w-14 h-14 rounded-full shadow-lg flex items-center justify-center disabled:opacity-50 hover:scale-105 transition-transform" style={{ backgroundColor: primaryColor, color: primaryTextColor }}>
