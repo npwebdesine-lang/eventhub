@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Heart, Camera, Loader2, User, MessageCircle, Sparkles, Send, ChevronLeft, ChevronRight, MessageSquare } from 'lucide-react';
+import { Heart, Camera, Loader2, User, MessageCircle, Sparkles, Send, ChevronLeft, MessageSquare, ShieldAlert } from 'lucide-react';
 import gsap from 'gsap';
 
 const getLuminance = (hex) => {
@@ -31,6 +31,9 @@ const Dating = () => {
   
   const [chatHistory, setChatHistory] = useState([]);
   const [unreadCounts, setUnreadCounts] = useState({});
+  
+  // מנגנון שמירת חסומים מקומי כדי להעלים אותם מיד מהפיד
+  const [blockedUsers, setBlockedUsers] = useState(() => JSON.parse(localStorage.getItem('blocked_users') || '[]'));
 
   const guestName = localStorage.getItem('guest_name');
   const guestId = localStorage.getItem('guest_id');
@@ -74,7 +77,8 @@ const Dating = () => {
     if (me.seeking !== 'הכל') query = query.eq('gender', me.seeking);
     const { data: others } = await query.order('created_at', { ascending: false });
     
-    const matchedProfiles = (others || []).filter(p => p.seeking === me.gender || p.seeking === 'הכל');
+    // סינון משתמשים חסומים מהפיד
+    const matchedProfiles = (others || []).filter(p => (p.seeking === me.gender || p.seeking === 'הכל') && !blockedUsers.includes(p.guest_id));
     setProfiles(matchedProfiles);
 
     const { data: msgs } = await supabase.from('dating_messages').select('*').eq('event_id', eventId).or(`sender_id.eq.${guestId},receiver_id.eq.${guestId}`);
@@ -88,7 +92,8 @@ const Dating = () => {
         if (m.receiver_id === guestId && !m.is_read) unreads[m.sender_id] = (unreads[m.sender_id] || 0) + 1;
       });
       setUnreadCounts(unreads);
-      const historyProfiles = (others || []).filter(p => historyIds.has(p.guest_id));
+      // סינון משתמשים חסומים מרשימת השיחות
+      const historyProfiles = (others || []).filter(p => historyIds.has(p.guest_id) && !blockedUsers.includes(p.guest_id));
       setChatHistory(historyProfiles);
     }
   };
@@ -111,6 +116,30 @@ const Dating = () => {
       if (error) throw error;
       checkProfile();
     } catch (err) { alert("שגיאה בשמירת הנתונים"); }
+  };
+
+  // פעולת החסימה והדיווח המשולבת
+  const handleReportAndBlock = async (partnerId, partnerName) => {
+    if (!window.confirm(`האם לחסום את ${partnerName} ולדווח עליו/עליה למנהל האירוע? לא תוכלו לראות או לשלוח להם הודעות יותר.`)) return;
+
+    // 1. שמירת החסימה מקומית
+    const newBlocked = [...blockedUsers, partnerId];
+    setBlockedUsers(newBlocked);
+    localStorage.setItem('blocked_users', JSON.stringify(newBlocked));
+
+    // 2. שליחת דיווח אמיתי לטבלת ה-Reports באדמין
+    try {
+      await supabase.from('reports').insert([{
+        event_id: eventId,
+        reported_item_id: partnerId,
+        item_type: 'dating_profile',
+        reporter_id: guestId
+      }]);
+    } catch(e) { console.error(e); }
+
+    alert("המשתמש נחסם והועבר לבדיקת מנהלי האירוע.");
+    setView('chatList');
+    checkProfile(); // מרענן את הרשימות כדי להעלים את החסום
   };
 
   const openChat = async (partner) => {
@@ -245,6 +274,10 @@ const Dating = () => {
                   <div className="flex-1 bg-slate-100 relative">
                     {p.photo_url ? <img src={p.photo_url} className="w-full h-full object-cover" /> : <User size={80} className="absolute inset-0 m-auto text-slate-300" />}
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent"></div>
+                    {/* כפתור דיווח ישירות על הפרופיל */}
+                    <button onClick={() => handleReportAndBlock(p.guest_id, p.name)} className="absolute top-4 right-4 bg-black/20 hover:bg-black/40 text-white/70 hover:text-white p-2 rounded-full backdrop-blur-sm transition-colors" title="חסום ודווח">
+                      <ShieldAlert size={18} />
+                    </button>
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 p-6 flex flex-col gap-2">
                     <div className="flex justify-between items-end mb-1">
@@ -297,16 +330,13 @@ const Dating = () => {
             <h2 className="font-black text-lg leading-tight">{activeChat.name}</h2>
             <span className="text-[11px] font-bold opacity-80">📍 {activeChat.location}</span>
           </div>
+          
+          {/* כפתור חסימה משולב */}
           <div className="mr-auto">
             <button 
-              onClick={() => {
-                if(window.confirm("לחסום משתמש זה? לא תוכלו לשלוח או לקבל ממנו הודעות.")) {
-                  alert("המשתמש נחסם.");
-                  setView('chatList');
-                }
-              }}
-              className="text-xs font-bold bg-black/10 hover:bg-black/20 px-3 py-1.5 rounded-lg transition-colors" style={{ color: primaryTextColor }}>
-              חסום
+              onClick={() => handleReportAndBlock(activeChat.guest_id, activeChat.name)}
+              className="text-xs font-bold bg-black/10 hover:bg-black/20 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1" style={{ color: primaryTextColor }}>
+              <ShieldAlert size={14} /> חסום
             </button>
           </div>
         </header>

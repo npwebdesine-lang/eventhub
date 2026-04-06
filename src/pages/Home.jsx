@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Camera, Heart, Loader2, PartyPopper, MapPin, X, RefreshCw, Zap, Users, Car, Info } from 'lucide-react';
+import { Camera, Heart, Loader2, PartyPopper, MapPin, X, RefreshCw, Zap, Users, Car, Info, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import gsap from 'gsap';
 
@@ -20,7 +20,6 @@ const Home = () => {
 
   const [isRegistered, setIsRegistered] = useState(false);
   const [nameInput, setNameInput] = useState('');
-  const [phoneInput, setPhoneInput] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
 
   const [myTable, setMyTable] = useState(null); 
@@ -89,19 +88,14 @@ const Home = () => {
     e.preventDefault();
     if (!nameInput.trim() || !termsAccepted) return;
     localStorage.setItem('guest_name', nameInput.trim());
-    if (phoneInput.trim()) {
-      localStorage.setItem('guest_phone', phoneInput.trim());
-    }
     localStorage.setItem('guest_id', 'guest_' + Math.random().toString(36).substr(2, 9));
     setIsRegistered(true);
   };
 
   const handleChangeName = () => {
     localStorage.removeItem('guest_name');
-    localStorage.removeItem('guest_phone');
     localStorage.removeItem('guest_id');
     setNameInput('');
-    setPhoneInput('');
     setTermsAccepted(false);
     setMyTable(null); 
     setIsRegistered(false);
@@ -135,15 +129,41 @@ const Home = () => {
           <h1 className="text-3xl font-black text-slate-800 mb-2">ברוכים הבאים!</h1>
           <p className="text-slate-500 mb-8 font-medium">ל-{name}.<br/>כדי להתחיל בחגיגה, מלאו פרטים:</p>
           <form onSubmit={handleRegister} className="space-y-4">
-            <input type="text" value={nameInput} onChange={(e) => setNameInput(e.target.value)} placeholder="שם מלא (לדוגמה: דודה תקווה)" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-[1.2rem] focus:ring-2 outline-none text-center text-lg font-bold transition-all" style={{ '--tw-ring-color': primary }} required />
-            <input type="tel" value={phoneInput} onChange={(e) => setPhoneInput(e.target.value)} placeholder="מספר טלפון (לזיהוי וטרמפים)" className="w-full p-4 bg-slate-50 border border-slate-100 rounded-[1.2rem] focus:ring-2 outline-none text-center text-lg font-bold transition-all" style={{ '--tw-ring-color': primary }} dir="ltr" />
+           <input 
+            type="text" 
+            value={nameInput} 
+            onChange={(e) => setNameInput(e.target.value)} 
+            placeholder="שם מלא (לדוגמה: תקווה משולם)" 
+            className="w-full p-4 bg-slate-50 border border-slate-100 rounded-[1.2rem] focus:ring-2 outline-none text-center text-lg font-bold transition-all" 
+           style={{ '--tw-ring-color': primary }} 
+           required 
+           />
+            
             <div className="flex items-start gap-2 text-right mt-2">
-              <input type="checkbox" required id="terms" checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} className="mt-1 w-4 h-4 cursor-pointer" />
+              <input 
+                type="checkbox" 
+                required 
+                id="terms" 
+                checked={termsAccepted} 
+                onChange={(e) => setTermsAccepted(e.target.checked)} 
+                className="mt-1 w-4 h-4 cursor-pointer shrink-0" 
+              />
               <label htmlFor="terms" className="text-xs font-medium text-slate-500 leading-tight">
                 אני מסכים/ה ל<a href="/terms" target="_blank" className="underline font-bold">תנאי השימוש</a> ול<a href="/privacy" target="_blank" className="underline font-bold">מדיניות הפרטיות</a> של Eventick, ומאשר/ת את הצגת שמי ותמונותיי לשאר אורחי האירוע.
               </label>
             </div>
-            <button type="submit" className="w-full text-white font-black py-4 rounded-[1.2rem] text-lg shadow-lg hover:scale-[1.02] transition-transform mt-4" style={{ backgroundColor: primary }}>היכנסו לאירוע</button>
+            
+            <button type="submit" className="w-full text-white font-black py-4 rounded-[1.2rem] text-lg shadow-lg hover:scale-[1.02] transition-transform mt-4" style={{ backgroundColor: primary }}>
+              היכנסו לאירוע
+            </button>
+
+            <button 
+              type="button" 
+              onClick={() => navigate('/')} 
+              className="w-full text-slate-400 hover:text-slate-600 font-bold text-sm py-2 transition-colors flex items-center justify-center gap-1 mt-2"
+            >
+              <ChevronRight size={16} /> חזור לעמוד הסריקה
+            </button>
           </form>
         </div>
       </div>

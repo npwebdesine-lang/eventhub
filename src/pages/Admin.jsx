@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { 
   Settings, Plus, Calendar, LogOut, Loader2, X, 
-  Save, Image as ImageIcon, Trash2, DownloadCloud, Share2, Check, Users, QrCode, Heart, ChevronRight, Camera, User, Sparkles, Edit2, Zap, Target, ListPlus, Wine, Briefcase, Music, PartyPopper, Gem, Link, UploadCloud, Car, CheckCircle2, Download, Info, Palette
+  Save, Image as ImageIcon, Trash2, DownloadCloud, Share2, Check, Users, QrCode, Heart, ChevronRight, Camera, User, Sparkles, Edit2, Zap, Target, ListPlus, Wine, Briefcase, Music, PartyPopper, Gem, Link, UploadCloud, Car, CheckCircle2, Download, Info, Palette, ShieldAlert
 } from 'lucide-react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
@@ -69,6 +69,11 @@ const Admin = () => {
   const [editingRsvpId, setEditingRsvpId] = useState(null);
   const [editRsvpName, setEditRsvpName] = useState('');
 
+  // --- מרכז הדיווחים והמודרציה ---
+  const [isReportsModalOpen, setIsReportsModalOpen] = useState(false);
+  const [reportsList, setReportsList] = useState([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => { setSession(session); setAuthLoading(false); if (session) fetchEvents(); });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => { setSession(session); if (session) fetchEvents(); });
@@ -85,7 +90,7 @@ const Admin = () => {
       name: event.name, 
       event_date: event.event_date || '', 
       location: event.location || '',
-      short_code: event.short_code || '', // <--- שדה חדש
+      short_code: event.short_code || '',
       active_modules: { photo: false, seating: false, dating: false, icebreaker: false, rideshare: false, rsvp: false, ...event.active_modules }, 
       design_config: {
         template: event.design_config?.template || 'glass',
@@ -99,7 +104,7 @@ const Admin = () => {
   const handleCreateNew = () => { 
     setSelectedEvent({ id: null, isNew: true }); 
     setFormData({ 
-      name: '', event_date: '', location: '', short_code: '', // <--- שדה חדש
+      name: '', event_date: '', location: '', short_code: '',
       active_modules: { photo: false, seating: false, dating: false, icebreaker: false, rideshare: false, rsvp: false }, 
       design_config: { 
         template: 'glass', 
@@ -112,7 +117,6 @@ const Admin = () => {
 
   const handleSave = async () => { 
     if (!formData.name) return alert("יש להזין שם אירוע"); 
-    // וידוא שהקוד קצר אותיות גדולות בלבד וללא רווחים
     const payloadToSave = {
       ...formData,
       short_code: formData.short_code ? formData.short_code.trim().toUpperCase() : null
@@ -130,7 +134,7 @@ const Admin = () => {
       setSelectedEvent(null); 
       fetchEvents(); 
     } catch (error) { 
-      if (error.code === '23505') { // Code for unique constraint violation
+      if (error.code === '23505') { 
         alert('הקוד הקצר הזה כבר תפוס על ידי אירוע אחר. אנא בחרו קוד אחר.');
       } else {
         alert(error.message); 
@@ -152,7 +156,8 @@ const Admin = () => {
         supabase.from('icebreaker_missions').delete().eq('event_id', selectedEvent.id),
         supabase.from('icebreaker_profiles').delete().eq('event_id', selectedEvent.id),
         supabase.from('rsvps').delete().eq('event_id', selectedEvent.id),
-        supabase.from('rideshares').delete().eq('event_id', selectedEvent.id)
+        supabase.from('rideshares').delete().eq('event_id', selectedEvent.id),
+        supabase.from('reports').delete().eq('event_id', selectedEvent.id) // מחיקת דיווחים
       ]);
       const { error } = await supabase.from('events').delete().eq('id', selectedEvent.id); 
       if (error) throw error;
@@ -209,6 +214,47 @@ const Admin = () => {
   const startEditingRsvp = (rsvp) => { setEditingRsvpId(rsvp.id); setEditRsvpName(rsvp.guest_name); };
   const saveRsvpEdit = async (rsvpId) => { if (!editRsvpName.trim()) return alert("חובה להזין שם"); try { const { error } = await supabase.from('rsvps').update({ guest_name: editRsvpName }).eq('id', rsvpId); if (error) throw error; setRsvpList(prev => prev.map(r => r.id === rsvpId ? { ...r, guest_name: editRsvpName } : r)); setEditingRsvpId(null); } catch (error) { alert("שגיאה בעדכון"); } };
   const exportRsvpToCSV = () => { const sorted = [...rsvpList].sort((a, b) => a.group_id.localeCompare(b.group_id)); let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; csvContent += "שם האורח,מי מילא את הטופס,טלפון,תאריך רישום\n"; sorted.forEach(row => { const date = new Date(row.created_at).toLocaleDateString('he-IL'); csvContent += `"${row.guest_name}","${row.submitter_name}","${row.submitter_phone}","${date}"\n`; }); const encodedUri = encodeURI(csvContent); const link = document.createElement("a"); link.setAttribute("href", encodedUri); link.setAttribute("download", `RSVP_${formData.name}.csv`); document.body.appendChild(link); link.click(); document.body.removeChild(link); };
+
+  // פונקציות המודרציה
+  const openReportsManager = async () => {
+    setIsReportsModalOpen(true);
+    setReportsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('reports')
+        .select('*')
+        .eq('event_id', selectedEvent.id)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      setReportsList(data || []);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setReportsLoading(false);
+    }
+  };
+
+  const handleResolveReport = async (reportId, action, itemType, itemId) => {
+    try {
+      if (action === 'delete_item') {
+        if (!window.confirm("פעולה בלתי הפיכה! האם למחוק את התוכן שדווח מהמערכת לחלוטין?")) return;
+        
+        if (itemType === 'photo') {
+          await supabase.from('photos').delete().eq('id', itemId);
+        } else if (itemType === 'icebreaker') {
+          await supabase.from('icebreaker_matches').delete().eq('id', itemId);
+        }
+        alert("התוכן הפוגעני נמחק בהצלחה.");
+      }
+      
+      await supabase.from('reports').update({ status: 'resolved' }).eq('id', reportId);
+      setReportsList(prev => prev.filter(r => r.id !== reportId));
+      
+    } catch (error) {
+      alert("שגיאה בטיפול בדיווח");
+    }
+  };
 
   if (authLoading) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="animate-spin text-indigo-600" size={48} /></div>;
   if (!session) { return ( <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4" dir="rtl"><form onSubmit={handleLogin} className="bg-white p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-slate-200"><div className="text-center mb-8"><h1 className="text-3xl font-black text-slate-800">Event Manager</h1><p className="text-slate-500 mt-2">ניהול מערכת האירועים שלך</p></div><div className="space-y-4"><input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="אימייל" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all" dir="ltr" /><input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="סיסמה" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all" dir="ltr" /><button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all">התחבר למערכת</button></div></form></div> ); }
@@ -282,7 +328,6 @@ const Admin = () => {
                   <input type="text" value={formData.location || ''} onChange={e => setFormData({...formData, location: e.target.value})} placeholder="לדוגמה: אולמי שושנים, תל אביב" className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm" />
                 </div>
 
-                {/* אזור קוד האירוע */}
                 <div className="space-y-2 bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100">
                   <label className="text-sm font-bold text-indigo-900 block">קוד כניסה לאורחים (אופציונלי)</label>
                   <p className="text-xs text-indigo-700/70 mb-3">יאפשר לאורחים להיכנס לאפליקציה על ידי הקלדת קוד במקום סריקת QR.</p>
@@ -375,7 +420,16 @@ const Admin = () => {
                   )}
                 </div>
                 
-                {!selectedEvent.isNew && (<button onClick={() => setIsQrModalOpen(true)} className="w-full mt-4 bg-slate-900 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-all"><QrCode size={20} /> הפק שילוט QR לאירוע</button>)}
+                {!selectedEvent.isNew && (
+                  <div className="pt-4 border-t border-slate-100 space-y-3">
+                    <button onClick={() => setIsQrModalOpen(true)} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-all"><QrCode size={20} /> הפק שילוט QR לאירוע</button>
+                    
+                    {/* כפתור מרכז הדיווחים */}
+                    <button onClick={openReportsManager} className="w-full bg-rose-50 text-rose-600 border border-rose-200 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-rose-100 transition-all">
+                      <ShieldAlert size={20} /> מרכז דיווחים (UGC)
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* מודולים */}
@@ -438,11 +492,57 @@ const Admin = () => {
         </div>
       )}
 
-      {/* === פופ-אפ מנהל RSVP === */}
+      {/* --- פופ-אפ מרכז הדיווחים --- */}
+      {isReportsModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[200]">
+          <div className="bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]">
+            <div className="p-6 md:p-8 border-b border-slate-100 flex justify-between items-center bg-rose-50/50 shrink-0">
+              <div>
+                <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2"><ShieldAlert className="text-rose-500"/> מרכז דיווחים</h2>
+                <p className="text-rose-600 font-bold mt-1">ממתינים לטיפול: {reportsList.length}</p>
+              </div>
+              <button onClick={() => setIsReportsModalOpen(false)} className="p-2 hover:bg-rose-100 text-rose-600 rounded-full transition-colors"><X size={24} /></button>
+            </div>
+            <div className="flex-1 bg-slate-50 p-6 md:p-8 overflow-y-auto">
+              {reportsLoading ? (
+                <div className="flex justify-center py-20"><Loader2 className="animate-spin text-rose-500" size={48} /></div>
+              ) : reportsList.length === 0 ? (
+                <div className="text-center py-20 text-slate-400">
+                  <CheckCircle2 size={48} className="mx-auto mb-3 opacity-20" />
+                  <p className="font-medium text-lg">איזה שקט... אין דיווחים לטיפול.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {reportsList.map(report => (
+                    <div key={report.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className="text-xs font-bold px-2 py-1 rounded bg-slate-100 text-slate-600 uppercase tracking-widest mb-2 inline-block">סוג: {report.item_type}</span>
+                          <p className="text-sm font-medium text-slate-600">ID פריט: <span className="font-mono text-xs">{report.reported_item_id}</span></p>
+                          <p className="text-xs text-slate-400 mt-1">דווח בתאריך: {new Date(report.created_at).toLocaleDateString('he-IL')} {new Date(report.created_at).toLocaleTimeString('he-IL')}</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 mt-2 pt-3 border-t border-slate-50">
+                        <button onClick={() => handleResolveReport(report.id, 'delete_item', report.item_type, report.reported_item_id)} className="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-bold py-2 rounded-xl text-sm transition-colors">
+                          מחק תוכן פוגעני
+                        </button>
+                        <button onClick={() => handleResolveReport(report.id, 'dismiss')} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-sm transition-colors">
+                          סגור כדיווח שווא
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- שאר הפופאפים ... --- */}
       {isRsvpManagerOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[200]">
           <div className="bg-white w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]">
-            
             <div className="p-6 md:p-8 border-b border-slate-100 flex justify-between items-center bg-blue-50/50 shrink-0">
               <div>
                 <h2 className="text-2xl font-black text-slate-800">אישורי הגעה (RSVP)</h2>
@@ -455,7 +555,6 @@ const Admin = () => {
                 <button onClick={() => setIsRsvpManagerOpen(false)} className="p-2 hover:bg-blue-100 text-blue-600 rounded-full transition-colors"><X size={24} /></button>
               </div>
             </div>
-
             <div className="flex-1 bg-slate-50 p-6 md:p-8 overflow-y-auto">
               {rsvpLoading ? (
                 <div className="flex justify-center py-20"><Loader2 className="animate-spin text-blue-500" size={48} /></div>
@@ -468,7 +567,6 @@ const Admin = () => {
                 <div className="space-y-3">
                   {rsvpList.map(guest => (
                     <div key={guest.id} className="bg-white p-4 rounded-2xl border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between shadow-sm hover:border-blue-200 transition-colors gap-4">
-                      
                       <div className="flex-1 w-full">
                         {editingRsvpId === guest.id ? (
                           <div className="flex items-center gap-2">
@@ -481,7 +579,6 @@ const Admin = () => {
                           </div>
                         )}
                       </div>
-
                       <div className="flex items-center justify-end gap-2 shrink-0 bg-slate-50 p-1.5 rounded-xl w-full md:w-auto">
                         {editingRsvpId === guest.id ? (
                           <>
@@ -496,7 +593,6 @@ const Admin = () => {
                           </>
                         )}
                       </div>
-
                     </div>
                   ))}
                 </div>
@@ -506,7 +602,6 @@ const Admin = () => {
         </div>
       )}
 
-      {/* --- שאר הפופאפים ... --- */}
       {isGalleryOpen && ( <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-md flex flex-col animate-in fade-in duration-300"><div className="p-6 md:p-8 flex justify-between items-center bg-white"><div><h2 className="text-3xl font-black text-slate-800">גלריית האירוע</h2></div><button onClick={() => setIsGalleryOpen(false)} className="bg-slate-100 text-slate-600 p-3 rounded-xl"><X size={24} /></button></div><div className="flex-1 overflow-y-auto p-6 md:p-10"><div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">{galleryPhotos.map(photo => (<div key={photo.id} className="relative group rounded-2xl overflow-hidden aspect-square"><img src={photo.image_url} className="w-full h-full object-cover" /><button onClick={() => handleDeletePhoto(photo)} className="absolute top-2 right-2 bg-rose-500 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100"><Trash2 size={16} /></button></div>))}</div></div></div> )}
       {isSeatingModalOpen && ( <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[200]"><div className="bg-white w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]"><div className="p-8 border-b border-slate-100 flex justify-between items-center bg-emerald-50/50 shrink-0"><div><h2 className="text-2xl font-black text-slate-800">ניהול הושבה</h2><p className="text-emerald-600 font-bold mt-1">סה"כ במערכת: {savedGuestsCount} אורחים</p></div><button onClick={() => setIsSeatingModalOpen(false)} className="p-2 hover:bg-emerald-100 text-emerald-600 rounded-full transition-colors"><X size={28} /></button></div><div className="flex flex-col md:flex-row flex-1 overflow-hidden"><div className="w-full md:w-1/2 p-8 border-l border-slate-100 flex flex-col bg-white shrink-0"><textarea value={seatingText} onChange={e => setSeatingText(e.target.value)} placeholder="ישראל ישראלי 12&#10;שרה כהן - 5" className="w-full flex-1 p-4 bg-slate-50 border border-slate-200 rounded-2xl min-h-[200px]" /><button onClick={handleSaveSeating} className="w-full mt-4 bg-emerald-500 text-white font-black py-4 rounded-2xl hover:bg-emerald-600">פענח והוסף לרשימה</button></div><div className="w-full md:w-1/2 bg-slate-50 p-8 overflow-y-auto"><div className="space-y-3">{seatingGuests.map(guest => (<div key={guest.id} className="bg-white p-3 rounded-2xl flex justify-between"><div className="flex items-center gap-3"><div className="bg-emerald-100 text-emerald-700 w-10 h-10 flex items-center justify-center rounded-xl">{guest.table_number}</div><span className="font-bold text-slate-700">{guest.guest_name}</span></div><button onClick={() => handleDeleteGuest(guest.id, guest.guest_name)} className="text-rose-500"><Trash2 size={16} /></button></div>))}</div></div></div></div></div> )}
       {isQrModalOpen && selectedEvent && ( <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[200]"><div className="bg-white w-full max-w-md rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"><div className="p-6 flex justify-between items-center bg-slate-50"><h2 className="text-2xl font-black text-slate-800">QR מעוצב</h2><button onClick={() => setIsQrModalOpen(false)}><X size={24}/></button></div><div className="p-6"><AdminQRGenerator key={selectedEvent.id} defaultUrl={`${window.location.origin}/event/${selectedEvent.id}`} defaultColor={formData.design_config?.colors?.primary || '#3b82f6'} /></div></div></div> )}

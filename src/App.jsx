@@ -5,6 +5,8 @@ import Invite from './pages/Invite';
 import Home from './pages/Home';
 import Admin from './pages/Admin';
 import Album from './pages/Album';
+import Privacy from './pages/Privacy'; // שנה את הנתיב בהתאם למיקום הקבצים שלך
+import Terms from './pages/Terms';
 
 // ייבוא המודולים
 import Photos from './modules/Photos';
@@ -21,6 +23,8 @@ function App() {
         <Route path="/invite/:id" element={<Invite />} />
         <Route path="/event/:id" element={<Home />} />
         <Route path="/album/:id" element={<Album />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
         
         {/* מודולים */}
         <Route path="/photos" element={<Photos />} />
