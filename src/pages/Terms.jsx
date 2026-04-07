@@ -57,7 +57,7 @@ const Terms = () => {
 
           <h3 className="text-xl font-bold text-slate-800 mt-8 mb-4">6. יצירת קשר</h3>
           <p>
-            לדיווח על הפרת תקנון או פניות כלליות, ניתן לפנות אלינו ב: <a href="mailto:support@eventick.app" className="text-indigo-600 font-bold">support@eventick.app</a>.
+            לדיווח על הפרת תקנון או פניות כלליות, ניתן לפנות אלינו ב: <a href="mailto:np.web.desine@gmail.com" className="text-indigo-600 font-bold">support@eventick.app</a>.
           </p>
         </div>
       </div>

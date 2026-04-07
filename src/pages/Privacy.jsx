@@ -54,7 +54,7 @@ const Privacy = () => {
 
           <h3 className="text-xl font-bold text-slate-800 mt-8 mb-4">6. יצירת קשר</h3>
           <p>
-            לכל שאלה הנוגעת לפרטיות או לבקשת מחיקת נתונים, ניתן לפנות אלינו בכתובת האימייל: <a href="mailto:support@eventick.app" className="text-indigo-600 font-bold">support@eventick.app</a>.
+            לכל שאלה הנוגעת לפרטיות או לבקשת מחיקת נתונים, ניתן לפנות אלינו בכתובת האימייל: <a href="mailto:np.web.desine@gmail.com" className="text-indigo-600 font-bold">support@eventick.app</a>.
           </p>
         </div>
       </div>
