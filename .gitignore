@@ -27,3 +27,12 @@ dist-ssr
 .env
 .env.local
 .env.*
+
+# Android & Capacitor files to ignore
+android/local.properties
+android/app/build/
+android/app/release/
+*.apk
+*.aab
+*.jks
+*.keystore

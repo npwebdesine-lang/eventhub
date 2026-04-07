@@ -13,7 +13,7 @@ const Terms = () => {
         </button>
         
         <h1 className="text-3xl md:text-4xl font-black text-slate-800 mb-2">תנאי שימוש</h1>
-        <p className="text-slate-500 font-medium mb-8">תאריך עדכון אחרון: [תאריך של היום]</p>
+        <p className="text-slate-500 font-medium mb-8">תאריך עדכון אחרון: 7 באפריל 2026</p>
 
         <div className="prose prose-slate max-w-none text-slate-700 space-y-6">
           <p>
@@ -57,7 +57,7 @@ const Terms = () => {
 
           <h3 className="text-xl font-bold text-slate-800 mt-8 mb-4">6. יצירת קשר</h3>
           <p>
-            לדיווח על הפרת תקנון או פניות כלליות, ניתן לפנות אלינו ב: <a href="mailto:[כתובת האימייל שלך]" className="text-indigo-600 font-bold">[כתובת האימייל שלך]</a>.
+            לדיווח על הפרת תקנון או פניות כלליות, ניתן לפנות אלינו ב: <a href="mailto:support@eventick.app" className="text-indigo-600 font-bold">support@eventick.app</a>.
           </p>
         </div>
       </div>

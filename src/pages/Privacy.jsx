@@ -13,7 +13,7 @@ const Privacy = () => {
         </button>
         
         <h1 className="text-3xl md:text-4xl font-black text-slate-800 mb-2">מדיניות פרטיות</h1>
-        <p className="text-slate-500 font-medium mb-8">תאריך עדכון אחרון: [תאריך של היום]</p>
+        <p className="text-slate-500 font-medium mb-8">תאריך עדכון אחרון: 7 באפריל 2026</p>
 
         <div className="prose prose-slate max-w-none text-slate-700 space-y-6">
           <p>
@@ -44,7 +44,7 @@ const Privacy = () => {
           <h3 className="text-xl font-bold text-slate-800 mt-8 mb-4">4. שמירת נתונים ומחיקתם (זכות להישכח)</h3>
           <p>
             אנו שומרים את הנתונים שלך רק כל עוד הם נדרשים לצורך אספקת השירות. אורח או מפיק זכאי לבקש את מחיקת המידע האישי שלו מהמערכת בכל עת. למחיקת נתונים, ניתן להשתמש בכפתור "פרישה מהמשחק/הסרת חשבון" באפליקציה או לפנות אלינו ישירות. 
-            <strong>לתשומת לב מפיקי האירוע:</strong> נתוני האירועים עשויים להימחק משרתינו [X] ימים לאחר תום האירוע, אלא אם הוסכם אחרת.
+            <strong>לתשומת לב מפיקי האירוע:</strong> נתוני האירועים עשויים להימחק משרתינו 30 ימים לאחר תום האירוע, אלא אם הוסכם אחרת.
           </p>
 
           <h3 className="text-xl font-bold text-slate-800 mt-8 mb-4">5. קטינים</h3>
@@ -54,7 +54,7 @@ const Privacy = () => {
 
           <h3 className="text-xl font-bold text-slate-800 mt-8 mb-4">6. יצירת קשר</h3>
           <p>
-            לכל שאלה הנוגעת לפרטיות או לבקשת מחיקת נתונים, ניתן לפנות אלינו בכתובת האימייל: <a href="mailto:[כתובת האימייל שלך]" className="text-indigo-600 font-bold">[כתובת האימייל שלך]</a>.
+            לכל שאלה הנוגעת לפרטיות או לבקשת מחיקת נתונים, ניתן לפנות אלינו בכתובת האימייל: <a href="mailto:support@eventick.app" className="text-indigo-600 font-bold">support@eventick.app</a>.
           </p>
         </div>
       </div>
