@@ -219,12 +219,10 @@ const Invite = () => {
         guest_name: name.trim(),
       }));
       // שימוש ב-upsert כדי למנוע כפילויות במקרה של שליחה כפולה. (מומלץ להוסיף Unique Constraint בבסיס הנתונים על event_id + guest_name)
-      const { error } = await supabase
-        .from("rsvps")
-        .upsert(inserts, {
-          onConflict: "event_id, guest_name",
-          ignoreDuplicates: true,
-        });
+      const { error } = await supabase.from("rsvps").upsert(inserts, {
+        onConflict: "event_id, guest_name",
+        ignoreDuplicates: true,
+      });
       if (error) throw error;
 
       setRsvpStep(4);

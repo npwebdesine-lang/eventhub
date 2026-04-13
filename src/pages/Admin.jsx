@@ -37,6 +37,7 @@ import {
   Info,
   Palette,
   ShieldAlert,
+  MessageCircle,
 } from "lucide-react";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
@@ -122,17 +123,27 @@ const Admin = () => {
   const [isReportsModalOpen, setIsReportsModalOpen] = useState(false);
   const [reportsList, setReportsList] = useState([]);
   const [reportsLoading, setReportsLoading] = useState(false);
+
+  // --- ניהול ברכות ---
+  const [isBlessingsManagerOpen, setIsBlessingsManagerOpen] = useState(false);
+  const [blessingsList, setBlessingsList] = useState([]);
+  const [blessingsLoading, setBlessingsLoading] = useState(false);
+  const [editingBlessingId, setEditingBlessingId] = useState(null);
+  const [editBlessingName, setEditBlessingName] = useState("");
+  const [editBlessingMessage, setEditBlessingMessage] = useState("");
+
   const [eventStats, setEventStats] = useState({
     rsvps: 0,
     photos: 0,
     dating: 0,
     reports: 0,
+    blessings: 0, // התווסף נתון לברכות
   });
 
   useEffect(() => {
     if (selectedEvent && !selectedEvent.isNew) {
       const fetchStats = async () => {
-        const [rsvps, photos, dating, reports] = await Promise.all([
+        const [rsvps, photos, dating, reports, blessings] = await Promise.all([
           supabase
             .from("rsvps")
             .select("id", { count: "exact", head: true })
@@ -150,12 +161,17 @@ const Admin = () => {
             .select("id", { count: "exact", head: true })
             .eq("event_id", selectedEvent.id)
             .eq("status", "pending"),
+          supabase
+            .from("blessings")
+            .select("id", { count: "exact", head: true })
+            .eq("event_id", selectedEvent.id),
         ]);
         setEventStats({
           rsvps: rsvps.data?.length ?? rsvps.count ?? 0,
           photos: photos.data?.length ?? photos.count ?? 0,
           dating: dating.data?.length ?? dating.count ?? 0,
           reports: reports.data?.length ?? reports.count ?? 0,
+          blessings: blessings.data?.length ?? blessings.count ?? 0,
         });
       };
       fetchStats();
@@ -218,6 +234,7 @@ const Admin = () => {
         icebreaker: false,
         rideshare: false,
         rsvp: false,
+        blessings: false, // הוספת מודול ברכות
         ...event.active_modules,
       },
       design_config: {
@@ -246,6 +263,7 @@ const Admin = () => {
         icebreaker: false,
         rideshare: false,
         rsvp: false,
+        blessings: false, // הוספת מודול ברכות
       },
       design_config: {
         template: "glass",
@@ -320,7 +338,8 @@ const Admin = () => {
           .eq("event_id", selectedEvent.id),
         supabase.from("rsvps").delete().eq("event_id", selectedEvent.id),
         supabase.from("rideshares").delete().eq("event_id", selectedEvent.id),
-        supabase.from("reports").delete().eq("event_id", selectedEvent.id), // מחיקת דיווחים
+        supabase.from("reports").delete().eq("event_id", selectedEvent.id),
+        supabase.from("blessings").delete().eq("event_id", selectedEvent.id), // מחיקת ברכות
       ]);
       const { error } = await supabase
         .from("events")
@@ -754,6 +773,73 @@ const Admin = () => {
     }
   };
 
+  // פונקציות ניהול ברכות (Blessings)
+  const openBlessingsManager = async () => {
+    setIsBlessingsManagerOpen(true);
+    setBlessingsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("blessings")
+        .select("*")
+        .eq("event_id", selectedEvent.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setBlessingsList(data || []);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setBlessingsLoading(false);
+    }
+  };
+
+  const handleDeleteBlessing = async (blessingId, name) => {
+    if (!window.confirm(`האם אתה בטוח שברצונך למחוק את הברכה של ${name}?`))
+      return;
+    try {
+      await supabase.from("blessings").delete().eq("id", blessingId);
+      setBlessingsList((prev) => prev.filter((b) => b.id !== blessingId));
+      setEventStats((prev) => ({
+        ...prev,
+        blessings: Math.max(0, prev.blessings - 1),
+      }));
+    } catch (error) {
+      alert("שגיאה במחיקת הברכה");
+    }
+  };
+
+  const startEditingBlessing = (blessing) => {
+    setEditingBlessingId(blessing.id);
+    setEditBlessingName(blessing.guest_name);
+    setEditBlessingMessage(blessing.message);
+  };
+
+  const saveBlessingEdit = async (blessingId) => {
+    if (!editBlessingName.trim() || !editBlessingMessage.trim())
+      return alert("חובה להזין שם ותוכן ברכה");
+    try {
+      const { error } = await supabase
+        .from("blessings")
+        .update({ guest_name: editBlessingName, message: editBlessingMessage })
+        .eq("id", blessingId);
+      if (error) throw error;
+
+      setBlessingsList((prev) =>
+        prev.map((b) =>
+          b.id === blessingId
+            ? {
+                ...b,
+                guest_name: editBlessingName,
+                message: editBlessingMessage,
+              }
+            : b,
+        ),
+      );
+      setEditingBlessingId(null);
+    } catch (error) {
+      alert("שגיאה בעדכון הברכה");
+    }
+  };
+
   if (authLoading)
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -957,13 +1043,13 @@ const Admin = () => {
             </div>
 
             {!selectedEvent.isNew && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-8 md:p-10 pb-0">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-8 md:p-10 pb-0">
                 <div className="bg-blue-50/50 border border-blue-100 p-4 rounded-2xl flex items-center gap-4 hover:shadow-md transition-shadow">
                   <div className="bg-blue-500 text-white p-3 rounded-xl">
                     <Users size={20} />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-blue-600/70">
+                    <p className="text-xs font-bold text-blue-600/70">
                       אישורי הגעה
                     </p>
                     <p className="text-2xl font-black text-blue-700">
@@ -976,11 +1062,24 @@ const Admin = () => {
                     <ImageIcon size={20} />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-orange-600/70">
+                    <p className="text-xs font-bold text-orange-600/70">
                       תמונות באלבום
                     </p>
                     <p className="text-2xl font-black text-orange-700">
                       {eventStats.photos}
+                    </p>
+                  </div>
+                </div>
+                <div className="bg-purple-50/50 border border-purple-100 p-4 rounded-2xl flex items-center gap-4 hover:shadow-md transition-shadow">
+                  <div className="bg-purple-500 text-white p-3 rounded-xl">
+                    <MessageCircle size={20} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-purple-600/70">
+                      ברכות באלבום
+                    </p>
+                    <p className="text-2xl font-black text-purple-700">
+                      {eventStats.blessings}
                     </p>
                   </div>
                 </div>
@@ -989,7 +1088,7 @@ const Admin = () => {
                     <Heart size={20} />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-rose-600/70">
+                    <p className="text-xs font-bold text-rose-600/70">
                       משתמשי דייטליין
                     </p>
                     <p className="text-2xl font-black text-rose-700">
@@ -1002,7 +1101,7 @@ const Admin = () => {
                     <ShieldAlert size={20} />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-slate-500">
+                    <p className="text-xs font-bold text-slate-500">
                       דיווחים פתוחים
                     </p>
                     <p className="text-2xl font-black text-slate-700">
@@ -1359,6 +1458,7 @@ const Admin = () => {
                   מודולים ופיצ'רים
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* מודול אישורי הגעה */}
                   <div
                     className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.rsvp ? "border-blue-500 bg-blue-50/30" : "border-slate-100 opacity-60 grayscale"}`}
                   >
@@ -1411,6 +1511,58 @@ const Admin = () => {
                     )}
                   </div>
 
+                  {/* מודול ברכות - חדש */}
+                  <div
+                    className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.blessings ? "border-purple-500 bg-purple-50/30" : "border-slate-100 opacity-60 grayscale"}`}
+                  >
+                    <div className="flex justify-between items-start mb-6">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`p-3 rounded-xl ${formData.active_modules.blessings ? "bg-purple-500 text-white" : "bg-slate-200 text-slate-500"}`}
+                        >
+                          <MessageCircle size={24} />
+                        </div>
+                        <div>
+                          <h4 className="font-black text-lg text-slate-800">
+                            ספר ברכות דיגיטלי
+                          </h4>
+                          <span className="text-xs font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">
+                            כולל העלאת תמונות
+                          </span>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          className="sr-only peer"
+                          checked={formData.active_modules.blessings || false}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              active_modules: {
+                                ...formData.active_modules,
+                                blessings: e.target.checked,
+                              },
+                            })
+                          }
+                        />
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
+                      </label>
+                    </div>
+                    {formData.active_modules.blessings &&
+                      !selectedEvent.isNew && (
+                        <div className="animate-in fade-in">
+                          <button
+                            onClick={openBlessingsManager}
+                            className="w-full py-3 bg-white border border-purple-200 text-purple-600 font-bold rounded-xl hover:bg-purple-50 transition-colors flex justify-center items-center gap-2 shadow-sm"
+                          >
+                            <Settings size={18} /> ניהול הברכות
+                          </button>
+                        </div>
+                      )}
+                  </div>
+
+                  {/* מודול כל אחד צלם */}
                   <div
                     className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.photo ? "border-orange-500 bg-orange-50/30" : "border-slate-100 opacity-60 grayscale"}`}
                   >
@@ -1463,6 +1615,7 @@ const Admin = () => {
                     )}
                   </div>
 
+                  {/* מודול סידור הושבה */}
                   <div
                     className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.seating ? "border-emerald-500 bg-emerald-50/30" : "border-slate-100 opacity-60 grayscale"}`}
                   >
@@ -1508,6 +1661,7 @@ const Admin = () => {
                       )}
                   </div>
 
+                  {/* מודול דייטליין */}
                   <div
                     className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.dating ? "border-rose-500 bg-rose-50/30" : "border-slate-100 opacity-60 grayscale"}`}
                   >
@@ -1554,6 +1708,7 @@ const Admin = () => {
                     )}
                   </div>
 
+                  {/* מודול אייסברייקר */}
                   <div
                     className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.icebreaker ? "border-cyan-500 bg-cyan-50/30" : "border-slate-100 opacity-60 grayscale"}`}
                   >
@@ -1607,6 +1762,7 @@ const Admin = () => {
                       )}
                   </div>
 
+                  {/* מודול טרמפים */}
                   <div
                     className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.rideshare ? "border-amber-500 bg-amber-50/30" : "border-slate-100 opacity-60 grayscale"}`}
                   >
@@ -1742,7 +1898,139 @@ const Admin = () => {
         </div>
       )}
 
-      {/* --- שאר הפופאפים ... --- */}
+      {/* --- פופ-אפ ניהול ברכות (חדש) --- */}
+      {isBlessingsManagerOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[200]">
+          <div className="bg-white w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]">
+            <div className="p-6 md:p-8 border-b border-slate-100 flex justify-between items-center bg-purple-50/50 shrink-0">
+              <div>
+                <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
+                  <MessageCircle className="text-purple-600" /> ספר ברכות
+                </h2>
+                <p className="text-purple-600 font-bold mt-1">
+                  סה"כ ברכות נשלחו: {blessingsList.length}
+                </p>
+              </div>
+              <button
+                onClick={() => setIsBlessingsManagerOpen(false)}
+                className="p-2 hover:bg-purple-100 text-purple-600 rounded-full transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="flex-1 bg-slate-50 p-6 md:p-8 overflow-y-auto">
+              {blessingsLoading ? (
+                <div className="flex justify-center py-20">
+                  <Loader2 className="animate-spin text-purple-500" size={48} />
+                </div>
+              ) : blessingsList.length === 0 ? (
+                <div className="text-center py-20 text-slate-400">
+                  <CheckCircle2 size={48} className="mx-auto mb-3 opacity-20" />
+                  <p className="font-medium text-lg">עדיין אין ברכות בספר...</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {blessingsList.map((blessing) => (
+                    <div
+                      key={blessing.id}
+                      className={`bg-white p-5 rounded-2xl border flex flex-col shadow-sm transition-all ${editingBlessingId === blessing.id ? "border-purple-300 ring-2 ring-purple-100" : "border-slate-200 hover:border-purple-200"}`}
+                    >
+                      {editingBlessingId === blessing.id ? (
+                        <div className="space-y-3 w-full">
+                          <input
+                            type="text"
+                            value={editBlessingName}
+                            onChange={(e) =>
+                              setEditBlessingName(e.target.value)
+                            }
+                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-purple-500"
+                            placeholder="שם השולח"
+                          />
+                          <textarea
+                            value={editBlessingMessage}
+                            onChange={(e) =>
+                              setEditBlessingMessage(e.target.value)
+                            }
+                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500 h-24 resize-none"
+                            placeholder="תוכן הברכה"
+                          />
+                          <div className="flex justify-end gap-2 pt-2">
+                            <button
+                              onClick={() => setEditingBlessingId(null)}
+                              className="px-4 py-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors font-bold text-sm"
+                            >
+                              ביטול
+                            </button>
+                            <button
+                              onClick={() => saveBlessingEdit(blessing.id)}
+                              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl transition-colors font-bold text-sm flex items-center gap-1"
+                            >
+                              <Check size={16} /> שמור שינויים
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex justify-between items-start mb-3">
+                            <h4 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+                              {blessing.guest_name}
+                            </h4>
+                            <div className="flex items-center gap-1 bg-slate-50 rounded-lg p-1">
+                              <button
+                                onClick={() => startEditingBlessing(blessing)}
+                                className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
+                                title="ערוך ברכה"
+                              >
+                                <Edit2 size={16} />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleDeleteBlessing(
+                                    blessing.id,
+                                    blessing.guest_name,
+                                  )
+                                }
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
+                                title="מחק ברכה"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </div>
+                          <p className="text-slate-600 text-sm whitespace-pre-wrap mb-4 flex-1">
+                            {blessing.message}
+                          </p>
+                          {blessing.image_url && (
+                            <div className="mt-auto pt-4 border-t border-slate-100">
+                              <div className="flex items-center gap-2 text-xs font-bold text-slate-400 mb-2">
+                                <ImageIcon size={14} /> תמונה מצורפת:
+                              </div>
+                              <img
+                                src={blessing.image_url}
+                                alt="Selfie"
+                                className="w-full h-32 object-cover rounded-xl border border-slate-100"
+                              />
+                            </div>
+                          )}
+                          <div className="mt-auto pt-3 text-[10px] text-slate-400 font-mono">
+                            נשלח:{" "}
+                            {new Date(blessing.created_at).toLocaleString(
+                              "he-IL",
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- שאר הפופאפים... --- */}
       {isRsvpManagerOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[200]">
           <div className="bg-white w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]">
