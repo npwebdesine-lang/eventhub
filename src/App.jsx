@@ -17,7 +17,7 @@ import Photos from "./modules/Photos";
 import Rideshare from "./modules/Rideshare";
 import Dating from "./modules/Dating";
 import Icebreaker from "./modules/Icebreaker";
-import Blessing from "./modules/blessing";
+import BlessingModule from "./modules/BlessingModule";
 
 function App() {
   return (
@@ -108,10 +108,10 @@ function App() {
             }
           />
           <Route
-            path="/blessing"
+            path="/blessingModule"
             element={
               <ErrorBoundary>
-                <Blessing />
+                <BlessingModule />
               </ErrorBoundary>
             }
           />
