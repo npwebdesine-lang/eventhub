@@ -68,6 +68,7 @@ const COLOR_PRESETS = [
   { name: "יונה מדברית", primary: "#7a2e00", background: "#ffdcc2" },
   { name: "היער הקסום", primary: "#1e4d2b", background: "#d0f0c0" },
   { name: "לוליפופ", primary: "#7a0050", background: "#ffd1e8" },
+  { name: "קרמל מלוח", primary: "#2e1f26", background: "#c87740" },
 ];
 
 const Admin = () => {
