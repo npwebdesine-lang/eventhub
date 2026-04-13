@@ -30,7 +30,7 @@ const Dating = () => {
   const [chatHistory, setChatHistory] = useState([]);
   const [unreadCounts, setUnreadCounts] = useState({});
 
-  const [blockedUsers] = useState(() => JSON.parse(localStorage.getItem('blocked_users') || '[]'));
+  const [blockedUsers, setBlockedUsers] = useState(() => JSON.parse(localStorage.getItem('blocked_users') || '[]'));
 
   const guestName = localStorage.getItem('guest_name');
   const guestId = localStorage.getItem('guest_id');
@@ -138,6 +138,13 @@ const Dating = () => {
     }
   }, [view, regStep, profiles]);
 
+  // Auto-scroll logic for new messages
+  useEffect(() => {
+    if (view === 'chat' && chatBoxRef.current) {
+      chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
+    }
+  }, [messages, view]);
+
   // Realtime subscription for active chat
   useEffect(() => {
     if (view !== 'chat' || !activeChat) return;
@@ -155,9 +162,6 @@ const Dating = () => {
           (m.sender_id === activeChat.guest_id && m.receiver_id === guestId);
         if (isRelevant) {
           setMessages(prev => [...prev, m]);
-          setTimeout(() => {
-            if (chatBoxRef.current) chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
-          }, 50);
         }
       })
       .subscribe();
@@ -224,6 +228,7 @@ const Dating = () => {
 
     const newBlocked = [...blockedUsers, partnerId];
     localStorage.setItem('blocked_users', JSON.stringify(newBlocked));
+    setBlockedUsers(newBlocked);
 
     try {
       await supabase.from('reports').insert([{
@@ -267,9 +272,6 @@ const Dating = () => {
 
     const ordered = (data || []).reverse();
     setMessages(ordered);
-    setTimeout(() => {
-      if (chatBoxRef.current) chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
-    }, 100);
   };
 
   const sendMessage = async (e) => {

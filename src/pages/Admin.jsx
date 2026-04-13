@@ -448,6 +448,7 @@ const Admin = () => {
     try {
       await supabase.from("photos").delete().eq("id", photo.id);
       setGalleryPhotos((prev) => prev.filter((p) => p.id !== photo.id));
+      setEventStats((prev) => ({ ...prev, photos: Math.max(0, prev.photos - 1) }));
     } catch (error) {
       alert(error.message);
     }
@@ -558,6 +559,7 @@ const Admin = () => {
     try {
       await supabase.from("dating_profiles").delete().eq("id", profileId);
       setDatingProfiles((prev) => prev.filter((p) => p.id !== profileId));
+      setEventStats((prev) => ({ ...prev, dating: Math.max(0, prev.dating - 1) }));
     } catch (error) {
       alert("תקלה במחיקה");
     }
@@ -677,6 +679,7 @@ const Admin = () => {
     try {
       await supabase.from("rsvps").delete().eq("id", rsvpId);
       setRsvpList((prev) => prev.filter((r) => r.id !== rsvpId));
+      setEventStats((prev) => ({ ...prev, rsvps: Math.max(0, prev.rsvps - 1) }));
     } catch (error) {
       alert("שגיאה במחיקה");
     }

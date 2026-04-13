@@ -21,6 +21,51 @@ import {
 import gsap from "gsap";
 import { getLuminance } from "../lib/colors";
 
+// כפתורי פעולה משותפים (Moved outside to prevent re-mounting)
+const ActionButtons = ({ theme, active_modules, location, id, primaryColor, setShowRsvp, setRsvpStep, navigate }) => {
+  const isLight = theme === "light";
+  return (
+    <div
+      className="fade-up-item mt-8 pt-8 border-t border-opacity-20 space-y-4 relative z-20"
+      style={{ borderColor: isLight ? "#000000" : "#ffffff" }}
+    >
+      {active_modules?.rsvp !== false && (
+        <button
+          onClick={() => {
+            setShowRsvp(true);
+            setRsvpStep(1);
+          }}
+          className="w-full flex items-center justify-center gap-3 text-white font-black py-4 rounded-[1.5rem] text-lg shadow-xl hover:scale-[1.02] transition-transform"
+          style={{ backgroundColor: primaryColor }}
+        >
+          <CheckCircle2 size={24} /> אישור הגעה (RSVP)
+        </button>
+      )}
+      <div className="flex flex-col md:flex-row gap-3">
+        {location && (
+          <a
+            href={`https://waze.com/ul?q=${encodeURIComponent(location)}&navigate=yes`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`flex-1 flex items-center justify-center gap-2 font-bold py-4 rounded-[1.5rem] text-sm transition-all active:scale-95 shadow-sm ${isLight ? "bg-[#e5f0ff] text-[#007ee5] hover:bg-[#d0e6ff]" : "bg-[#007ee5]/20 text-[#3399ff] border border-[#007ee5]/30 hover:bg-[#007ee5]/30"}`}
+            title={`ניווט אל: ${location}`}
+          >
+            <Navigation size={18} /> נווט לאירוע
+          </a>
+        )}
+        {active_modules?.rideshare && (
+          <button
+            onClick={() => navigate(`/rideshare?event=${id}`)}
+            className={`flex-1 flex items-center justify-center gap-2 font-bold py-4 rounded-[1.5rem] text-sm transition-all active:scale-95 shadow-sm ${isLight ? "bg-slate-100 text-slate-800 hover:bg-slate-200" : "bg-white/10 text-white hover:bg-white/20 border border-white/10"}`}
+          >
+            <Car size={18} /> לוח טרמפים
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const Invite = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -266,51 +311,6 @@ const Invite = () => {
     timeLeft.minutes === 0 &&
     timeLeft.seconds === 0;
 
-  // כפתורי פעולה משותפים
-  const ActionButtons = ({ theme }) => {
-    const isLight = theme === "light";
-    return (
-      <div
-        className="fade-up-item mt-8 pt-8 border-t border-opacity-20 space-y-4 relative z-20"
-        style={{ borderColor: isLight ? "#000000" : "#ffffff" }}
-      >
-        {active_modules?.rsvp !== false && (
-          <button
-            onClick={() => {
-              setShowRsvp(true);
-              setRsvpStep(1);
-            }}
-            className="w-full flex items-center justify-center gap-3 text-white font-black py-4 rounded-[1.5rem] text-lg shadow-xl hover:scale-[1.02] transition-transform"
-            style={{ backgroundColor: primaryColor }}
-          >
-            <CheckCircle2 size={24} /> אישור הגעה (RSVP)
-          </button>
-        )}
-        <div className="flex flex-col md:flex-row gap-3">
-          {location && (
-            <a
-              href={`https://waze.com/ul?q=${encodeURIComponent(location)}&navigate=yes`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`flex-1 flex items-center justify-center gap-2 font-bold py-4 rounded-[1.5rem] text-sm transition-all active:scale-95 shadow-sm ${isLight ? "bg-[#e5f0ff] text-[#007ee5] hover:bg-[#d0e6ff]" : "bg-[#007ee5]/20 text-[#3399ff] border border-[#007ee5]/30 hover:bg-[#007ee5]/30"}`}
-              title={`ניווט אל: ${location}`}
-            >
-              <Navigation size={18} /> נווט לאירוע
-            </a>
-          )}
-          {active_modules?.rideshare && (
-            <button
-              onClick={() => navigate(`/rideshare?event=${id}`)}
-              className={`flex-1 flex items-center justify-center gap-2 font-bold py-4 rounded-[1.5rem] text-sm transition-all active:scale-95 shadow-sm ${isLight ? "bg-slate-100 text-slate-800 hover:bg-slate-200" : "bg-white/10 text-white hover:bg-white/20 border border-white/10"}`}
-            >
-              <Car size={18} /> לוח טרמפים
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  };
-
   const renderTemplate = () => {
     if (template === "elegant") {
       return (
@@ -424,7 +424,16 @@ const Invite = () => {
             <p className="fade-up-item text-slate-500 font-medium mb-8">
               ב- {new Date(event_date).toLocaleDateString("he-IL")}
             </p>
-            <ActionButtons theme="light" />
+            <ActionButtons 
+              theme="light" 
+              active_modules={active_modules}
+              id={id}
+              location={location}
+              primaryColor={primaryColor}
+              setShowRsvp={setShowRsvp}
+              setRsvpStep={setRsvpStep}
+              navigate={navigate} 
+            />
           </div>
         </div>
       );
@@ -519,7 +528,16 @@ const Invite = () => {
               )}
             </div>
             <div className="fade-up-item mt-8 bg-white p-6 rounded-2xl shadow-sm relative z-30">
-              <ActionButtons theme="light" />
+              <ActionButtons 
+                theme="light" 
+                active_modules={active_modules}
+                id={id}
+                location={location}
+                primaryColor={primaryColor}
+                setShowRsvp={setShowRsvp}
+                setRsvpStep={setRsvpStep}
+                navigate={navigate} 
+              />
             </div>
           </div>
         </div>
@@ -665,7 +683,16 @@ const Invite = () => {
             </div>
           )}
 
-          <ActionButtons theme={isLightBg ? "light" : "dark"} />
+          <ActionButtons 
+            theme={isLightBg ? "light" : "dark"} 
+            active_modules={active_modules}
+            id={id}
+            location={location}
+            primaryColor={primaryColor}
+            setShowRsvp={setShowRsvp}
+            setRsvpStep={setRsvpStep}
+            navigate={navigate} 
+          />
         </div>
       </div>
     );

@@ -64,6 +64,56 @@ const getGreeting = () => {
   return "לילה טוב";
 };
 
+// --- Improved Module Card (Moved outside to prevent re-mounting bugs) ---
+const CustomModuleCard = ({ mKey, onClick, hasBadge, openInfo }) => {
+  const info = MODULES_INFO[mKey];
+  if (!info) return null;
+  return (
+    <div
+      className="module-card-anim relative group bg-white rounded-[2rem] p-5 shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-slate-100/80 flex flex-col cursor-pointer hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-0.5 transition-all duration-200"
+      onClick={onClick}
+    >
+      {/* Info button */}
+      <button
+        onClick={(e) => openInfo(e, mKey)}
+        className="absolute top-3 left-3 text-slate-200 hover:text-slate-400 z-10 p-1 transition-colors"
+        aria-label="מידע"
+      >
+        <Info size={16} />
+      </button>
+
+      {/* Unread badge */}
+      {hasBadge && (
+        <span className="absolute top-3 right-3 flex h-3.5 w-3.5">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+          <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-rose-500 border-2 border-white"></span>
+        </span>
+      )}
+
+      {/* Icon */}
+      <div
+        className={`w-12 h-12 ${info.bg} rounded-[1rem] flex items-center justify-center mb-3 mt-1`}
+      >
+        <info.icon size={24} className={info.color} />
+      </div>
+
+      {/* Title + description */}
+      <h3 className="font-bold text-slate-800 text-sm leading-tight">
+        {info.title}
+      </h3>
+      <p className="text-slate-400 text-xs mt-1 leading-relaxed line-clamp-2">
+        {info.description}
+      </p>
+
+      {/* Arrow hint */}
+      <ChevronLeft
+        size={13}
+        className="absolute bottom-4 left-4 text-slate-200 group-hover:text-slate-400 transition-colors"
+      />
+    </div>
+  );
+};
+
 const Home = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -350,56 +400,6 @@ const Home = () => {
     );
   }
 
-  // --- Improved Module Card ---
-  const CustomModuleCard = ({ mKey, onClick, hasBadge }) => {
-    const info = MODULES_INFO[mKey];
-    if (!info) return null;
-    return (
-      <div
-        className="module-card-anim relative group bg-white rounded-[2rem] p-5 shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-slate-100/80 flex flex-col cursor-pointer hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-0.5 transition-all duration-200"
-        onClick={onClick}
-      >
-        {/* Info button */}
-        <button
-          onClick={(e) => openInfo(e, mKey)}
-          className="absolute top-3 left-3 text-slate-200 hover:text-slate-400 z-10 p-1 transition-colors"
-          aria-label="מידע"
-        >
-          <Info size={16} />
-        </button>
-
-        {/* Unread badge */}
-        {hasBadge && (
-          <span className="absolute top-3 right-3 flex h-3.5 w-3.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-rose-500 border-2 border-white"></span>
-          </span>
-        )}
-
-        {/* Icon */}
-        <div
-          className={`w-12 h-12 ${info.bg} rounded-[1rem] flex items-center justify-center mb-3 mt-1`}
-        >
-          <info.icon size={24} className={info.color} />
-        </div>
-
-        {/* Title + description */}
-        <h3 className="font-bold text-slate-800 text-sm leading-tight">
-          {info.title}
-        </h3>
-        <p className="text-slate-400 text-xs mt-1 leading-relaxed line-clamp-2">
-          {info.description}
-        </p>
-
-        {/* Arrow hint */}
-        <ChevronLeft
-          size={13}
-          className="absolute bottom-4 left-4 text-slate-200 group-hover:text-slate-400 transition-colors"
-        />
-      </div>
-    );
-  };
-
   // --- Main Event Screen ---
   return (
     <div
@@ -516,12 +516,14 @@ const Home = () => {
             <CustomModuleCard
               mKey="photo"
               onClick={() => navigate(`/photos?event=${id}`)}
+              openInfo={openInfo}
             />
           )}
           {active_modules.dating && (
             <CustomModuleCard
               mKey="dating"
               onClick={() => navigate(`/dating?event=${id}`)}
+              openInfo={openInfo}
               hasBadge={hasUnreadDating}
             />
           )}
@@ -529,12 +531,14 @@ const Home = () => {
             <CustomModuleCard
               mKey="icebreaker"
               onClick={() => navigate(`/icebreaker?event=${id}`)}
+              openInfo={openInfo}
             />
           )}
           {active_modules.rideshare && (
             <CustomModuleCard
               mKey="rideshare"
               onClick={() => navigate(`/rideshare?event=${id}`)}
+              openInfo={openInfo}
             />
           )}
         </div>
