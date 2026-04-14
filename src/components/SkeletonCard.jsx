@@ -4,7 +4,7 @@
  */
 
 /** Generic rectangular skeleton block */
-export const SkeletonBlock = ({ className = '' }) => (
+export const SkeletonBlock = ({ className = "" }) => (
   <div className={`animate-pulse bg-slate-200 rounded-2xl ${className}`} />
 );
 
@@ -25,7 +25,10 @@ export const PhotoGridSkeleton = ({ count = 6 }) => (
 export const ProfileCardSkeleton = ({ count = 2 }) => (
   <div className="flex gap-3 overflow-hidden">
     {Array.from({ length: count }).map((_, i) => (
-      <div key={i} className="animate-pulse bg-slate-200 rounded-[2rem] flex-shrink-0 w-64 h-80" />
+      <div
+        key={i}
+        className="animate-pulse bg-slate-200 rounded-[2rem] flex-shrink-0 w-64 h-80"
+      />
     ))}
   </div>
 );

@@ -1,5 +1,5 @@
-import { Component } from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { Component } from "react";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 
 /**
  * Catches runtime errors in the component tree and shows a Hebrew fallback UI.
@@ -21,7 +21,7 @@ class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, info) {
-    console.error('[ErrorBoundary] Caught error:', error, info.componentStack);
+    console.error("[ErrorBoundary] Caught error:", error, info.componentStack);
   }
 
   render() {
@@ -35,9 +35,12 @@ class ErrorBoundary extends Component {
             <div className="w-20 h-20 bg-rose-50 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6">
               <AlertTriangle size={36} className="text-rose-500" />
             </div>
-            <h2 className="text-2xl font-black text-slate-800 mb-2">משהו השתבש</h2>
+            <h2 className="text-2xl font-black text-slate-800 mb-2">
+              משהו השתבש
+            </h2>
             <p className="text-slate-500 font-medium mb-8 text-sm leading-relaxed">
-              קרתה שגיאה בלתי צפויה.<br />
+              קרתה שגיאה בלתי צפויה.
+              <br />
               נסו לרענן את הדף.
             </p>
             <button

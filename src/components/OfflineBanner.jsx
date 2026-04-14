@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { WifiOff, Wifi } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { WifiOff, Wifi } from "lucide-react";
 
 /**
  * Shows a fixed banner at the bottom of the screen when the user loses internet connection.
@@ -22,11 +22,11 @@ const OfflineBanner = () => {
       setShowRestored(false);
     };
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
   }, []);
 
@@ -39,7 +39,9 @@ const OfflineBanner = () => {
     >
       <div
         className={`flex items-center gap-3 px-5 py-3 rounded-2xl shadow-xl text-white text-sm font-bold transition-all duration-500 ${
-          isOnline ? 'bg-emerald-500 animate-in fade-in' : 'bg-slate-800 animate-in slide-in-from-bottom-4'
+          isOnline
+            ? "bg-emerald-500 animate-in fade-in"
+            : "bg-slate-800 animate-in slide-in-from-bottom-4"
         }`}
       >
         {isOnline ? (

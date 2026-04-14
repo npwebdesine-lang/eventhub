@@ -154,7 +154,11 @@ const Rideshare = () => {
 
   // Skip welcome screen if role was passed via URL param
   useEffect(() => {
-    if (!loading && eventData && (roleParam === "driver" || roleParam === "seeker")) {
+    if (
+      !loading &&
+      eventData &&
+      (roleParam === "driver" || roleParam === "seeker")
+    ) {
       setStep("form");
     }
   }, [loading, eventData, roleParam]);

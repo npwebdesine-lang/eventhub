@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion } from "framer-motion";
 
 const ModuleCard = ({ title, icon: Icon, color, onClick }) => {
   return (
@@ -10,7 +10,7 @@ const ModuleCard = ({ title, icon: Icon, color, onClick }) => {
                  border border-white/10 rounded-3xl shadow-2xl space-y-4 w-full aspect-square cursor-pointer"
     >
       <div className={`p-4 rounded-2xl ${color} bg-opacity-20`}>
-        <Icon size={32} className={color.replace('bg-', 'text-')} />
+        <Icon size={32} className={color.replace("bg-", "text-")} />
       </div>
       <span className="text-white font-semibold text-lg">{title}</span>
     </motion.button>

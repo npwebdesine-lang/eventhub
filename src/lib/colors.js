@@ -5,8 +5,12 @@
 
 export const getLuminance = (hex) => {
   if (!hex) return 0;
-  let color = hex.replace('#', '');
-  if (color.length === 3) color = color.split('').map(c => c + c).join('');
+  let color = hex.replace("#", "");
+  if (color.length === 3)
+    color = color
+      .split("")
+      .map((c) => c + c)
+      .join("");
   const r = parseInt(color.substr(0, 2), 16);
   const g = parseInt(color.substr(2, 2), 16);
   const b = parseInt(color.substr(4, 2), 16);
@@ -18,4 +22,4 @@ export const getLuminance = (hex) => {
  * Threshold: 150 luminance (0–255 scale)
  */
 export const getTextColor = (bgHex) =>
-  getLuminance(bgHex) > 150 ? '#1e293b' : '#ffffff';
+  getLuminance(bgHex) > 150 ? "#1e293b" : "#ffffff";

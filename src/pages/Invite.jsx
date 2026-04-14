@@ -22,7 +22,16 @@ import gsap from "gsap";
 import { getLuminance } from "../lib/colors";
 
 // כפתורי פעולה משותפים (Moved outside to prevent re-mounting)
-const ActionButtons = ({ theme, active_modules, location, id, primaryColor, setShowRsvp, setRsvpStep, navigate }) => {
+const ActionButtons = ({
+  theme,
+  active_modules,
+  location,
+  id,
+  primaryColor,
+  setShowRsvp,
+  setRsvpStep,
+  navigate,
+}) => {
   const isLight = theme === "light";
   return (
     <div
@@ -424,15 +433,15 @@ const Invite = () => {
             <p className="fade-up-item text-slate-500 font-medium mb-8">
               ב- {new Date(event_date).toLocaleDateString("he-IL")}
             </p>
-            <ActionButtons 
-              theme="light" 
+            <ActionButtons
+              theme="light"
               active_modules={active_modules}
               id={id}
               location={location}
               primaryColor={primaryColor}
               setShowRsvp={setShowRsvp}
               setRsvpStep={setRsvpStep}
-              navigate={navigate} 
+              navigate={navigate}
             />
           </div>
         </div>
@@ -528,15 +537,15 @@ const Invite = () => {
               )}
             </div>
             <div className="fade-up-item mt-8 bg-white p-6 rounded-2xl shadow-sm relative z-30">
-              <ActionButtons 
-                theme="light" 
+              <ActionButtons
+                theme="light"
                 active_modules={active_modules}
                 id={id}
                 location={location}
                 primaryColor={primaryColor}
                 setShowRsvp={setShowRsvp}
                 setRsvpStep={setRsvpStep}
-                navigate={navigate} 
+                navigate={navigate}
               />
             </div>
           </div>
@@ -683,15 +692,15 @@ const Invite = () => {
             </div>
           )}
 
-          <ActionButtons 
-            theme={isLightBg ? "light" : "dark"} 
+          <ActionButtons
+            theme={isLightBg ? "light" : "dark"}
             active_modules={active_modules}
             id={id}
             location={location}
             primaryColor={primaryColor}
             setShowRsvp={setShowRsvp}
             setRsvpStep={setRsvpStep}
-            navigate={navigate} 
+            navigate={navigate}
           />
         </div>
       </div>

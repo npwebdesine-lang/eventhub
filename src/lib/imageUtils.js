@@ -16,7 +16,10 @@
  * @param {number} options.quality   - JPEG quality 0–1 (default 0.82)
  * @returns {Promise<Blob>} Compressed JPEG blob
  */
-export const compressImage = (file, { maxWidth = 1200, maxHeight = 1200, quality = 0.82 } = {}) => {
+export const compressImage = (
+  file,
+  { maxWidth = 1200, maxHeight = 1200, quality = 0.82 } = {},
+) => {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
@@ -36,26 +39,26 @@ export const compressImage = (file, { maxWidth = 1200, maxHeight = 1200, quality
         height = maxHeight;
       }
 
-      const canvas = document.createElement('canvas');
+      const canvas = document.createElement("canvas");
       canvas.width = width;
       canvas.height = height;
 
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext("2d");
       ctx.drawImage(img, 0, 0, width, height);
 
       canvas.toBlob(
         (blob) => {
           if (blob) resolve(blob);
-          else reject(new Error('canvas.toBlob failed'));
+          else reject(new Error("canvas.toBlob failed"));
         },
-        'image/jpeg',
-        quality
+        "image/jpeg",
+        quality,
       );
     };
 
     img.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new Error('Failed to load image for compression'));
+      reject(new Error("Failed to load image for compression"));
     };
 
     img.src = url;
@@ -70,7 +73,14 @@ export const compressImage = (file, { maxWidth = 1200, maxHeight = 1200, quality
  * @returns {boolean}
  */
 export const isAllowedImageType = (file) => {
-  const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/gif'];
+  const ALLOWED_MIME = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/heic",
+    "image/heif",
+    "image/gif",
+  ];
   const ALLOWED_EXT = /\.(jpg|jpeg|png|webp|heic|heif|gif)$/i;
   return ALLOWED_MIME.includes(file.type) || ALLOWED_EXT.test(file.name);
 };

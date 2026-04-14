@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from "@supabase/supabase-js";
 
 // עכשיו השמות תואמים בול למה שכתבת בקובץ ה-.env!
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
