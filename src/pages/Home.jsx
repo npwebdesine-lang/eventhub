@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Camera,
@@ -73,57 +73,61 @@ const getGreeting = () => {
   return "לילה טוב";
 };
 
-// ---- Photo Carousel Card ----
-const PhotoCarouselCard = ({
+// Shared glassmorphism card style
+const GLASS =
+  "module-card-anim relative rounded-[2rem] overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.09)] bg-white/80 backdrop-blur-md border border-white/60";
+
+// ---- Photo Marquee Card ----
+const PhotoMarqueeCard = ({
   photos,
   primaryColor,
   eventId,
   navigate,
   openInfo,
 }) => {
-  const [idx, setIdx] = useState(0);
+  const trackRef = useRef(null);
 
   useEffect(() => {
-    if (photos.length <= 1) return;
-    const t = setInterval(() => setIdx((i) => (i + 1) % photos.length), 2800);
-    return () => clearInterval(t);
-  }, [photos.length]);
+    if (!trackRef.current || photos.length === 0) return;
+    const el = trackRef.current;
+    // function value evaluated when tween starts (after delay) so images have loaded
+    const tween = gsap.to(el, {
+      x: () => -(el.scrollWidth / 2),
+      duration: Math.max(12, photos.length * 2.2),
+      ease: "none",
+      repeat: -1,
+      delay: 0.9,
+    });
+    return () => tween.kill();
+  }, [photos]);
 
   return (
-    <div className="module-card-anim relative bg-white rounded-[2rem] overflow-hidden shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-slate-100">
+    <div className={`${GLASS} flex flex-col`}>
       <button
         onClick={(e) => openInfo(e, "photo")}
-        className="absolute top-3 left-3 text-slate-200 hover:text-slate-400 z-20 p-1 transition-colors"
+        className="absolute top-3 left-3 text-slate-300 hover:text-slate-500 z-20 p-1 transition-colors"
         aria-label="מידע"
       >
         <Info size={16} />
       </button>
 
-      {/* Carousel area */}
-      <div className="relative h-44 bg-slate-50 overflow-hidden">
-        {photos.length > 0 && photos[idx] ? (
-          <>
-            <img
-              key={idx}
-              src={photos[idx]?.image_url || ""}
-              alt="תמונה מהאירוע"
-              className="w-full h-full object-cover animate-in fade-in duration-700"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/35 to-transparent pointer-events-none" />
-            {photos.length > 1 && (
-              <div className="absolute bottom-2.5 left-0 right-0 flex justify-center gap-1.5 z-10">
-                {photos.slice(0, 8).map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setIdx(i)}
-                    className={`h-1 rounded-full transition-all ${
-                      i === idx ? "w-5 bg-white" : "w-1.5 bg-white/50"
-                    }`}
-                  />
-                ))}
-              </div>
-            )}
-          </>
+      {/* Marquee strip */}
+      <div className="relative h-36 md:h-44 overflow-hidden bg-slate-100/60">
+        {photos.length > 0 ? (
+          <div
+            ref={trackRef}
+            className="flex gap-2 h-full will-change-transform px-2 py-2"
+          >
+            {/* Duplicate for seamless loop */}
+            {[...photos, ...photos].map((photo, i) => (
+              <img
+                key={i}
+                src={photo?.image_url || ""}
+                alt=""
+                className="h-full w-28 object-cover rounded-xl shrink-0"
+              />
+            ))}
+          </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-full">
             <Camera size={36} className="text-slate-200" />
@@ -137,9 +141,7 @@ const PhotoCarouselCard = ({
       {/* Bottom */}
       <div className="p-4 text-center">
         <h3 className="font-black text-slate-800 text-sm mb-0.5">כל אחד צלם</h3>
-        <p className="text-slate-400 text-xs mb-3">
-          העלו תמונות לאלבום המשותף של האירוע
-        </p>
+        <p className="text-slate-400 text-xs mb-3">העלו תמונות לאלבום המשותף</p>
         <button
           onClick={() => navigate(`/photos?event=${eventId}`)}
           className="w-full font-bold py-3 rounded-[1rem] text-sm flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all text-white shadow-md"
@@ -164,38 +166,40 @@ const ActionModuleCard = ({
   if (!info) return null;
 
   return (
-    <div className="module-card-anim relative bg-white rounded-[2rem] p-5 shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-slate-100 flex flex-col items-center text-center">
+    <div
+      className={`${GLASS} p-4 flex flex-col items-center text-center h-full`}
+    >
       <button
         onClick={(e) => openInfo(e, mKey)}
-        className="absolute top-3 left-3 text-slate-200 hover:text-slate-400 z-10 p-1 transition-colors"
+        className="absolute top-2.5 left-2.5 text-slate-300 hover:text-slate-500 z-10 p-1 transition-colors"
         aria-label="מידע"
       >
-        <Info size={16} />
+        <Info size={14} />
       </button>
 
       {hasBadge && (
-        <span className="absolute top-3 right-3 flex h-3.5 w-3.5">
+        <span className="absolute top-2.5 right-2.5 flex h-3 w-3">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-rose-500 border-2 border-white" />
+          <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500 border-2 border-white" />
         </span>
       )}
 
       <div
-        className={`w-12 h-12 ${info.bg} rounded-[1rem] flex items-center justify-center mb-3 mt-1`}
+        className={`w-11 h-11 ${info.bg} rounded-[0.875rem] flex items-center justify-center mb-2.5 mt-1`}
       >
-        <info.icon size={24} className={info.color} />
+        <info.icon size={20} className={info.color} />
       </div>
 
-      <h3 className="font-black text-slate-800 text-sm leading-tight mb-1">
+      <h3 className="font-black text-slate-800 text-xs leading-tight mb-1">
         {info.title}
       </h3>
-      <p className="text-slate-400 text-xs leading-relaxed line-clamp-2 mb-3 flex-1">
+      <p className="text-slate-400 text-[11px] leading-relaxed line-clamp-3 mb-3 flex-1">
         {info.description}
       </p>
 
       <button
         onClick={onClick}
-        className="w-full font-bold py-2.5 rounded-[0.8rem] text-xs flex items-center justify-center gap-1.5 hover:opacity-80 active:scale-[0.98] transition-all"
+        className="w-full font-bold py-2 rounded-[0.8rem] text-xs flex items-center justify-center gap-1 hover:opacity-80 active:scale-[0.98] transition-all mt-auto"
         style={{ backgroundColor: `${primaryColor}18`, color: primaryColor }}
       >
         כניסה <ChevronLeft size={12} />
@@ -206,49 +210,49 @@ const ActionModuleCard = ({
 
 // ---- Rideshare Card (2 role buttons) ----
 const RideshareHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
-  <div className="module-card-anim relative bg-white rounded-[2rem] p-5 shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-slate-100 flex flex-col items-center text-center">
+  <div className={`${GLASS} p-4 flex flex-col items-center text-center h-full`}>
     <button
       onClick={(e) => openInfo(e, "rideshare")}
-      className="absolute top-3 left-3 text-slate-200 hover:text-slate-400 z-10 p-1 transition-colors"
+      className="absolute top-2.5 left-2.5 text-slate-300 hover:text-slate-500 z-10 p-1 transition-colors"
       aria-label="מידע"
     >
-      <Info size={16} />
+      <Info size={14} />
     </button>
 
-    <div className="w-12 h-12 bg-amber-50 rounded-[1rem] flex items-center justify-center mb-3 mt-1">
-      <Car size={24} className="text-amber-500" />
+    <div className="w-11 h-11 bg-amber-50 rounded-[0.875rem] flex items-center justify-center mb-2.5 mt-1">
+      <Car size={20} className="text-amber-500" />
     </div>
 
-    <h3 className="font-black text-slate-800 text-sm mb-1">לוח טרמפים</h3>
-    <p className="text-slate-400 text-xs mb-3 leading-relaxed">
+    <h3 className="font-black text-slate-800 text-xs mb-1">לוח טרמפים</h3>
+    <p className="text-slate-400 text-[11px] mb-3 leading-relaxed flex-1 line-clamp-3">
       שתפו נסיעות לאחר האירוע
     </p>
 
-    <div className="w-full space-y-2">
+    <div className="w-full space-y-1.5 mt-auto">
       <button
         onClick={() => navigate(`/rideshare?event=${eventId}&role=driver`)}
-        className="w-full font-bold py-2.5 rounded-[0.8rem] text-xs hover:opacity-90 active:scale-[0.98] transition-all text-white flex items-center justify-center gap-1.5"
+        className="w-full font-bold py-2 rounded-[0.8rem] text-xs hover:opacity-90 active:scale-[0.98] transition-all text-white flex items-center justify-center gap-1"
         style={{ backgroundColor: primaryColor }}
       >
-        <Car size={13} /> אני מציע 🚗
+        <Car size={12} /> אני מציע 🚗
       </button>
       <button
         onClick={() => navigate(`/rideshare?event=${eventId}&role=seeker`)}
-        className="w-full font-bold py-2.5 rounded-[0.8rem] text-xs hover:opacity-80 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
+        className="w-full font-bold py-2 rounded-[0.8rem] text-xs hover:opacity-80 active:scale-[0.98] transition-all flex items-center justify-center gap-1"
         style={{ backgroundColor: `${primaryColor}18`, color: primaryColor }}
       >
-        <Users size={13} /> אני מחפש 🙋
+        <Users size={12} /> אני מחפש 🙋
       </button>
     </div>
   </div>
 );
 
-// ---- Blessings Card (add only) ----
+// ---- Blessings Card ----
 const BlessingsHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
-  <div className="module-card-anim relative bg-white rounded-[2rem] p-5 shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-slate-100 flex flex-col items-center text-center">
+  <div className={`${GLASS} p-5 flex flex-col items-center text-center`}>
     <button
       onClick={(e) => openInfo(e, "blessings")}
-      className="absolute top-3 left-3 text-slate-200 hover:text-slate-400 z-10 p-1 transition-colors"
+      className="absolute top-3 left-3 text-slate-300 hover:text-slate-500 z-10 p-1 transition-colors"
       aria-label="מידע"
     >
       <Info size={16} />
@@ -273,6 +277,93 @@ const BlessingsHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
   </div>
 );
 
+// ---- Blessings Strip Ticker ----
+const BlessingsStrip = ({ eventId, primaryColor }) => {
+  const [blessing, setBlessing] = useState(null);
+  const trackRef = useRef(null);
+  const stripRef = useRef(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchLatest = async () => {
+      try {
+        const { data } = await supabase
+          .from("blessings")
+          .select("guest_name, message")
+          .eq("event_id", eventId)
+          .eq("is_approved", true)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (isMounted) setBlessing(data || null);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    fetchLatest();
+    return () => {
+      isMounted = false;
+    };
+  }, [eventId]);
+
+  // Entry animation
+  useEffect(() => {
+    if (!blessing || !stripRef.current) return;
+    gsap.fromTo(
+      stripRef.current,
+      { y: -12, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.45, ease: "power2.out" },
+    );
+  }, [blessing]);
+
+  // Ticker scroll
+  useEffect(() => {
+    if (!trackRef.current || !blessing) return;
+    const tween = gsap.to(trackRef.current, {
+      x: "-50%",
+      duration: 16,
+      ease: "none",
+      repeat: -1,
+    });
+    return () => tween.kill();
+  }, [blessing]);
+
+  if (!blessing) return null;
+
+  const text = `✨  "${blessing.message}"  —  ${blessing.guest_name}  `;
+
+  return (
+    <div
+      ref={stripRef}
+      className="overflow-hidden rounded-2xl py-2.5 mb-3 flex items-center"
+      style={{
+        backgroundColor: `${primaryColor}12`,
+        borderRight: `3px solid ${primaryColor}`,
+      }}
+    >
+      <div className="overflow-hidden flex-1">
+        <div
+          ref={trackRef}
+          className="flex whitespace-nowrap will-change-transform"
+        >
+          <span
+            className="text-sm font-medium px-4"
+            style={{ color: primaryColor }}
+          >
+            {text}
+          </span>
+          <span
+            className="text-sm font-medium px-4"
+            style={{ color: primaryColor }}
+          >
+            {text}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ---- Main Component ----
 const Home = () => {
   const { id } = useParams();
@@ -292,8 +383,9 @@ const Home = () => {
   const [hasUnreadDating, setHasUnreadDating] = useState(false);
   const [infoModal, setInfoModal] = useState(null);
 
-  // Photo carousel
   const [carouselPhotos, setCarouselPhotos] = useState([]);
+  const [activeModuleIdx, setActiveModuleIdx] = useState(0);
+  const modulesCarouselRef = useRef(null);
 
   // Fetch event data
   useEffect(() => {
@@ -381,11 +473,10 @@ const Home = () => {
     };
   }, [isRegistered, eventData, id]);
 
-  // Fetch carousel photos + realtime
+  // Fetch photos + realtime subscription
   useEffect(() => {
     if (!isRegistered || !eventData?.active_modules?.photo || !id) return;
     let isMounted = true;
-    // Unique channel name prevents React StrictMode double-invoke conflicts
     const channelId = `home_photos_${id}_${crypto.randomUUID()}`;
 
     const fetchPhotos = async () => {
@@ -398,7 +489,7 @@ const Home = () => {
           .limit(10);
         if (isMounted) setCarouselPhotos(data || []);
       } catch (e) {
-        console.error("Error fetching carousel photos:", e);
+        console.error("Error fetching photos:", e);
       }
     };
     fetchPhotos();
@@ -426,7 +517,7 @@ const Home = () => {
     };
   }, [isRegistered, eventData, id]);
 
-  // Animations
+  // GSAP entry animations
   useEffect(() => {
     if (isRegistered && eventData && !loading) {
       gsap.fromTo(
@@ -441,7 +532,7 @@ const Home = () => {
           y: 0,
           opacity: 1,
           duration: 0.6,
-          stagger: 0.1,
+          stagger: 0.08,
           ease: "back.out(1.2)",
         },
       );
@@ -520,6 +611,13 @@ const Home = () => {
   const { background = "#f8fafc", primary = "#3b82f6" } =
     design_config?.colors || {};
   const guestNameStr = localStorage.getItem("guest_name");
+
+  const secondaryModules = [
+    active_modules?.dating && "dating",
+    active_modules?.icebreaker && "icebreaker",
+    active_modules?.rideshare && "rideshare",
+    active_modules?.blessings && "blessings",
+  ].filter(Boolean);
 
   // --- Registration Screen ---
   if (!isRegistered) {
@@ -660,135 +758,194 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Cards */}
-      <div className="px-5 -mt-10 relative z-20 w-full max-w-md mx-auto flex-1 flex flex-col gap-4">
-        {/* Seating Card */}
-        {active_modules.seating && (
-          <div className="module-card-anim relative bg-white rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.07)] border border-slate-100">
-            <button
-              onClick={(e) => openInfo(e, "seating")}
-              className="absolute top-4 left-4 text-slate-200 hover:text-slate-400 z-10 p-1 transition-colors"
-              aria-label="מידע"
-            >
-              <Info size={16} />
-            </button>
+      {/* Content Area */}
+      <div className="px-3 -mt-10 relative z-20 w-full max-w-lg mx-auto flex-1 flex flex-col">
+        {/* Blessings Strip Ticker */}
+        {active_modules.blessings && (
+          <BlessingsStrip eventId={id} primaryColor={primary} />
+        )}
 
-            {myTable === null ? (
-              <div className="flex justify-center py-6">
-                <Loader2
-                  className="animate-spin"
-                  size={32}
-                  style={{ color: primary }}
-                />
-              </div>
-            ) : myTable.found ? (
-              <div className="flex items-center justify-between gap-4">
-                {/* Table info */}
-                <div className="flex flex-col items-center">
-                  <div
-                    className="w-12 h-12 rounded-full flex items-center justify-center mb-2"
-                    style={{ backgroundColor: `${primary}18` }}
-                  >
-                    <MapPin size={22} style={{ color: primary }} />
-                  </div>
-                  <p className="text-slate-400 font-bold text-xs mb-0.5">
-                    השולחן שלך
-                  </p>
-                  <div
-                    className="text-7xl font-black leading-none"
+        {/* Module Cards — stacked layout */}
+        <div className="flex flex-col gap-3">
+          {/* 1. Seating Card — first */}
+          {active_modules.seating && (
+            <div className={`${GLASS} p-6`}>
+              <button
+                onClick={(e) => openInfo(e, "seating")}
+                className="absolute top-4 left-4 text-slate-300 hover:text-slate-500 z-10 p-1 transition-colors"
+                aria-label="מידע"
+              >
+                <Info size={16} />
+              </button>
+
+              {myTable === null ? (
+                <div className="flex justify-center py-6">
+                  <Loader2
+                    className="animate-spin"
+                    size={32}
                     style={{ color: primary }}
-                  >
-                    {myTable.number}
-                  </div>
+                  />
                 </div>
+              ) : myTable.found ? (
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex flex-col items-center">
+                    <div
+                      className="w-12 h-12 rounded-full flex items-center justify-center mb-2"
+                      style={{ backgroundColor: `${primary}18` }}
+                    >
+                      <MapPin size={22} style={{ color: primary }} />
+                    </div>
+                    <p className="text-slate-400 font-bold text-xs mb-0.5">
+                      השולחן שלך
+                    </p>
+                    <div
+                      className="text-7xl font-black leading-none"
+                      style={{ color: primary }}
+                    >
+                      {myTable.number}
+                    </div>
+                  </div>
 
-                {/* Who's with me button */}
-                <button
-                  onClick={() => fetchTableMates(myTable.number)}
-                  className="flex-1 flex flex-col items-center justify-center gap-2 py-5 rounded-[1.5rem] hover:opacity-80 active:scale-[0.97] transition-all border-2"
-                  style={{
-                    backgroundColor: `${primary}10`,
-                    borderColor: `${primary}20`,
-                    color: primary,
-                  }}
-                >
-                  <Users size={26} />
-                  <span className="text-xs font-black text-center leading-snug">
-                    מי איתי
-                    <br />
-                    בשולחן?
-                  </span>
-                </button>
-              </div>
-            ) : (
-              <div className="text-center py-2">
-                <h3 className="text-xl font-black text-slate-800 mb-1">
-                  לא נמצא שולחן
-                </h3>
-                <p className="text-slate-400 text-sm font-medium mb-5">
-                  לא מצאנו את השם &quot;{guestNameStr}&quot;.
-                </p>
-                <button
-                  onClick={handleChangeName}
-                  className="w-full bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold py-3.5 px-6 rounded-[1.2rem] transition-colors flex justify-center items-center gap-2"
-                >
-                  <RefreshCw size={16} /> נסו שם אחר
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Photo Carousel Card */}
-        {active_modules.photo && (
-          <PhotoCarouselCard
-            photos={carouselPhotos}
-            primaryColor={primary}
-            eventId={id}
-            navigate={navigate}
-            openInfo={openInfo}
-          />
-        )}
-
-        {/* Module Cards Grid */}
-        <div className="grid grid-cols-2 gap-3">
-          {active_modules.dating && (
-            <ActionModuleCard
-              mKey="dating"
-              primaryColor={primary}
-              onClick={() => navigate(`/dating?event=${id}`)}
-              openInfo={openInfo}
-              hasBadge={hasUnreadDating}
-            />
+                  <button
+                    onClick={() => fetchTableMates(myTable.number)}
+                    className="flex-1 flex flex-col items-center justify-center gap-2 py-5 rounded-[1.5rem] hover:opacity-80 active:scale-[0.97] transition-all border-2"
+                    style={{
+                      backgroundColor: `${primary}10`,
+                      borderColor: `${primary}20`,
+                      color: primary,
+                    }}
+                  >
+                    <Users size={26} />
+                    <span className="text-xs font-black text-center leading-snug">
+                      מי איתי
+                      <br />
+                      בשולחן?
+                    </span>
+                  </button>
+                </div>
+              ) : (
+                <div className="text-center py-2">
+                  <h3 className="text-xl font-black text-slate-800 mb-1">
+                    לא נמצא שולחן
+                  </h3>
+                  <p className="text-slate-400 text-sm font-medium mb-5">
+                    לא מצאנו את השם &quot;{guestNameStr}&quot;.
+                  </p>
+                  <button
+                    onClick={handleChangeName}
+                    className="w-full bg-slate-50/80 hover:bg-slate-100/80 text-slate-700 font-bold py-3.5 px-6 rounded-[1.2rem] transition-colors flex justify-center items-center gap-2"
+                  >
+                    <RefreshCw size={16} /> נסו שם אחר
+                  </button>
+                </div>
+              )}
+            </div>
           )}
-          {active_modules.icebreaker && (
-            <ActionModuleCard
-              mKey="icebreaker"
-              primaryColor={primary}
-              onClick={() => navigate(`/icebreaker?event=${id}`)}
-              openInfo={openInfo}
-            />
-          )}
-          {active_modules.rideshare && (
-            <RideshareHomeCard
+
+          {/* 2. Photo Marquee Card — second */}
+          {active_modules.photo && (
+            <PhotoMarqueeCard
+              photos={carouselPhotos}
               primaryColor={primary}
               eventId={id}
               navigate={navigate}
               openInfo={openInfo}
             />
           )}
-          {active_modules.blessings && (
-            <BlessingsHomeCard
-              primaryColor={primary}
-              eventId={id}
-              navigate={navigate}
-              openInfo={openInfo}
-            />
+
+          {/* 3. Secondary modules — horizontal swipeable carousel */}
+          {secondaryModules.length > 0 && (
+            <div>
+              <div
+                ref={modulesCarouselRef}
+                className="flex gap-3 overflow-x-auto snap-x snap-mandatory"
+                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                onScroll={() => {
+                  const el = modulesCarouselRef.current;
+                  if (!el) return;
+                  const page = Math.round(el.scrollLeft / el.clientWidth);
+                  setActiveModuleIdx(page);
+                }}
+              >
+                {active_modules.dating && (
+                  <div
+                    className="snap-start shrink-0"
+                    style={{ width: "calc(50% - 6px)" }}
+                  >
+                    <ActionModuleCard
+                      mKey="dating"
+                      primaryColor={primary}
+                      onClick={() => navigate(`/dating?event=${id}`)}
+                      openInfo={openInfo}
+                      hasBadge={hasUnreadDating}
+                    />
+                  </div>
+                )}
+                {active_modules.icebreaker && (
+                  <div
+                    className="snap-start shrink-0"
+                    style={{ width: "calc(50% - 6px)" }}
+                  >
+                    <ActionModuleCard
+                      mKey="icebreaker"
+                      primaryColor={primary}
+                      onClick={() => navigate(`/icebreaker?event=${id}`)}
+                      openInfo={openInfo}
+                    />
+                  </div>
+                )}
+                {active_modules.rideshare && (
+                  <div
+                    className="snap-start shrink-0"
+                    style={{ width: "calc(50% - 6px)" }}
+                  >
+                    <RideshareHomeCard
+                      primaryColor={primary}
+                      eventId={id}
+                      navigate={navigate}
+                      openInfo={openInfo}
+                    />
+                  </div>
+                )}
+                {active_modules.blessings && (
+                  <div
+                    className="snap-start shrink-0"
+                    style={{ width: "calc(50% - 6px)" }}
+                  >
+                    <BlessingsHomeCard
+                      primaryColor={primary}
+                      eventId={id}
+                      navigate={navigate}
+                      openInfo={openInfo}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Dot indicators — shown only when more than 2 modules */}
+              {secondaryModules.length > 2 && (
+                <div className="flex justify-center gap-1.5 mt-2.5">
+                  {Array.from({
+                    length: Math.ceil(secondaryModules.length / 2),
+                  }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="h-1.5 rounded-full transition-all duration-300"
+                      style={{
+                        width: activeModuleIdx === i ? 16 : 6,
+                        backgroundColor:
+                          activeModuleIdx === i ? primary : `${primary}40`,
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
 
         {/* Footer */}
-        <p className="text-center text-xs text-slate-400/60 font-medium mt-2 pb-2">
+        <p className="text-center text-xs text-slate-400/60 font-medium mt-6 pb-2">
           מופעל ע&quot;י Eventick
         </p>
       </div>

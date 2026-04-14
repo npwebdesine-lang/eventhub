@@ -717,13 +717,17 @@ const Admin = () => {
   };
   const exportRsvpToCSV = () => {
     const sorted = [...rsvpList].sort((a, b) =>
-      a.group_id.localeCompare(b.group_id),
+      (a.group_id || "").localeCompare(b.group_id || ""),
     );
     let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-    csvContent += "שם האורח,מי מילא את הטופס,טלפון,תאריך רישום\n";
+    csvContent += "שם האורח,מי מילא את הטופס,טלפון,אלרגנים,תאריך רישום\n";
     sorted.forEach((row) => {
       const date = new Date(row.created_at).toLocaleDateString("he-IL");
-      csvContent += `"${row.guest_name}","${row.submitter_name}","${row.submitter_phone}","${date}"\n`;
+      const allergens =
+        Array.isArray(row.allergens) && row.allergens.length > 0
+          ? row.allergens.join(", ")
+          : "";
+      csvContent += `"${row.guest_name}","${row.submitter_name}","${row.submitter_phone}","${allergens}","${date}"\n`;
     });
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import gsap from "gsap";
 import {
   Send,
   Image as ImageIcon,
@@ -30,6 +31,8 @@ const BlessingModule = () => {
   const [status, setStatus] = useState(null);
 
   const fileInputRef = useRef(null);
+  const headerRef = useRef(null);
+  const cardRef = useRef(null);
 
   useEffect(() => {
     const savedName = localStorage.getItem("guest_name");
@@ -119,6 +122,25 @@ const BlessingModule = () => {
     }
   };
 
+  // GSAP entry animations once event data loads
+  useEffect(() => {
+    if (loadingEvent || !eventData) return;
+    if (headerRef.current) {
+      gsap.fromTo(
+        headerRef.current,
+        { y: -30, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" },
+      );
+    }
+    if (cardRef.current) {
+      gsap.fromTo(
+        cardRef.current,
+        { y: 40, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.6, delay: 0.25, ease: "back.out(1.2)" },
+      );
+    }
+  }, [loadingEvent, eventData]);
+
   if (loadingEvent) {
     return (
       <div
@@ -139,8 +161,9 @@ const BlessingModule = () => {
       style={{ backgroundColor: bgColor }}
       dir="rtl"
     >
-      {/* Header סגנון חדש - תואם למודול התמונות */}
+      {/* Header */}
       <div
+        ref={headerRef}
         className="rounded-b-[2.5rem] pt-8 pb-20 px-6 relative z-10 shadow-md text-center transition-colors duration-1000"
         style={{ backgroundColor: primaryColor }}
       >
@@ -161,7 +184,7 @@ const BlessingModule = () => {
 
       {/* אזור הכרטיסייה ה"רוכבת" על החיבור */}
       <div className="px-5 -mt-12 relative z-20 w-full max-w-md mx-auto flex-1 flex flex-col gap-6">
-        <div className="bg-white rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-50 text-center animate-in zoom-in duration-500">
+        <div ref={cardRef} className="bg-white rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-50 text-center">
           {status === "success" ? (
             <div className="py-6">
               <div
