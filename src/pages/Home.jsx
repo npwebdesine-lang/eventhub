@@ -89,7 +89,27 @@ const PhotoMarqueeCard = ({
   navigate,
   openInfo,
 }) => {
-  const duration = Math.max(14, photos.length * 2.5);
+  // Ensure each logical "copy" has at least MIN_VISIBLE photos so the strip
+  // always fills the visible area even when few photos exist.
+  const MIN_VISIBLE = 5;
+  const repeatsPerCopy = Math.max(
+    1,
+    Math.ceil(MIN_VISIBLE / Math.max(1, photos.length)),
+  );
+  const singleCopy = Array.from(
+    { length: repeatsPerCopy },
+    () => photos,
+  ).flat();
+
+  // Use 4 copies total; animate by exactly -25% (= 1 copy) so the loop is seamless.
+  const LOOP_COPIES = 4;
+  const allPhotos = Array.from(
+    { length: LOOP_COPIES },
+    () => singleCopy,
+  ).flat();
+
+  // Slower for few photos, faster for many — keeps visual rhythm pleasant.
+  const duration = Math.max(18, photos.length * 3);
 
   return (
     <div className={`${GLASS} flex flex-col`}>
@@ -102,29 +122,40 @@ const PhotoMarqueeCard = ({
       </button>
 
       {/* Marquee strip */}
-      <div className="relative h-36 md:h-44 overflow-hidden bg-slate-100/60">
+      <div
+        className="relative h-36 md:h-44 overflow-hidden rounded-t-[1.8rem]"
+        style={{
+          background: "linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)",
+          // Fade the strip edges so the loop is completely invisible
+          WebkitMaskImage:
+            "linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)",
+          maskImage:
+            "linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)",
+        }}
+      >
         {photos.length > 0 ? (
           <div
-            className="flex gap-2 h-full will-change-transform px-2 py-2"
+            className="marquee-track flex gap-3 h-full will-change-transform px-4 py-2.5"
             style={{
               animation: `photo-marquee ${duration}s linear infinite`,
               width: "max-content",
+              "--marquee-offset": "-25%",
             }}
           >
-            {/* Two identical copies — second copy makes the loop seamless */}
-            {[...photos, ...photos].map((photo, i) => (
+            {allPhotos.map((photo, i) => (
               <img
                 key={i}
                 src={photo?.image_url || ""}
                 alt=""
-                className="h-full w-28 object-cover rounded-xl shrink-0"
+                className="h-full w-28 md:w-32 object-cover rounded-2xl shrink-0 shadow-md"
                 loading="lazy"
+                style={{ filter: "brightness(0.97) contrast(1.03)" }}
               />
             ))}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-full">
-            <Camera size={36} className="text-slate-200" />
+            <Camera size={36} className="text-slate-300" />
             <p className="text-xs mt-2 font-bold text-slate-400">
               אין תמונות עדיין
             </p>
