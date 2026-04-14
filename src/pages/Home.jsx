@@ -78,6 +78,10 @@ const GLASS =
   "module-card-anim relative rounded-[2rem] overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.09)] bg-white/80 backdrop-blur-md border border-white/60";
 
 // ---- Photo Marquee Card ----
+// Uses a pure-CSS @keyframes loop so the track never "jumps" on reset.
+// The track contains two identical copies of the images; the animation
+// moves exactly -50% (one full copy), then wraps back to 0 — invisible
+// because both positions look identical.
 const PhotoMarqueeCard = ({
   photos,
   primaryColor,
@@ -85,21 +89,7 @@ const PhotoMarqueeCard = ({
   navigate,
   openInfo,
 }) => {
-  const trackRef = useRef(null);
-
-  useEffect(() => {
-    if (!trackRef.current || photos.length === 0) return;
-    const el = trackRef.current;
-    // function value evaluated when tween starts (after delay) so images have loaded
-    const tween = gsap.to(el, {
-      x: () => -(el.scrollWidth / 2),
-      duration: Math.max(12, photos.length * 2.2),
-      ease: "none",
-      repeat: -1,
-      delay: 0.9,
-    });
-    return () => tween.kill();
-  }, [photos]);
+  const duration = Math.max(14, photos.length * 2.5);
 
   return (
     <div className={`${GLASS} flex flex-col`}>
@@ -115,16 +105,20 @@ const PhotoMarqueeCard = ({
       <div className="relative h-36 md:h-44 overflow-hidden bg-slate-100/60">
         {photos.length > 0 ? (
           <div
-            ref={trackRef}
             className="flex gap-2 h-full will-change-transform px-2 py-2"
+            style={{
+              animation: `photo-marquee ${duration}s linear infinite`,
+              width: "max-content",
+            }}
           >
-            {/* Duplicate for seamless loop */}
+            {/* Two identical copies — second copy makes the loop seamless */}
             {[...photos, ...photos].map((photo, i) => (
               <img
                 key={i}
                 src={photo?.image_url || ""}
                 alt=""
                 className="h-full w-28 object-cover rounded-xl shrink-0"
+                loading="lazy"
               />
             ))}
           </div>
@@ -374,6 +368,18 @@ const Home = () => {
   const [isRegistered, setIsRegistered] = useState(false);
   const [nameInput, setNameInput] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [registrationError, setRegistrationError] = useState(null);
+
+  // Persistent device fingerprint — created once, never wiped on "change user"
+  const [deviceId] = useState(() => {
+    let did = localStorage.getItem("device_id");
+    if (!did) {
+      did = crypto.randomUUID();
+      localStorage.setItem("device_id", did);
+    }
+    return did;
+  });
 
   const [myTable, setMyTable] = useState(null);
   const [showMatesModal, setShowMatesModal] = useState(false);
@@ -539,12 +545,42 @@ const Home = () => {
     }
   }, [isRegistered, eventData, loading]);
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
-    if (!nameInput.trim() || !termsAccepted) return;
-    localStorage.setItem("guest_name", nameInput.trim());
-    localStorage.setItem("guest_id", crypto.randomUUID());
-    setIsRegistered(true);
+    if (!nameInput.trim() || !termsAccepted || isRegistering) return;
+
+    setIsRegistering(true);
+    setRegistrationError(null);
+
+    try {
+      const tentativeGuestId = crypto.randomUUID();
+
+      const { data, error } = await supabase.rpc("register_guest", {
+        p_event_id: id,
+        p_guest_name: nameInput.trim(),
+        p_device_id: deviceId,
+        p_guest_id: tentativeGuestId,
+      });
+
+      if (error) throw error;
+
+      if (!data.ok) {
+        setRegistrationError(
+          "השם הזה כבר רשום ממכשיר אחר. אנא השתמשו בשם אחר.",
+        );
+        return;
+      }
+
+      // Use the guest_id returned from DB (preserves identity for returning users)
+      localStorage.setItem("guest_name", nameInput.trim());
+      localStorage.setItem("guest_id", data.guest_id);
+      setIsRegistered(true);
+    } catch (err) {
+      console.error("Registration error:", err);
+      setRegistrationError("שגיאה בהתחברות. בדקו את החיבור לאינטרנט.");
+    } finally {
+      setIsRegistering(false);
+    }
   };
 
   const handleChangeName = () => {
@@ -646,12 +682,24 @@ const Home = () => {
             <input
               type="text"
               value={nameInput}
-              onChange={(e) => setNameInput(e.target.value)}
+              onChange={(e) => {
+                setNameInput(e.target.value);
+                if (registrationError) setRegistrationError(null);
+              }}
               placeholder="שם מלא (לדוגמה: תקווה משולם)"
               className="w-full p-4 bg-slate-50 border border-slate-100 rounded-[1.2rem] focus:ring-2 outline-none text-center text-lg font-bold transition-all"
               style={{ "--tw-ring-color": primary }}
               required
+              disabled={isRegistering}
             />
+
+            {/* Error banner */}
+            {registrationError && (
+              <div className="flex items-center gap-2 bg-rose-50 border border-rose-100 text-rose-600 text-sm font-medium px-4 py-3 rounded-[1rem]">
+                <X size={15} className="shrink-0" />
+                {registrationError}
+              </div>
+            )}
 
             <div className="flex items-start gap-2 text-right mt-2">
               <input
@@ -689,10 +737,17 @@ const Home = () => {
 
             <button
               type="submit"
-              className="w-full text-white font-black py-4 rounded-[1.2rem] text-lg shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-transform mt-4"
+              disabled={isRegistering}
+              className="w-full text-white font-black py-4 rounded-[1.2rem] text-lg shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-transform mt-4 flex items-center justify-center gap-2 disabled:opacity-70 disabled:scale-100"
               style={{ backgroundColor: primary }}
             >
-              היכנסו לאירוע
+              {isRegistering ? (
+                <>
+                  <Loader2 size={20} className="animate-spin" /> מתחבר...
+                </>
+              ) : (
+                "היכנסו לאירוע"
+              )}
             </button>
 
             <button
@@ -922,22 +977,27 @@ const Home = () => {
                 )}
               </div>
 
-              {/* Dot indicators — shown only when more than 2 modules */}
+              {/* Pill pagination — shown only when scrolling is needed (>2 modules) */}
               {secondaryModules.length > 2 && (
-                <div className="flex justify-center gap-1.5 mt-2.5">
+                <div className="flex justify-center items-center gap-[5px] mt-3">
                   {Array.from({
                     length: Math.ceil(secondaryModules.length / 2),
-                  }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="h-1.5 rounded-full transition-all duration-300"
-                      style={{
-                        width: activeModuleIdx === i ? 16 : 6,
-                        backgroundColor:
-                          activeModuleIdx === i ? primary : `${primary}40`,
-                      }}
-                    />
-                  ))}
+                  }).map((_, i) => {
+                    const active = activeModuleIdx === i;
+                    return (
+                      <div
+                        key={i}
+                        className="rounded-full transition-all duration-300 ease-in-out"
+                        style={{
+                          width: active ? 22 : 7,
+                          height: 7,
+                          backgroundColor: active
+                            ? primary
+                            : "rgba(120,110,100,0.25)",
+                        }}
+                      />
+                    );
+                  })}
                 </div>
               )}
             </div>

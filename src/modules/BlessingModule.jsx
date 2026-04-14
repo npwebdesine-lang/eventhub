@@ -184,7 +184,10 @@ const BlessingModule = () => {
 
       {/* אזור הכרטיסייה ה"רוכבת" על החיבור */}
       <div className="px-5 -mt-12 relative z-20 w-full max-w-md mx-auto flex-1 flex flex-col gap-6">
-        <div ref={cardRef} className="bg-white rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-50 text-center">
+        <div
+          ref={cardRef}
+          className="bg-white rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-50 text-center"
+        >
           {status === "success" ? (
             <div className="py-6">
               <div
