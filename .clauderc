@@ -1,0 +1,8 @@
+{
+  "skills": [
+    "frontend-design"
+  ],
+  "skillPaths": [
+    ".claude/skills"
+  ]
+}

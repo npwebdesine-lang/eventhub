@@ -108,7 +108,7 @@ function App() {
             }
           />
           <Route
-            path="/blessingModule"
+            path="/blessing"
             element={
               <ErrorBoundary>
                 <BlessingModule />

@@ -14,6 +14,8 @@ import {
   Info,
   ChevronLeft,
   ChevronRight,
+  MessageCircle,
+  UserX,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import gsap from "gsap";
@@ -54,6 +56,13 @@ const MODULES_INFO = {
     color: "text-emerald-500",
     bg: "bg-emerald-50",
   },
+  blessings: {
+    title: "ספר ברכות",
+    description: "כתבו ברכה וצרפו תמונה לבעלי השמחה",
+    icon: MessageCircle,
+    color: "text-purple-500",
+    bg: "bg-purple-50",
+  },
 };
 
 const getGreeting = () => {
@@ -64,16 +73,98 @@ const getGreeting = () => {
   return "לילה טוב";
 };
 
-// --- Improved Module Card (Moved outside to prevent re-mounting bugs) ---
-const CustomModuleCard = ({ mKey, onClick, hasBadge, openInfo }) => {
+// ---- Photo Carousel Card ----
+const PhotoCarouselCard = ({
+  photos,
+  primaryColor,
+  eventId,
+  navigate,
+  openInfo,
+}) => {
+  const [idx, setIdx] = useState(0);
+
+  useEffect(() => {
+    if (photos.length <= 1) return;
+    const t = setInterval(() => setIdx((i) => (i + 1) % photos.length), 2800);
+    return () => clearInterval(t);
+  }, [photos.length]);
+
+  return (
+    <div className="module-card-anim relative bg-white rounded-[2rem] overflow-hidden shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-slate-100">
+      <button
+        onClick={(e) => openInfo(e, "photo")}
+        className="absolute top-3 left-3 text-slate-200 hover:text-slate-400 z-20 p-1 transition-colors"
+        aria-label="מידע"
+      >
+        <Info size={16} />
+      </button>
+
+      {/* Carousel area */}
+      <div className="relative h-44 bg-slate-50 overflow-hidden">
+        {photos.length > 0 && photos[idx] ? (
+          <>
+            <img
+              key={idx}
+              src={photos[idx]?.image_url || ""}
+              alt="תמונה מהאירוע"
+              className="w-full h-full object-cover animate-in fade-in duration-700"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/35 to-transparent pointer-events-none" />
+            {photos.length > 1 && (
+              <div className="absolute bottom-2.5 left-0 right-0 flex justify-center gap-1.5 z-10">
+                {photos.slice(0, 8).map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setIdx(i)}
+                    className={`h-1 rounded-full transition-all ${
+                      i === idx ? "w-5 bg-white" : "w-1.5 bg-white/50"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full">
+            <Camera size={36} className="text-slate-200" />
+            <p className="text-xs mt-2 font-bold text-slate-400">
+              אין תמונות עדיין
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Bottom */}
+      <div className="p-4 text-center">
+        <h3 className="font-black text-slate-800 text-sm mb-0.5">כל אחד צלם</h3>
+        <p className="text-slate-400 text-xs mb-3">
+          העלו תמונות לאלבום המשותף של האירוע
+        </p>
+        <button
+          onClick={() => navigate(`/photos?event=${eventId}`)}
+          className="w-full font-bold py-3 rounded-[1rem] text-sm flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all text-white shadow-md"
+          style={{ backgroundColor: primaryColor }}
+        >
+          <Camera size={16} /> פתח מצלמה / גלריה
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ---- Action Module Card (dating, icebreaker) ----
+const ActionModuleCard = ({
+  mKey,
+  primaryColor,
+  onClick,
+  openInfo,
+  hasBadge,
+}) => {
   const info = MODULES_INFO[mKey];
   if (!info) return null;
+
   return (
-    <div
-      className="module-card-anim relative group bg-white rounded-[2rem] p-5 shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-slate-100/80 flex flex-col cursor-pointer hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-0.5 transition-all duration-200"
-      onClick={onClick}
-    >
-      {/* Info button */}
+    <div className="module-card-anim relative bg-white rounded-[2rem] p-5 shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-slate-100 flex flex-col items-center text-center">
       <button
         onClick={(e) => openInfo(e, mKey)}
         className="absolute top-3 left-3 text-slate-200 hover:text-slate-400 z-10 p-1 transition-colors"
@@ -82,38 +173,107 @@ const CustomModuleCard = ({ mKey, onClick, hasBadge, openInfo }) => {
         <Info size={16} />
       </button>
 
-      {/* Unread badge */}
       {hasBadge && (
         <span className="absolute top-3 right-3 flex h-3.5 w-3.5">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-rose-500 border-2 border-white"></span>
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+          <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-rose-500 border-2 border-white" />
         </span>
       )}
 
-      {/* Icon */}
       <div
         className={`w-12 h-12 ${info.bg} rounded-[1rem] flex items-center justify-center mb-3 mt-1`}
       >
         <info.icon size={24} className={info.color} />
       </div>
 
-      {/* Title + description */}
-      <h3 className="font-bold text-slate-800 text-sm leading-tight">
+      <h3 className="font-black text-slate-800 text-sm leading-tight mb-1">
         {info.title}
       </h3>
-      <p className="text-slate-400 text-xs mt-1 leading-relaxed line-clamp-2">
+      <p className="text-slate-400 text-xs leading-relaxed line-clamp-2 mb-3 flex-1">
         {info.description}
       </p>
 
-      {/* Arrow hint */}
-      <ChevronLeft
-        size={13}
-        className="absolute bottom-4 left-4 text-slate-200 group-hover:text-slate-400 transition-colors"
-      />
+      <button
+        onClick={onClick}
+        className="w-full font-bold py-2.5 rounded-[0.8rem] text-xs flex items-center justify-center gap-1.5 hover:opacity-80 active:scale-[0.98] transition-all"
+        style={{ backgroundColor: `${primaryColor}18`, color: primaryColor }}
+      >
+        כניסה <ChevronLeft size={12} />
+      </button>
     </div>
   );
 };
 
+// ---- Rideshare Card (2 role buttons) ----
+const RideshareHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
+  <div className="module-card-anim relative bg-white rounded-[2rem] p-5 shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-slate-100 flex flex-col items-center text-center">
+    <button
+      onClick={(e) => openInfo(e, "rideshare")}
+      className="absolute top-3 left-3 text-slate-200 hover:text-slate-400 z-10 p-1 transition-colors"
+      aria-label="מידע"
+    >
+      <Info size={16} />
+    </button>
+
+    <div className="w-12 h-12 bg-amber-50 rounded-[1rem] flex items-center justify-center mb-3 mt-1">
+      <Car size={24} className="text-amber-500" />
+    </div>
+
+    <h3 className="font-black text-slate-800 text-sm mb-1">לוח טרמפים</h3>
+    <p className="text-slate-400 text-xs mb-3 leading-relaxed">
+      שתפו נסיעות לאחר האירוע
+    </p>
+
+    <div className="w-full space-y-2">
+      <button
+        onClick={() => navigate(`/rideshare?event=${eventId}&role=driver`)}
+        className="w-full font-bold py-2.5 rounded-[0.8rem] text-xs hover:opacity-90 active:scale-[0.98] transition-all text-white flex items-center justify-center gap-1.5"
+        style={{ backgroundColor: primaryColor }}
+      >
+        <Car size={13} /> אני מציע 🚗
+      </button>
+      <button
+        onClick={() => navigate(`/rideshare?event=${eventId}&role=seeker`)}
+        className="w-full font-bold py-2.5 rounded-[0.8rem] text-xs hover:opacity-80 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5"
+        style={{ backgroundColor: `${primaryColor}18`, color: primaryColor }}
+      >
+        <Users size={13} /> אני מחפש 🙋
+      </button>
+    </div>
+  </div>
+);
+
+// ---- Blessings Card (add only) ----
+const BlessingsHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
+  <div className="module-card-anim relative bg-white rounded-[2rem] p-5 shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-slate-100 flex flex-col items-center text-center">
+    <button
+      onClick={(e) => openInfo(e, "blessings")}
+      className="absolute top-3 left-3 text-slate-200 hover:text-slate-400 z-10 p-1 transition-colors"
+      aria-label="מידע"
+    >
+      <Info size={16} />
+    </button>
+
+    <div className="w-12 h-12 bg-purple-50 rounded-[1rem] flex items-center justify-center mb-3 mt-1">
+      <MessageCircle size={24} className="text-purple-500" />
+    </div>
+
+    <h3 className="font-black text-slate-800 text-sm mb-1">ספר ברכות</h3>
+    <p className="text-slate-400 text-xs mb-3 leading-relaxed">
+      כתבו ברכה לבעלי השמחה
+    </p>
+
+    <button
+      onClick={() => navigate(`/blessing?event=${eventId}`)}
+      className="w-full font-bold py-2.5 rounded-[0.8rem] text-xs hover:opacity-90 active:scale-[0.98] transition-all text-white flex items-center justify-center gap-1.5"
+      style={{ backgroundColor: primaryColor }}
+    >
+      <MessageCircle size={13} /> הוסף ברכה ✍️
+    </button>
+  </div>
+);
+
+// ---- Main Component ----
 const Home = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -132,7 +292,10 @@ const Home = () => {
   const [hasUnreadDating, setHasUnreadDating] = useState(false);
   const [infoModal, setInfoModal] = useState(null);
 
-  // Fetch event data — only needed columns
+  // Photo carousel
+  const [carouselPhotos, setCarouselPhotos] = useState([]);
+
+  // Fetch event data
   useEffect(() => {
     const savedName = localStorage.getItem("guest_name");
     const savedId = localStorage.getItem("guest_id");
@@ -162,7 +325,7 @@ const Home = () => {
     };
   }, [id]);
 
-  // Fetch seating assignment
+  // Fetch seating
   useEffect(() => {
     if (!isRegistered || !eventData?.active_modules?.seating) return;
     let isMounted = true;
@@ -193,7 +356,7 @@ const Home = () => {
     };
   }, [isRegistered, eventData, id]);
 
-  // Check for unread dating messages
+  // Check unread dating messages
   useEffect(() => {
     if (!isRegistered || !eventData?.active_modules?.dating) return;
     const guestId = localStorage.getItem("guest_id");
@@ -215,6 +378,51 @@ const Home = () => {
     checkUnread();
     return () => {
       isMounted = false;
+    };
+  }, [isRegistered, eventData, id]);
+
+  // Fetch carousel photos + realtime
+  useEffect(() => {
+    if (!isRegistered || !eventData?.active_modules?.photo || !id) return;
+    let isMounted = true;
+    // Unique channel name prevents React StrictMode double-invoke conflicts
+    const channelId = `home_photos_${id}_${crypto.randomUUID()}`;
+
+    const fetchPhotos = async () => {
+      try {
+        const { data } = await supabase
+          .from("photos")
+          .select("id, image_url")
+          .eq("event_id", id)
+          .order("created_at", { ascending: false })
+          .limit(10);
+        if (isMounted) setCarouselPhotos(data || []);
+      } catch (e) {
+        console.error("Error fetching carousel photos:", e);
+      }
+    };
+    fetchPhotos();
+
+    const channel = supabase
+      .channel(channelId)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "photos",
+          filter: `event_id=eq.${id}`,
+        },
+        (payload) => {
+          if (isMounted && payload.new?.image_url)
+            setCarouselPhotos((prev) => [payload.new, ...prev].slice(0, 10));
+        },
+      )
+      .subscribe();
+
+    return () => {
+      isMounted = false;
+      supabase.removeChannel(channel);
     };
   }, [isRegistered, eventData, id]);
 
@@ -254,6 +462,7 @@ const Home = () => {
     setNameInput("");
     setTermsAccepted(false);
     setMyTable(null);
+    setCarouselPhotos([]);
     setIsRegistered(false);
   };
 
@@ -308,7 +517,8 @@ const Home = () => {
     );
 
   const { name, active_modules, design_config } = eventData;
-  const { background, primary } = design_config.colors;
+  const { background = "#f8fafc", primary = "#3b82f6" } =
+    design_config?.colors || {};
   const guestNameStr = localStorage.getItem("guest_name");
 
   // --- Registration Screen ---
@@ -429,18 +639,22 @@ const Home = () => {
               {eventData.location ? ` · ${eventData.location}` : ""}
             </p>
           )}
-          <div className="bg-black/20 rounded-[1.5rem] p-4 flex items-center justify-between border border-white/10 backdrop-blur-sm">
-            <div className="flex flex-col text-right">
-              <span className="text-white/50 text-xs font-bold">מחובר כ:</span>
-              <span className="text-white font-bold text-sm">
+
+          {/* User bar */}
+          <div className="bg-black/20 rounded-[1.5rem] p-3.5 flex items-center justify-between border border-white/10 backdrop-blur-sm gap-3">
+            <div className="flex flex-col text-right min-w-0">
+              <span className="text-white/50 text-[10px] font-bold">
+                מחובר כ:
+              </span>
+              <span className="text-white font-bold text-sm truncate">
                 {guestNameStr}
               </span>
             </div>
             <button
               onClick={handleChangeName}
-              className="text-xs bg-black/30 hover:bg-black/50 text-white px-4 py-2 rounded-xl transition-colors font-bold flex items-center gap-1 active:scale-95"
+              className="shrink-0 text-xs bg-white/15 hover:bg-white/25 text-white px-3.5 py-2 rounded-xl transition-colors font-bold flex items-center gap-1.5 active:scale-95 border border-white/20"
             >
-              <RefreshCw size={13} /> החלף
+              <UserX size={14} /> החלף משתמש
             </button>
           </div>
         </div>
@@ -450,22 +664,17 @@ const Home = () => {
       <div className="px-5 -mt-10 relative z-20 w-full max-w-md mx-auto flex-1 flex flex-col gap-4">
         {/* Seating Card */}
         {active_modules.seating && (
-          <div className="module-card-anim relative bg-white rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.07)] border border-slate-100 flex flex-col items-center text-center">
+          <div className="module-card-anim relative bg-white rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.07)] border border-slate-100">
             <button
               onClick={(e) => openInfo(e, "seating")}
-              className="absolute top-5 left-5 text-slate-200 hover:text-slate-400 z-10 p-1 transition-colors"
+              className="absolute top-4 left-4 text-slate-200 hover:text-slate-400 z-10 p-1 transition-colors"
+              aria-label="מידע"
             >
-              <Info size={18} />
+              <Info size={16} />
             </button>
-            <div
-              className="w-12 h-12 rounded-full flex items-center justify-center mb-3 mt-1"
-              style={{ backgroundColor: `${primary}18` }}
-            >
-              <MapPin size={22} style={{ color: primary }} />
-            </div>
 
             {myTable === null ? (
-              <div className="py-6">
+              <div className="flex justify-center py-6">
                 <Loader2
                   className="animate-spin"
                   size={32}
@@ -473,26 +682,46 @@ const Home = () => {
                 />
               </div>
             ) : myTable.found ? (
-              <>
-                <p className="text-slate-400 font-bold mb-1 text-xs uppercase tracking-wide">
-                  השולחן שלך
-                </p>
-                <div
-                  className="text-7xl font-black mb-5 leading-none"
-                  style={{ color: primary }}
-                >
-                  {myTable.number}
+              <div className="flex items-center justify-between gap-4">
+                {/* Table info */}
+                <div className="flex flex-col items-center">
+                  <div
+                    className="w-12 h-12 rounded-full flex items-center justify-center mb-2"
+                    style={{ backgroundColor: `${primary}18` }}
+                  >
+                    <MapPin size={22} style={{ color: primary }} />
+                  </div>
+                  <p className="text-slate-400 font-bold text-xs mb-0.5">
+                    השולחן שלך
+                  </p>
+                  <div
+                    className="text-7xl font-black leading-none"
+                    style={{ color: primary }}
+                  >
+                    {myTable.number}
+                  </div>
                 </div>
+
+                {/* Who's with me button */}
                 <button
                   onClick={() => fetchTableMates(myTable.number)}
-                  className="w-full font-bold py-3.5 rounded-[1.2rem] transition-all flex justify-center items-center gap-2 hover:opacity-80 active:scale-[0.98]"
-                  style={{ backgroundColor: `${primary}15`, color: primary }}
+                  className="flex-1 flex flex-col items-center justify-center gap-2 py-5 rounded-[1.5rem] hover:opacity-80 active:scale-[0.97] transition-all border-2"
+                  style={{
+                    backgroundColor: `${primary}10`,
+                    borderColor: `${primary}20`,
+                    color: primary,
+                  }}
                 >
-                  <Users size={18} /> מי איתי בשולחן?
+                  <Users size={26} />
+                  <span className="text-xs font-black text-center leading-snug">
+                    מי איתי
+                    <br />
+                    בשולחן?
+                  </span>
                 </button>
-              </>
+              </div>
             ) : (
-              <div className="py-2">
+              <div className="text-center py-2">
                 <h3 className="text-xl font-black text-slate-800 mb-1">
                   לא נמצא שולחן
                 </h3>
@@ -510,34 +739,49 @@ const Home = () => {
           </div>
         )}
 
+        {/* Photo Carousel Card */}
+        {active_modules.photo && (
+          <PhotoCarouselCard
+            photos={carouselPhotos}
+            primaryColor={primary}
+            eventId={id}
+            navigate={navigate}
+            openInfo={openInfo}
+          />
+        )}
+
         {/* Module Cards Grid */}
         <div className="grid grid-cols-2 gap-3">
-          {active_modules.photo && (
-            <CustomModuleCard
-              mKey="photo"
-              onClick={() => navigate(`/photos?event=${id}`)}
-              openInfo={openInfo}
-            />
-          )}
           {active_modules.dating && (
-            <CustomModuleCard
+            <ActionModuleCard
               mKey="dating"
+              primaryColor={primary}
               onClick={() => navigate(`/dating?event=${id}`)}
               openInfo={openInfo}
               hasBadge={hasUnreadDating}
             />
           )}
           {active_modules.icebreaker && (
-            <CustomModuleCard
+            <ActionModuleCard
               mKey="icebreaker"
+              primaryColor={primary}
               onClick={() => navigate(`/icebreaker?event=${id}`)}
               openInfo={openInfo}
             />
           )}
           {active_modules.rideshare && (
-            <CustomModuleCard
-              mKey="rideshare"
-              onClick={() => navigate(`/rideshare?event=${id}`)}
+            <RideshareHomeCard
+              primaryColor={primary}
+              eventId={id}
+              navigate={navigate}
+              openInfo={openInfo}
+            />
+          )}
+          {active_modules.blessings && (
+            <BlessingsHomeCard
+              primaryColor={primary}
+              eventId={id}
+              navigate={navigate}
               openInfo={openInfo}
             />
           )}

@@ -1,27 +1,59 @@
-import React, { useState, useRef } from "react";
-import { supabase } from "../lib/supabase"; // מוודא שהנתיב תואם לארכיטקטורה שלך
+import React, { useState, useRef, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { supabase } from "../lib/supabase";
 import {
   Send,
   Image as ImageIcon,
   X,
   Loader2,
   CheckCircle2,
-  MessageSquare,
+  MessageCircle,
   User,
+  ChevronRight,
+  UploadCloud,
 } from "lucide-react";
 
-const Blessing = ({ eventId }) => {
+const BlessingModule = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const eventId = searchParams.get("event");
+
+  const [eventData, setEventData] = useState(null);
+  const [loadingEvent, setLoadingEvent] = useState(true);
+
   const [guestName, setGuestName] = useState("");
   const [message, setMessage] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [status, setStatus] = useState(null); // 'success' | 'error' | null
+  const [status, setStatus] = useState(null);
 
   const fileInputRef = useRef(null);
 
-  // טיפול בבחירת תמונה (כולל יצירת תצוגה מקדימה)
+  useEffect(() => {
+    const savedName = localStorage.getItem("guest_name");
+    if (savedName) setGuestName(savedName);
+
+    if (!eventId) return;
+    const fetchEvent = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("events")
+          .select("name, design_config")
+          .eq("id", eventId)
+          .single();
+        if (error) throw error;
+        setEventData(data);
+      } catch (error) {
+        console.error("Error fetching event:", error);
+      } finally {
+        setLoadingEvent(false);
+      }
+    };
+    fetchEvent();
+  }, [eventId]);
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -31,17 +63,15 @@ const Blessing = ({ eventId }) => {
     }
   };
 
-  // ביטול בחירת התמונה
   const removeImage = () => {
     setImageFile(null);
     setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // פונקציית השליחה ל-Supabase
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!guestName.trim() || !message.trim()) return;
+    if (!guestName.trim() || !message.trim() || !eventId) return;
 
     setIsSubmitting(true);
     setStatus(null);
@@ -49,11 +79,10 @@ const Blessing = ({ eventId }) => {
     try {
       let imageUrl = null;
 
-      // 1. העלאת התמונה ל-Storage (אם יש)
       if (imageFile) {
         const fileExt = imageFile.name.split(".").pop();
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `${eventId}/${fileName}`; // תיקייה לכל אירוע
+        const filePath = `${eventId}/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from("blessings-uploads")
@@ -61,7 +90,6 @@ const Blessing = ({ eventId }) => {
 
         if (uploadError) throw uploadError;
 
-        // קבלת הכתובת הפומבית
         const { data: publicUrlData } = supabase.storage
           .from("blessings-uploads")
           .getPublicUrl(filePath);
@@ -69,7 +97,6 @@ const Blessing = ({ eventId }) => {
         imageUrl = publicUrlData.publicUrl;
       }
 
-      // 2. שמירת הברכה ב-Database
       const { error: dbError } = await supabase.from("blessings").insert([
         {
           event_id: eventId,
@@ -81,9 +108,7 @@ const Blessing = ({ eventId }) => {
 
       if (dbError) throw dbError;
 
-      // הצלחה!
       setStatus("success");
-      setGuestName("");
       setMessage("");
       removeImage();
     } catch (error) {
@@ -94,147 +119,212 @@ const Blessing = ({ eventId }) => {
     }
   };
 
+  if (loadingEvent) {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center bg-slate-50"
+        dir="rtl"
+      >
+        <Loader2 className="animate-spin text-slate-400 mb-4" size={48} />
+      </div>
+    );
+  }
+
+  const primaryColor = eventData?.design_config?.colors?.primary || "#8b5cf6";
+  const bgColor = eventData?.design_config?.colors?.background || "#f8fafc";
+
   return (
     <div
-      className="w-full max-w-md mx-auto p-6 bg-slate-900/60 backdrop-blur-md rounded-[2rem] border border-white/10 shadow-2xl font-sans"
+      className="min-h-screen flex flex-col transition-colors duration-1000 font-sans pb-12"
+      style={{ backgroundColor: bgColor }}
       dir="rtl"
     >
-      {status === "success" ? (
-        <div className="text-center py-10 animate-in fade-in zoom-in duration-500">
-          <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-500/30">
-            <CheckCircle2 size={40} className="text-green-400" />
-          </div>
-          <h3 className="text-2xl font-black text-white mb-2">
-            איזו ברכה מרגשת!
-          </h3>
-          <p className="text-white/60">
-            הברכה שלך נשלחה בהצלחה ותצורף לאלבום של בעלי השמחה.
-          </p>
-          <button
-            onClick={() => setStatus(null)}
-            className="mt-6 px-6 py-2 bg-white/10 hover:bg-white/20 text-white font-bold rounded-full transition-colors"
-          >
-            שלח ברכה נוספת
-          </button>
+      {/* Header סגנון חדש - תואם למודול התמונות */}
+      <div
+        className="rounded-b-[2.5rem] pt-8 pb-20 px-6 relative z-10 shadow-md text-center transition-colors duration-1000"
+        style={{ backgroundColor: primaryColor }}
+      >
+        {/* כפתור חזרה תואם */}
+        <button
+          onClick={() => navigate(`/event/${eventId}`)}
+          className="absolute top-6 right-6 w-10 h-10 bg-black/20 hover:bg-black/30 rounded-full flex items-center justify-center text-white transition-colors"
+          aria-label="חזרה לאירוע"
+        >
+          <ChevronRight size={22} className="mr-0.5" />
+        </button>
+
+        <div className="mt-2 flex items-center justify-center gap-2 text-white font-black text-xl drop-shadow-sm">
+          <MessageCircle size={22} />
+          ספר ברכות
         </div>
-      ) : (
-        <>
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-black text-white flex items-center justify-center gap-2">
-              <MessageSquare className="text-indigo-400" size={24} />
-              השאירו ברכה
-            </h2>
-            <p className="text-white/50 text-sm mt-1">
-              המילים שלכם הן המזכרת הכי יפה מהאירוע
-            </p>
-          </div>
+      </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* שדה שם */}
-            <div className="relative">
-              <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                <User size={18} className="text-white/30" />
+      {/* אזור הכרטיסייה ה"רוכבת" על החיבור */}
+      <div className="px-5 -mt-12 relative z-20 w-full max-w-md mx-auto flex-1 flex flex-col gap-6">
+        <div className="bg-white rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-50 text-center animate-in zoom-in duration-500">
+          {status === "success" ? (
+            <div className="py-6">
+              <div
+                className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 border-4"
+                style={{
+                  backgroundColor: `${primaryColor}15`,
+                  borderColor: `${primaryColor}30`,
+                }}
+              >
+                <CheckCircle2 size={40} style={{ color: primaryColor }} />
               </div>
-              <input
-                type="text"
-                required
-                value={guestName}
-                onChange={(e) => setGuestName(e.target.value)}
-                className="w-full bg-slate-950/50 border border-white/10 text-white rounded-2xl py-3.5 pr-12 pl-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-white/30"
-                placeholder="השם שלכם"
-              />
+              <h3 className="text-2xl font-black text-slate-800 mb-2">
+                הברכה נשלחה!
+              </h3>
+              <p className="text-slate-500 font-medium text-sm mb-8 px-4">
+                המילים המרגשות שלך צורפו לספר הברכות של {eventData?.name}.
+              </p>
+
+              <button
+                onClick={() => setStatus(null)}
+                className="w-full py-3.5 mb-3 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold rounded-2xl transition-colors border border-slate-200"
+              >
+                כתבו ברכה נוספת
+              </button>
+              <button
+                onClick={() => navigate(`/event/${eventId}`)}
+                className="w-full py-3.5 text-white font-black rounded-2xl shadow-md transition-transform active:scale-95"
+                style={{ backgroundColor: primaryColor }}
+              >
+                חזרה לאירוע
+              </button>
             </div>
+          ) : (
+            <>
+              <div className="mb-6">
+                <h2 className="text-xl font-black text-slate-800">
+                  כתבו משהו מהלב
+                </h2>
+                <p className="text-slate-500 text-sm font-medium mt-1">
+                  הברכה והתמונה יצורפו לאלבום הדיגיטלי
+                </p>
+              </div>
 
-            {/* שדה ברכה */}
-            <div className="relative">
-              <textarea
-                required
-                rows="4"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="w-full bg-slate-950/50 border border-white/10 text-white rounded-2xl py-3.5 px-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-white/30 resize-none"
-                placeholder="כתבו כאן את הברכה שלכם..."
-              />
-            </div>
-
-            {/* אזור העלאת תמונה */}
-            <div>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                ref={fileInputRef}
-                className="hidden"
-              />
-
-              {!imagePreview ? (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full py-4 border-2 border-dashed border-white/10 hover:border-white/30 bg-white/5 rounded-2xl flex flex-col items-center justify-center gap-2 text-white/50 hover:text-white/80 transition-all group"
-                >
-                  <ImageIcon
-                    size={28}
-                    className="group-hover:scale-110 transition-transform"
+              <form onSubmit={handleSubmit} className="space-y-4 text-right">
+                <div className="relative">
+                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                    <User size={18} className="text-slate-400" />
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    value={guestName}
+                    onChange={(e) => setGuestName(e.target.value)}
+                    className="w-full p-3.5 pr-12 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-slate-800 placeholder:text-slate-400 transition-all focus:ring-2 focus:bg-white"
+                    style={{ "--tw-ring-color": primaryColor }}
+                    placeholder="איך תרצו להופיע באלבום?"
                   />
-                  <span className="text-sm font-medium">
-                    צרפו תמונת סלפי (רשות)
-                  </span>
-                </button>
-              ) : (
-                <div className="relative rounded-2xl overflow-hidden border border-white/10 h-48 group">
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
+                </div>
+
+                <div className="relative">
+                  <textarea
+                    required
+                    rows="4"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-medium text-slate-800 placeholder:text-slate-400 transition-all focus:ring-2 focus:bg-white resize-none"
+                    style={{ "--tw-ring-color": primaryColor }}
+                    placeholder="כתבו כאן את הברכה שלכם..."
                   />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                </div>
+
+                <div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    ref={fileInputRef}
+                    className="hidden"
+                  />
+
+                  {!imagePreview ? (
                     <button
                       type="button"
-                      onClick={removeImage}
-                      className="bg-red-500/80 hover:bg-red-500 text-white p-3 rounded-full backdrop-blur-md transform hover:scale-105 transition-all"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full py-6 border-2 border-dashed border-slate-300 hover:border-slate-400 bg-slate-50 rounded-2xl flex flex-col items-center justify-center gap-3 text-slate-600 transition-all group"
                     >
-                      <X size={20} />
+                      <div className="bg-white p-3 rounded-full shadow-sm group-hover:scale-110 transition-transform">
+                        <UploadCloud
+                          size={24}
+                          style={{ color: primaryColor }}
+                        />
+                      </div>
+                      <div className="text-center">
+                        <span className="text-sm font-bold block">
+                          צרפו תמונת סלפי
+                        </span>
+                        <span className="text-xs text-slate-400">
+                          (רשות, אבל מוסיף המון!)
+                        </span>
+                      </div>
                     </button>
-                  </div>
+                  ) : (
+                    <div className="relative rounded-2xl overflow-hidden border border-slate-200 h-48 group shadow-sm">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                        <button
+                          type="button"
+                          onClick={removeImage}
+                          className="bg-white text-rose-500 p-3 rounded-full shadow-lg transform hover:scale-105 transition-all"
+                        >
+                          <X size={20} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            {/* הודעת שגיאה */}
-            {status === "error" && (
-              <p className="text-red-400 text-sm text-center font-medium bg-red-400/10 py-2 rounded-lg">
-                אופס, משהו השתבש. אנא נסו שוב.
-              </p>
-            )}
+                {status === "error" && (
+                  <p className="text-rose-500 text-sm text-center font-bold bg-rose-50 py-3 rounded-xl border border-rose-100">
+                    אופס, משהו השתבש בשליחה. אנא נסו שוב.
+                  </p>
+                )}
 
-            {/* כפתור שליחה */}
-            <button
-              type="submit"
-              disabled={isSubmitting || !guestName.trim() || !message.trim()}
-              className={`w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-black text-lg transition-all duration-300 ${
-                isSubmitting || !guestName.trim() || !message.trim()
-                  ? "bg-slate-800 text-white/30 cursor-not-allowed"
-                  : "bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-400 hover:to-purple-400 text-white shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:shadow-[0_0_30px_rgba(99,102,241,0.6)] transform hover:-translate-y-1"
-              }`}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="animate-spin" size={24} />
-                  שולח ברכה...
-                </>
-              ) : (
-                <>
-                  <Send size={20} />
-                  שלח ברכה
-                </>
-              )}
-            </button>
-          </form>
-        </>
-      )}
+                <button
+                  type="submit"
+                  disabled={
+                    isSubmitting || !guestName.trim() || !message.trim()
+                  }
+                  className={`w-full flex items-center justify-center gap-2 py-4 mt-2 rounded-2xl font-black text-lg transition-all ${
+                    isSubmitting || !guestName.trim() || !message.trim()
+                      ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                      : "text-white shadow-[0_4px_15px_rgb(0,0,0,0.1)] active:scale-[0.98]"
+                  }`}
+                  style={{
+                    backgroundColor:
+                      isSubmitting || !guestName.trim() || !message.trim()
+                        ? undefined
+                        : primaryColor,
+                  }}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="animate-spin" size={24} />
+                      שולח ברכה...
+                    </>
+                  ) : (
+                    <>
+                      <Send size={20} className="ml-1" />
+                      שלח ברכה
+                    </>
+                  )}
+                </button>
+              </form>
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
 
-export default Blessing;
+export default BlessingModule;
