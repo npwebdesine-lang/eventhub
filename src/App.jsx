@@ -1,23 +1,29 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Suspense,
+} from "react-router-dom";
 import ErrorBoundary from "./components/ErrorBoundary";
 import OfflineBanner from "./components/OfflineBanner";
 import { ToastProvider } from "./components/Toast";
+import Loader from "./components/Loader";
 
-// ייבוא הקבצים שלנו
-import ScanQR from "./pages/ScanQR";
-import Invite from "./pages/Invite";
-import Home from "./pages/Home";
-import Admin from "./pages/Admin";
-import Album from "./pages/Album";
-import Privacy from "./pages/Privacy";
-import Terms from "./pages/Terms";
+// ייבוא קבצים באופן עצל (lazy loading)
+const ScanQR = React.lazy(() => import("./pages/ScanQR"));
+const Invite = React.lazy(() => import("./pages/Invite"));
+const Home = React.lazy(() => import("./pages/Home"));
+const Admin = React.lazy(() => import("./pages/Admin"));
+const Album = React.lazy(() => import("./pages/Album"));
+const Privacy = React.lazy(() => import("./pages/Privacy"));
+const Terms = React.lazy(() => import("./pages/Terms"));
 
-// ייבוא המודולים
-import Photos from "./modules/Photos";
-import Rideshare from "./modules/Rideshare";
-import Dating from "./modules/Dating";
-import Icebreaker from "./modules/Icebreaker";
-import BlessingModule from "./modules/BlessingModule";
+// ייבוא המודולים באופן עצל
+const Photos = React.lazy(() => import("./modules/Photos"));
+const Rideshare = React.lazy(() => import("./modules/Rideshare"));
+const Dating = React.lazy(() => import("./modules/Dating"));
+const Icebreaker = React.lazy(() => import("./modules/Icebreaker"));
+const BlessingModule = React.lazy(() => import("./modules/BlessingModule"));
 
 function App() {
   return (
