@@ -73,9 +73,9 @@ const getGreeting = () => {
   return "לילה טוב";
 };
 
-// Shared glassmorphism card style
+// Shared glassmorphism card style with celebration-forward design
 const GLASS =
-  "module-card-anim relative rounded-[2rem] overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.09)] bg-white/80 backdrop-blur-md border border-white/60";
+  "module-card-anim relative rounded-[2.5rem] overflow-hidden shadow-elevated card-hover glass-card transition-smooth";
 
 const PhotoMarqueeCard = ({
   photos,
@@ -103,24 +103,24 @@ const PhotoMarqueeCard = ({
   const duration = Math.max(18, photos.length * 3);
 
   return (
-    <div className={`${GLASS} flex flex-col`}>
+    <div className={`${GLASS} flex flex-col overflow-hidden group`}>
       <button
         onClick={(e) => openInfo(e, "photo")}
-        className="absolute top-3 left-3 text-slate-300 hover:text-slate-500 z-20 p-1 transition-colors"
+        className="absolute top-4 left-4 text-slate-400 hover:text-slate-600 z-20 p-2 bg-white/50 hover:bg-white/80 rounded-full transition-smooth"
         aria-label="מידע"
       >
-        <Info size={16} />
+        <Info size={18} />
       </button>
 
-      {/* Marquee strip */}
+      {/* Marquee strip with enhanced visual */}
       <div
-        className="relative h-36 md:h-44 overflow-hidden rounded-t-[1.8rem]"
+        className="relative h-40 md:h-48 overflow-hidden rounded-t-[2.2rem]"
         style={{
-          background: "linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)",
+          background: `linear-gradient(135deg, ${primaryColor}15 0%, ${primaryColor}08 100%)`,
           WebkitMaskImage:
-            "linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)",
+            "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
           maskImage:
-            "linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)",
+            "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
         }}
       >
         {photos.length > 0 ? (
@@ -153,16 +153,19 @@ const PhotoMarqueeCard = ({
         )}
       </div>
 
-      {/* Bottom */}
-      <div className="p-4 text-center">
-        <h3 className="font-black text-slate-800 text-sm mb-0.5">כל אחד צלם</h3>
-        <p className="text-slate-400 text-xs mb-3">העלו תמונות לאלבום המשותף</p>
+      {/* Bottom with enhanced styling */}
+      <div className="p-6 text-center bg-gradient-to-br from-white to-slate-50/50">
+        <h3 className="font-black text-slate-900 text-lg mb-1" style={{ color: primaryColor }}>כל אחד צלם</h3>
+        <p className="text-slate-500 text-sm mb-5 font-medium">העלו תמונות לאלבום המשותף</p>
         <button
           onClick={() => navigate(`/photos?event=${eventId}`)}
-          className="w-full font-bold py-3 rounded-[1rem] text-sm flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all text-white shadow-md"
-          style={{ backgroundColor: primaryColor }}
+          className="w-full font-bold py-3 rounded-[1.2rem] text-sm flex items-center justify-center gap-2 hover:opacity-85 active:scale-[0.97] transition-all text-white shadow-elevated button-pulse"
+          style={{
+            backgroundColor: primaryColor,
+            boxShadow: `0 10px 30px ${primaryColor}40`
+          }}
         >
-          <Camera size={16} /> פתח מצלמה / גלריה
+          <Camera size={18} /> פתח מצלמה / גלריה
         </button>
       </div>
     </div>
@@ -182,42 +185,46 @@ const ActionModuleCard = ({
 
   return (
     <div
-      className={`${GLASS} p-4 flex flex-col items-center text-center h-full`}
+      className={`${GLASS} p-5 flex flex-col items-center text-center h-full group`}
     >
       <button
         onClick={(e) => openInfo(e, mKey)}
-        className="absolute top-2.5 left-2.5 text-slate-300 hover:text-slate-500 z-10 p-1 transition-colors"
+        className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 z-10 p-2 bg-white/50 hover:bg-white/80 rounded-full transition-smooth"
         aria-label="מידע"
       >
-        <Info size={14} />
+        <Info size={16} />
       </button>
 
       {hasBadge && (
-        <span className="absolute top-2.5 right-2.5 flex h-3 w-3">
+        <span className="absolute top-3 left-3 flex h-4 w-4">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500 border-2 border-white" />
+          <span className="relative inline-flex rounded-full h-4 w-4 bg-rose-500 border-2 border-white shadow-lg" />
         </span>
       )}
 
       <div
-        className={`w-11 h-11 ${info.bg} rounded-[0.875rem] flex items-center justify-center mb-2.5 mt-1`}
+        className={`w-14 h-14 ${info.bg} rounded-[1.2rem] flex items-center justify-center mb-3 mt-2 group-hover:scale-110 transition-smooth shadow-elevated`}
       >
-        <info.icon size={20} className={info.color} />
+        <info.icon size={24} className={info.color} />
       </div>
 
-      <h3 className="font-black text-slate-800 text-xs leading-tight mb-1">
+      <h3 className="font-black text-slate-900 text-sm leading-tight mb-1.5" style={{ fontSize: '1.1rem' }}>
         {info.title}
       </h3>
-      <p className="text-slate-400 text-[11px] leading-relaxed line-clamp-3 mb-3 flex-1">
+      <p className="text-slate-500 text-xs leading-relaxed line-clamp-3 mb-4 flex-1 font-medium">
         {info.description}
       </p>
 
       <button
         onClick={onClick}
-        className="w-full font-bold py-2 rounded-[0.8rem] text-xs flex items-center justify-center gap-1 hover:opacity-80 active:scale-[0.98] transition-all mt-auto"
-        style={{ backgroundColor: `${primaryColor}18`, color: primaryColor }}
+        className="w-full font-bold py-2.5 rounded-[1rem] text-xs flex items-center justify-center gap-1.5 hover:opacity-90 active:scale-[0.97] transition-smooth mt-auto button-pulse"
+        style={{
+          backgroundColor: `${primaryColor}15`,
+          color: primaryColor,
+          border: `1.5px solid ${primaryColor}30`
+        }}
       >
-        כניסה <ChevronLeft size={12} />
+        כניסה <ChevronLeft size={14} />
       </button>
     </div>
   );
@@ -225,38 +232,45 @@ const ActionModuleCard = ({
 
 // ---- Rideshare Card (2 role buttons) ----
 const RideshareHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
-  <div className={`${GLASS} p-4 flex flex-col items-center text-center h-full`}>
+  <div className={`${GLASS} p-5 flex flex-col items-center text-center h-full group`}>
     <button
       onClick={(e) => openInfo(e, "rideshare")}
-      className="absolute top-2.5 left-2.5 text-slate-300 hover:text-slate-500 z-10 p-1 transition-colors"
+      className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 z-10 p-2 bg-white/50 hover:bg-white/80 rounded-full transition-smooth"
       aria-label="מידע"
     >
-      <Info size={14} />
+      <Info size={16} />
     </button>
 
-    <div className="w-11 h-11 bg-amber-50 rounded-[0.875rem] flex items-center justify-center mb-2.5 mt-1">
-      <Car size={20} className="text-amber-500" />
+    <div className="w-14 h-14 bg-amber-50 rounded-[1.2rem] flex items-center justify-center mb-3 mt-2 group-hover:scale-110 transition-smooth shadow-elevated">
+      <Car size={24} className="text-amber-500" />
     </div>
 
-    <h3 className="font-black text-slate-800 text-xs mb-1">לוח טרמפים</h3>
-    <p className="text-slate-400 text-[11px] mb-3 leading-relaxed flex-1 line-clamp-3">
+    <h3 className="font-black text-slate-900 text-sm mb-1.5" style={{ fontSize: '1.1rem' }}>לוח טרמפים</h3>
+    <p className="text-slate-500 text-xs mb-4 leading-relaxed flex-1 line-clamp-3 font-medium">
       שתפו נסיעות לאחר האירוע
     </p>
 
-    <div className="w-full space-y-1.5 mt-auto">
+    <div className="w-full space-y-2 mt-auto">
       <button
         onClick={() => navigate(`/rideshare?event=${eventId}&role=driver`)}
-        className="w-full font-bold py-2 rounded-[0.8rem] text-xs hover:opacity-90 active:scale-[0.98] transition-all text-white flex items-center justify-center gap-1"
-        style={{ backgroundColor: primaryColor }}
+        className="w-full font-bold py-2.5 rounded-[1rem] text-xs hover:opacity-85 active:scale-[0.97] transition-smooth text-white flex items-center justify-center gap-1.5 button-pulse shadow-elevated"
+        style={{
+          backgroundColor: primaryColor,
+          boxShadow: `0 8px 20px ${primaryColor}40`
+        }}
       >
-        <Car size={12} /> אני מציע 🚗
+        <Car size={14} /> אני מציע 🚗
       </button>
       <button
         onClick={() => navigate(`/rideshare?event=${eventId}&role=seeker`)}
-        className="w-full font-bold py-2 rounded-[0.8rem] text-xs hover:opacity-80 active:scale-[0.98] transition-all flex items-center justify-center gap-1"
-        style={{ backgroundColor: `${primaryColor}18`, color: primaryColor }}
+        className="w-full font-bold py-2.5 rounded-[1rem] text-xs hover:opacity-90 active:scale-[0.97] transition-smooth flex items-center justify-center gap-1.5 border-2"
+        style={{
+          backgroundColor: `${primaryColor}10`,
+          color: primaryColor,
+          borderColor: `${primaryColor}30`
+        }}
       >
-        <Users size={12} /> אני מחפש 🙋
+        <Users size={14} /> אני מחפש 🙋
       </button>
     </div>
   </div>
@@ -264,30 +278,33 @@ const RideshareHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
 
 // ---- Blessings Card ----
 const BlessingsHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
-  <div className={`${GLASS} p-5 flex flex-col items-center text-center`}>
+  <div className={`${GLASS} p-5 flex flex-col items-center text-center h-full group`}>
     <button
       onClick={(e) => openInfo(e, "blessings")}
-      className="absolute top-3 left-3 text-slate-300 hover:text-slate-500 z-10 p-1 transition-colors"
+      className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 z-10 p-2 bg-white/50 hover:bg-white/80 rounded-full transition-smooth"
       aria-label="מידע"
     >
       <Info size={16} />
     </button>
 
-    <div className="w-12 h-12 bg-purple-50 rounded-[1rem] flex items-center justify-center mb-3 mt-1">
-      <MessageCircle size={24} className="text-purple-500" />
+    <div className="w-14 h-14 bg-purple-50 rounded-[1.2rem] flex items-center justify-center mb-3 mt-2 group-hover:scale-110 transition-smooth shadow-elevated">
+      <MessageCircle size={26} className="text-purple-500" />
     </div>
 
-    <h3 className="font-black text-slate-800 text-sm mb-1">ספר ברכות</h3>
-    <p className="text-slate-400 text-xs mb-3 leading-relaxed">
+    <h3 className="font-black text-slate-900 text-sm mb-1.5" style={{ fontSize: '1.1rem' }}>ספר ברכות</h3>
+    <p className="text-slate-500 text-xs mb-5 leading-relaxed font-medium flex-1">
       כתבו ברכה לבעלי השמחה
     </p>
 
     <button
       onClick={() => navigate(`/blessing?event=${eventId}`)}
-      className="w-full font-bold py-2.5 rounded-[0.8rem] text-xs hover:opacity-90 active:scale-[0.98] transition-all text-white flex items-center justify-center gap-1.5"
-      style={{ backgroundColor: primaryColor }}
+      className="w-full font-bold py-2.5 rounded-[1rem] text-xs hover:opacity-85 active:scale-[0.97] transition-smooth text-white flex items-center justify-center gap-1.5 button-pulse shadow-elevated"
+      style={{
+        backgroundColor: primaryColor,
+        boxShadow: `0 10px 25px ${primaryColor}40`
+      }}
     >
-      <MessageCircle size={13} /> הוסף ברכה ✍️
+      <MessageCircle size={15} /> הוסף ברכה ✍️
     </button>
   </div>
 );
@@ -316,8 +333,72 @@ const BlessingsStrip = ({ eventId, primaryColor }) => {
       }
     };
     fetchLatest();
+
+    // Real-time listener for new approved blessings
+    const channelId = `blessings_ticker_${eventId}_${crypto.randomUUID()}`;
+    const channel = supabase
+      .channel(channelId)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "blessings",
+          filter: `event_id=eq.${eventId}`,
+        },
+        (payload) => {
+          if (!isMounted || !payload?.new) return;
+          // Update if blessing is approved
+          if (payload.new.is_approved === true) {
+            if (isMounted) {
+              setBlessing({
+                guest_name: payload.new.guest_name,
+                message: payload.new.message,
+              });
+            }
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "blessings",
+          filter: `event_id=eq.${eventId}`,
+        },
+        (payload) => {
+          if (!isMounted || !payload?.new) return;
+          // If a blessing was approved or edited
+          if (payload.new.is_approved === true) {
+            if (isMounted) {
+              setBlessing({
+                guest_name: payload.new.guest_name,
+                message: payload.new.message,
+              });
+            }
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "blessings",
+          filter: `event_id=eq.${eventId}`,
+        },
+        () => {
+          if (!isMounted) return;
+          // If a blessing is deleted, fetch the latest
+          fetchLatest();
+        },
+      )
+      .subscribe();
+
     return () => {
       isMounted = false;
+      supabase.removeChannel(channel);
     };
   }, [eventId]);
 
@@ -350,10 +431,9 @@ const BlessingsStrip = ({ eventId, primaryColor }) => {
   return (
     <div
       ref={stripRef}
-      className="overflow-hidden rounded-2xl py-2.5 mb-3 flex items-center"
+      className="overflow-hidden rounded-[1.5rem] py-3.5 mb-4 flex items-center shadow-elevated glass-card transition-smooth"
       style={{
-        backgroundColor: `${primaryColor}12`,
-        borderRight: `3px solid ${primaryColor}`,
+        borderLeft: `4px solid ${primaryColor}`,
       }}
     >
       <div className="overflow-hidden flex-1">
@@ -362,13 +442,13 @@ const BlessingsStrip = ({ eventId, primaryColor }) => {
           className="flex whitespace-nowrap will-change-transform"
         >
           <span
-            className="text-sm font-medium px-4"
+            className="text-sm font-bold px-4"
             style={{ color: primaryColor }}
           >
             {text}
           </span>
           <span
-            className="text-sm font-medium px-4"
+            className="text-sm font-bold px-4"
             style={{ color: primaryColor }}
           >
             {text}
@@ -522,8 +602,21 @@ const Home = () => {
           filter: `event_id=eq.${id}`,
         },
         (payload) => {
-          if (isMounted && payload.new?.image_url)
-            setCarouselPhotos((prev) => [payload.new, ...prev].slice(0, 10));
+          if (!isMounted || !payload?.new?.image_url) return;
+          setCarouselPhotos((prev) => [payload.new, ...prev].slice(0, 10));
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "photos",
+          filter: `event_id=eq.${id}`,
+        },
+        (payload) => {
+          if (!isMounted || !payload?.old?.id) return;
+          setCarouselPhotos((prev) => prev.filter((p) => p.id !== payload.old.id));
         },
       )
       .subscribe();
@@ -663,7 +756,7 @@ const Home = () => {
         style={{ backgroundColor: background }}
         dir="rtl"
       >
-        <div className="bg-white p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.10)] w-full max-w-sm text-center animate-in zoom-in duration-500">
+        <div className="glass-card shadow-deep p-8 rounded-[2.5rem] w-full max-w-sm text-center animate-in zoom-in duration-500" style={{ animation: 'bounce-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
           <div
             className="w-16 h-16 rounded-[1.2rem] flex items-center justify-center mx-auto mb-5"
             style={{ backgroundColor: `${primary}18` }}
@@ -687,8 +780,8 @@ const Home = () => {
                 if (registrationError) setRegistrationError(null);
               }}
               placeholder="שם מלא (לדוגמה: תקווה משולם)"
-              className="w-full p-4 bg-slate-50 border border-slate-100 rounded-[1.2rem] focus:ring-2 outline-none text-center text-lg font-bold transition-all"
-              style={{ "--tw-ring-color": primary }}
+              className="w-full p-4 bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-slate-200 rounded-[1.2rem] focus:ring-2 outline-none text-center text-lg font-bold transition-smooth"
+              style={{ "--tw-ring-color": primary, borderColor: `${primary}40` }}
               required
               disabled={isRegistering}
             />
@@ -738,8 +831,11 @@ const Home = () => {
             <button
               type="submit"
               disabled={isRegistering}
-              className="w-full text-white font-black py-4 rounded-[1.2rem] text-lg shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-transform mt-4 flex items-center justify-center gap-2 disabled:opacity-70 disabled:scale-100"
-              style={{ backgroundColor: primary }}
+              className="w-full text-white font-black py-4 rounded-[1.2rem] text-lg shadow-deep hover:opacity-85 active:scale-[0.97] transition-smooth mt-4 flex items-center justify-center gap-2 disabled:opacity-60 disabled:scale-100 button-pulse"
+              style={{
+                backgroundColor: primary,
+                boxShadow: `0 12px 35px ${primary}50`
+              }}
             >
               {isRegistering ? (
                 <>
@@ -770,16 +866,23 @@ const Home = () => {
       style={{ backgroundColor: background }}
       dir="rtl"
     >
-      {/* Header */}
+      {/* Header with gradient background */}
       <div
-        className="rounded-b-[3rem] pt-12 pb-24 px-6 relative z-10 shadow-lg text-center flex flex-col items-center transition-colors duration-1000"
-        style={{ backgroundColor: primary }}
+        className="rounded-b-[3.5rem] pt-16 pb-28 px-6 relative z-10 shadow-deep text-center flex flex-col items-center transition-colors duration-1000 overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, ${primary} 0%, ${primary}dd 100%)`,
+          boxShadow: `0 20px 50px ${primary}30`
+        }}
       >
-        <div className="max-w-md w-full header-anim">
-          <p className="text-white/60 font-bold text-xs uppercase tracking-widest mb-1">
+        {/* Decorative floating elements */}
+        <div className="absolute top-6 right-10 w-20 h-20 rounded-full opacity-10 bg-white float-effect" />
+        <div className="absolute bottom-8 left-8 w-32 h-32 rounded-full opacity-10 bg-white float-delayed" />
+
+        <div className="max-w-md w-full header-anim relative z-10">
+          <p className="text-white/70 font-bold text-xs uppercase tracking-widest mb-2">
             {getGreeting()}
           </p>
-          <h1 className="text-3xl md:text-4xl font-black text-white mb-1 leading-tight drop-shadow-sm">
+          <h1 className="text-4xl md:text-5xl font-black text-white mb-2 leading-tight drop-shadow-lg" style={{ fontFamily: "'Playfair Display', serif" }}>
             {name}
           </h1>
           {eventData.event_date && (
@@ -793,21 +896,21 @@ const Home = () => {
             </p>
           )}
 
-          {/* User bar */}
-          <div className="bg-black/20 rounded-[1.5rem] p-3.5 flex items-center justify-between border border-white/10 backdrop-blur-sm gap-3">
+          {/* User bar with enhanced styling */}
+          <div className="bg-white/15 rounded-[1.5rem] p-4 flex items-center justify-between border border-white/30 backdrop-blur-md gap-3 shadow-elevated hover:bg-white/20 transition-smooth">
             <div className="flex flex-col text-right min-w-0">
-              <span className="text-white/50 text-[10px] font-bold">
+              <span className="text-white/60 text-[11px] font-bold uppercase tracking-wider">
                 מחובר כ:
               </span>
-              <span className="text-white font-bold text-sm truncate">
+              <span className="text-white font-black text-sm truncate">
                 {guestNameStr}
               </span>
             </div>
             <button
               onClick={handleChangeName}
-              className="shrink-0 text-xs bg-white/15 hover:bg-white/25 text-white px-3.5 py-2 rounded-xl transition-colors font-bold flex items-center gap-1.5 active:scale-95 border border-white/20"
+              className="shrink-0 text-xs bg-white/20 hover:bg-white/30 text-white px-4 py-2.5 rounded-[0.9rem] transition-smooth font-bold flex items-center gap-1.5 active:scale-95 border border-white/40 button-pulse"
             >
-              <UserX size={14} /> החלף משתמש
+              <UserX size={15} /> החלף
             </button>
           </div>
         </div>
@@ -824,13 +927,16 @@ const Home = () => {
         <div className="flex flex-col gap-3">
           {/* 1. Seating Card — first */}
           {active_modules.seating && (
-            <div className={`${GLASS} p-6`}>
+            <div className={`${GLASS} p-6 relative overflow-hidden group`}>
+              {/* Decorative background */}
+              <div className="absolute inset-0 opacity-5" style={{ background: `linear-gradient(135deg, ${primary} 0%, transparent 100%)` }} />
+
               <button
                 onClick={(e) => openInfo(e, "seating")}
-                className="absolute top-4 left-4 text-slate-300 hover:text-slate-500 z-10 p-1 transition-colors"
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 z-10 p-2 bg-white/50 hover:bg-white/80 rounded-full transition-smooth"
                 aria-label="מידע"
               >
-                <Info size={16} />
+                <Info size={18} />
               </button>
 
               {myTable === null ? (
@@ -842,20 +948,27 @@ const Home = () => {
                   />
                 </div>
               ) : myTable.found ? (
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center justify-between gap-5 relative z-10">
                   <div className="flex flex-col items-center">
                     <div
-                      className="w-12 h-12 rounded-full flex items-center justify-center mb-2"
-                      style={{ backgroundColor: `${primary}18` }}
+                      className="w-16 h-16 rounded-full flex items-center justify-center mb-3 shadow-elevated group-hover:scale-110 transition-smooth"
+                      style={{
+                        backgroundColor: `${primary}18`,
+                        boxShadow: `0 10px 30px ${primary}25`
+                      }}
                     >
-                      <MapPin size={22} style={{ color: primary }} />
+                      <MapPin size={28} style={{ color: primary }} />
                     </div>
-                    <p className="text-slate-400 font-bold text-xs mb-0.5">
+                    <p className="text-slate-500 font-bold text-xs mb-1 uppercase tracking-wider">
                       השולחן שלך
                     </p>
                     <div
                       className="text-7xl font-black leading-none"
-                      style={{ color: primary }}
+                      style={{
+                        color: primary,
+                        fontFamily: "'Playfair Display', serif",
+                        textShadow: `0 4px 12px ${primary}30`
+                      }}
                     >
                       {myTable.number}
                     </div>
@@ -863,14 +976,14 @@ const Home = () => {
 
                   <button
                     onClick={() => fetchTableMates(myTable.number)}
-                    className="flex-1 flex flex-col items-center justify-center gap-2 py-5 rounded-[1.5rem] hover:opacity-80 active:scale-[0.97] transition-all border-2"
+                    className="flex-1 flex flex-col items-center justify-center gap-2 py-6 rounded-[1.5rem] hover:opacity-85 active:scale-[0.97] transition-smooth border-2 shadow-elevated card-hover"
                     style={{
-                      backgroundColor: `${primary}10`,
-                      borderColor: `${primary}20`,
+                      backgroundColor: `${primary}12`,
+                      borderColor: `${primary}25`,
                       color: primary,
                     }}
                   >
-                    <Users size={26} />
+                    <Users size={28} />
                     <span className="text-xs font-black text-center leading-snug">
                       מי איתי
                       <br />

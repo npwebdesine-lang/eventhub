@@ -122,16 +122,19 @@ const Album = () => {
 
   if (loading)
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center">
-        <Loader2 className="animate-spin text-slate-400 mb-4" size={48} />
-        <p className="text-slate-500 font-bold animate-pulse">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col items-center justify-center">
+        <div className="relative">
+          <Loader2 className="animate-spin text-slate-400 mb-6" size={56} />
+          <div className="absolute inset-0 rounded-full animate-pulse opacity-20 bg-slate-400" style={{ width: '72px', height: '72px', left: '-8px', top: '-8px' }} />
+        </div>
+        <p className="text-slate-600 font-black text-lg animate-pulse">
           מכין את הרגעים שלכם...
         </p>
       </div>
     );
   if (!eventData)
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-800 text-2xl font-black">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center text-slate-800 text-2xl font-black">
         האירוע לא נמצא 💔
       </div>
     );
@@ -186,46 +189,55 @@ const Album = () => {
         />
       </div>
 
-      {/* Header צבוע בצבע הראשי */}
+      {/* Header עם gradient ואנימציות */}
       <div
         ref={headerRef}
-        className="rounded-b-[3rem] pt-16 pb-20 px-6 relative z-10 shadow-md flex flex-col items-center text-center transition-colors duration-1000"
-        style={{ backgroundColor: primaryColor }}
+        className="rounded-b-[3.5rem] pt-20 pb-28 px-6 relative z-10 shadow-deep flex flex-col items-center text-center transition-colors duration-1000 overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, ${primaryColor} 0%, ${primaryColor}dd 100%)`,
+          boxShadow: `0 20px 50px ${primaryColor}30`
+        }}
       >
-        <div className="w-16 h-16 rounded-[1.2rem] flex items-center justify-center mb-4 bg-white/20 border border-white/20 shadow-inner">
-          <ImageIcon className="text-white opacity-90" size={28} />
-        </div>
-        <p className="text-white/70 font-bold text-xs uppercase tracking-widest mb-1">
-          האלבום הדיגיטלי של
-        </p>
-        <h1 className="text-3xl md:text-4xl font-black text-white leading-tight drop-shadow-sm">
-          {eventData.name}
-        </h1>
+        {/* Decorative floating elements */}
+        <div className="absolute top-10 right-12 w-24 h-24 rounded-full opacity-10 bg-white float-effect" />
+        <div className="absolute bottom-8 left-8 w-32 h-32 rounded-full opacity-10 bg-white float-delayed" />
 
-        {/* טאבים מותאמים לרקע צבעוני */}
+        <div className="relative z-10">
+          <div className="w-20 h-20 rounded-[1.5rem] flex items-center justify-center mb-6 bg-white/20 border border-white/30 shadow-elevated backdrop-blur-md hover:scale-110 transition-transform">
+            <ImageIcon className="text-white" size={32} />
+          </div>
+          <p className="text-white/70 font-bold text-xs uppercase tracking-widest mb-2">
+            האלבום הדיגיטלי של
+          </p>
+          <h1 className="text-4xl md:text-5xl font-black text-white leading-tight drop-shadow-lg" style={{ fontFamily: "'Playfair Display', serif" }}>
+            {eventData.name}
+          </h1>
+        </div>
+
+        {/* טאבים עם אנימציות חלקות */}
         {eventData.active_modules?.blessings && (
-          <div className="flex bg-black/15 p-1.5 rounded-full mt-8 backdrop-blur-sm border border-white/10">
+          <div className="flex bg-white/15 p-2 rounded-full mt-10 backdrop-blur-md border border-white/30 shadow-elevated gap-2">
             <button
               onClick={() => setActiveTab("photos")}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-full font-bold text-sm transition-all duration-300 ${
+              className={`flex items-center gap-2 px-7 py-3 rounded-full font-bold text-sm transition-all duration-300 button-pulse ${
                 activeTab === "photos"
-                  ? "bg-white shadow-md"
+                  ? "bg-white shadow-elevated scale-105"
                   : "text-white/70 hover:text-white"
               }`}
               style={activeTab === "photos" ? { color: primaryColor } : {}}
             >
-              <ImageIcon size={16} /> תמונות
+              <ImageIcon size={18} /> תמונות
             </button>
             <button
               onClick={() => setActiveTab("blessings")}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-full font-bold text-sm transition-all duration-300 ${
+              className={`flex items-center gap-2 px-7 py-3 rounded-full font-bold text-sm transition-all duration-300 button-pulse ${
                 activeTab === "blessings"
-                  ? "bg-white shadow-md"
+                  ? "bg-white shadow-elevated scale-105"
                   : "text-white/70 hover:text-white"
               }`}
               style={activeTab === "blessings" ? { color: primaryColor } : {}}
             >
-              <MessageCircle size={16} /> ברכות
+              <MessageCircle size={18} /> ברכות
             </button>
           </div>
         )}
@@ -257,21 +269,23 @@ const Album = () => {
                 <div
                   key={photo.id}
                   onClick={() => setSelectedIndex(index)}
-                  className="media-card relative break-inside-avoid rounded-[1.5rem] overflow-hidden cursor-pointer group shadow-md bg-white border border-slate-100 transform-gpu hover:shadow-xl transition-all"
+                  className="media-card relative break-inside-avoid rounded-[2rem] overflow-hidden cursor-pointer group shadow-elevated glass-card transform-gpu card-hover"
                 >
                   <img
                     src={photo.image_url}
                     alt={`Photo by ${photo.guest_name}`}
-                    className="w-full h-auto object-cover transition-all duration-700 group-hover:scale-105"
+                    className="w-full h-auto object-cover transition-all duration-700 group-hover:scale-110"
                     loading="lazy"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-5">
-                    <p className="text-white/80 text-[10px] font-bold uppercase tracking-widest mb-1 flex items-center gap-1.5">
-                      <Heart size={10} className="fill-rose-500" /> צולם ע"י
-                    </p>
-                    <p className="text-white text-lg font-black tracking-tight translate-y-2 group-hover:translate-y-0 transition-transform duration-500 truncate">
-                      {photo.guest_name}
-                    </p>
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-900/30 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-6">
+                    <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                      <p className="text-white/70 text-[11px] font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
+                        <Heart size={12} className="fill-rose-500" style={{ color: primaryColor }} /> צולם ע"י
+                      </p>
+                      <p className="text-white text-lg font-black tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+                        {photo.guest_name}
+                      </p>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -299,37 +313,38 @@ const Album = () => {
               {blessings.map((blessing) => (
                 <div
                   key={blessing.id}
-                  className="media-card relative break-inside-avoid rounded-[1.5rem] overflow-hidden shadow-md bg-white border border-slate-100 p-6 flex flex-col h-full transform-gpu transition-all hover:shadow-xl"
+                  className="media-card relative break-inside-avoid rounded-[2rem] overflow-hidden shadow-elevated glass-card p-7 flex flex-col h-full transform-gpu card-hover"
                 >
+                  {/* Background quote decoration */}
                   <Quote
-                    size={36}
-                    className="absolute top-4 left-4 opacity-[0.05]"
+                    size={42}
+                    className="absolute top-4 right-4 opacity-10"
                     style={{ color: primaryColor }}
                   />
 
                   {blessing.image_url && (
-                    <div className="w-full h-48 mb-6 rounded-xl overflow-hidden border border-slate-100 bg-slate-50">
+                    <div className="w-full h-52 mb-6 rounded-[1.5rem] overflow-hidden border border-slate-200 bg-slate-100 shadow-elevated">
                       <img
                         src={blessing.image_url}
                         alt="Selfie"
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
                       />
                     </div>
                   )}
 
-                  <div className="flex-grow mt-2">
-                    <p className="text-slate-700 text-lg leading-relaxed whitespace-pre-wrap relative z-10 font-medium">
-                      {blessing.message}
+                  <div className="flex-grow mt-3">
+                    <p className="text-slate-700 text-base leading-relaxed whitespace-pre-wrap relative z-10 font-medium italic">
+                      "{blessing.message}"
                     </p>
                   </div>
 
-                  <div className="mt-6 pt-6 border-t border-slate-100">
-                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">
+                  <div className="mt-8 pt-6 border-t border-slate-200">
+                    <p className="text-slate-500 text-[11px] font-bold uppercase tracking-widest mb-2">
                       באהבה מ:
                     </p>
                     <p
-                      className="text-xl font-black"
-                      style={{ color: primaryColor }}
+                      className="text-lg font-black"
+                      style={{ color: primaryColor, fontFamily: "'Playfair Display', serif" }}
                     >
                       {blessing.guest_name}
                     </p>
@@ -340,52 +355,61 @@ const Album = () => {
           ))}
       </div>
 
-      {/* Lightbox - תמיד כהה להבלטת התמונה */}
+      {/* Lightbox - אלגנטי עם אנימציות חלקות */}
       {selectedIndex !== null && activeTab === "photos" && (
         <div
-          className="fixed inset-0 z-[200] bg-slate-950/95 backdrop-blur-3xl flex items-center justify-center animate-in fade-in duration-300"
+          className="fixed inset-0 z-[200] bg-slate-950/98 backdrop-blur-2xl flex items-center justify-center animate-in fade-in duration-300"
           onClick={() => setSelectedIndex(null)}
         >
-          <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center z-50 bg-gradient-to-b from-black/80 to-transparent pointer-events-none">
+          {/* Info bar */}
+          <div className="absolute top-0 left-0 right-0 p-8 flex justify-between items-center z-50 bg-gradient-to-b from-black/70 via-black/40 to-transparent pointer-events-none">
             <div className="pointer-events-auto">
-              <p className="text-white/50 text-xs font-bold uppercase tracking-widest">
+              <p className="text-white/60 text-xs font-bold uppercase tracking-widest mb-1">
                 צלם/ת הרגע
               </p>
-              <p className="text-white text-xl font-black">
+              <p className="text-white text-2xl font-black" style={{ fontFamily: "'Playfair Display', serif" }}>
                 {photos[selectedIndex].guest_name}
               </p>
             </div>
-            <button className="pointer-events-auto text-white/50 hover:text-white bg-white/10 hover:bg-white/20 p-3 rounded-[1rem] transition-all backdrop-blur-md">
-              <X size={24} />
+            <button
+              onClick={() => setSelectedIndex(null)}
+              className="pointer-events-auto text-white/50 hover:text-white bg-white/15 hover:bg-white/25 p-3 rounded-full transition-all backdrop-blur-md button-pulse"
+            >
+              <X size={26} />
             </button>
           </div>
 
+          {/* Counter */}
+          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-50 text-white/60 text-sm font-bold bg-black/40 backdrop-blur-md px-5 py-2.5 rounded-full">
+            {selectedIndex + 1} / {photos.length}
+          </div>
+
           <div
-            className="relative w-full h-full flex items-center justify-center p-4 md:p-12"
+            className="relative w-full h-full flex items-center justify-center p-6 md:p-16"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={handleNext}
-              className="absolute right-4 md:right-10 z-50 text-white/30 hover:text-white bg-black/20 hover:bg-black/40 p-4 rounded-[1.2rem] transition-all backdrop-blur-md group"
+              className="absolute right-6 md:right-12 z-50 text-white/40 hover:text-white bg-white/10 hover:bg-white/20 p-5 rounded-[1.5rem] transition-all backdrop-blur-md group button-pulse"
             >
               <ChevronRight
-                size={28}
-                className="group-hover:scale-110 transition-transform"
+                size={32}
+                className="group-hover:scale-125 transition-transform"
               />
             </button>
             <img
               key={selectedIndex}
               src={photos[selectedIndex].image_url}
-              className="max-w-full max-h-full object-contain rounded-[1.5rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] animate-in zoom-in-95 duration-300"
+              className="max-w-full max-h-[85vh] object-contain rounded-[2rem] shadow-[0_0_80px_rgba(0,0,0,0.7)] animate-in zoom-in-95 duration-300"
               alt="Enlarged moment"
             />
             <button
               onClick={handlePrev}
-              className="absolute left-4 md:left-10 z-50 text-white/30 hover:text-white bg-black/20 hover:bg-black/40 p-4 rounded-[1.2rem] transition-all backdrop-blur-md group"
+              className="absolute left-6 md:left-12 z-50 text-white/40 hover:text-white bg-white/10 hover:bg-white/20 p-5 rounded-[1.5rem] transition-all backdrop-blur-md group button-pulse"
             >
               <ChevronLeft
-                size={28}
-                className="group-hover:scale-110 transition-transform"
+                size={32}
+                className="group-hover:scale-125 transition-transform"
               />
             </button>
           </div>
