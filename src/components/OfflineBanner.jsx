@@ -8,7 +8,7 @@ import { WifiOff, Wifi } from "lucide-react";
  * Usage: <OfflineBanner /> inside App.jsx (outside <Routes>)
  */
 const OfflineBanner = () => {
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isOnline, setIsOnline] = useState(true);
   const [showRestored, setShowRestored] = useState(false);
 
   useEffect(() => {
