@@ -551,7 +551,7 @@ const Admin = () => {
     try {
       const { data } = await supabase
         .from("dating_profiles")
-        .select("*")
+        .select("id, name, age, connection, location, bio, photo_url, seeking")
         .eq("event_id", selectedEvent.id)
         .order("created_at", { ascending: false });
       setDatingProfiles(data || []);
@@ -2521,6 +2521,15 @@ const Admin = () => {
                                 {profile.location}
                               </p>
                             )}
+                          </div>
+                        )}
+
+                        {/* Seeking Badge */}
+                        {profile.seeking && (
+                          <div className="mb-3">
+                            <span className="inline-block bg-rose-100 text-rose-700 text-xs font-bold px-3 py-1 rounded-full">
+                              מחפש/ת: {profile.seeking}
+                            </span>
                           </div>
                         )}
 
