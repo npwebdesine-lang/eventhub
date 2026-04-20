@@ -150,7 +150,10 @@ const BlessingModule = () => {
       >
         <div className="relative">
           <Loader2 className="animate-spin text-slate-400 mb-6" size={56} />
-          <div className="absolute inset-0 rounded-full animate-pulse opacity-20 bg-slate-400" style={{ width: '72px', height: '72px', left: '-8px', top: '-8px' }} />
+          <div
+            className="absolute inset-0 rounded-full animate-pulse opacity-20 bg-slate-400"
+            style={{ width: "72px", height: "72px", left: "-8px", top: "-8px" }}
+          />
         </div>
       </div>
     );
@@ -171,7 +174,7 @@ const BlessingModule = () => {
         className="rounded-b-[3.5rem] pt-16 pb-24 px-6 relative z-10 shadow-deep text-center transition-colors duration-1000 overflow-hidden"
         style={{
           background: `linear-gradient(135deg, ${primaryColor} 0%, ${primaryColor}dd 100%)`,
-          boxShadow: `0 20px 50px ${primaryColor}30`
+          boxShadow: `0 20px 50px ${primaryColor}30`,
         }}
       >
         {/* Decorative floating elements */}
@@ -190,7 +193,10 @@ const BlessingModule = () => {
         <div className="relative z-10 flex items-center justify-center gap-3">
           <MessageCircle size={28} className="text-white" />
           <div>
-            <h1 className="text-3xl md:text-4xl font-black text-white leading-tight drop-shadow-lg" style={{ fontFamily: "'Playfair Display', serif" }}>
+            <h1
+              className="text-3xl md:text-4xl font-black text-white leading-tight drop-shadow-lg"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
               ספר ברכות
             </h1>
             <p className="text-white/70 font-bold text-xs uppercase tracking-widest mt-1">
@@ -205,20 +211,30 @@ const BlessingModule = () => {
         <div
           ref={cardRef}
           className="glass-card rounded-[2.5rem] p-8 shadow-deep text-center"
-          style={{ animation: 'bounce-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+          style={{
+            animation: "bounce-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)",
+          }}
         >
           {status === "success" ? (
-            <div className="py-8 animate-in zoom-in" style={{ animation: 'bounce-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+            <div
+              className="py-8 animate-in zoom-in"
+              style={{
+                animation: "bounce-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)",
+              }}
+            >
               <div
                 className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 shadow-elevated"
                 style={{
                   backgroundColor: `${primaryColor}18`,
-                  boxShadow: `0 10px 30px ${primaryColor}25`
+                  boxShadow: `0 10px 30px ${primaryColor}25`,
                 }}
               >
                 <CheckCircle2 size={48} style={{ color: primaryColor }} />
               </div>
-              <h3 className="text-3xl font-black text-slate-900 mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>
+              <h3
+                className="text-3xl font-black text-slate-900 mb-3"
+                style={{ fontFamily: "'Playfair Display', serif" }}
+              >
                 הברכה נשלחה! ✨
               </h3>
               <p className="text-slate-600 font-medium text-sm mb-8 px-4 leading-relaxed">
@@ -236,7 +252,7 @@ const BlessingModule = () => {
                 className="w-full py-4 text-white font-black rounded-[1.3rem] shadow-elevated transition-all active:scale-95 button-pulse"
                 style={{
                   backgroundColor: primaryColor,
-                  boxShadow: `0 10px 30px ${primaryColor}40`
+                  boxShadow: `0 10px 30px ${primaryColor}40`,
                 }}
               >
                 חזרה לאירוע
@@ -245,7 +261,10 @@ const BlessingModule = () => {
           ) : (
             <>
               <div className="mb-8">
-                <h2 className="text-2xl font-black text-slate-900" style={{ fontFamily: "'Playfair Display', serif" }}>
+                <h2
+                  className="text-2xl font-black text-slate-900"
+                  style={{ fontFamily: "'Playfair Display', serif" }}
+                >
                   כתבו משהו מהלב
                 </h2>
                 <p className="text-slate-600 text-sm font-medium mt-2">
@@ -256,7 +275,10 @@ const BlessingModule = () => {
               <form onSubmit={handleSubmit} className="space-y-5 text-right">
                 <div className="relative">
                   <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                    <User size={18} style={{ color: primaryColor, opacity: 0.7 }} />
+                    <User
+                      size={18}
+                      style={{ color: primaryColor, opacity: 0.7 }}
+                    />
                   </div>
                   <input
                     type="text"
@@ -264,7 +286,10 @@ const BlessingModule = () => {
                     value={guestName}
                     onChange={(e) => setGuestName(e.target.value)}
                     className="w-full p-4 pr-12 bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-slate-200 rounded-[1.3rem] outline-none font-bold text-slate-800 placeholder:text-slate-400 transition-smooth focus:bg-white"
-                    style={{ "--tw-ring-color": primaryColor, borderColor: `${primaryColor}30` }}
+                    style={{
+                      "--tw-ring-color": primaryColor,
+                      borderColor: `${primaryColor}30`,
+                    }}
                     placeholder="איך תרצו להופיע באלבום?"
                   />
                 </div>
@@ -276,7 +301,10 @@ const BlessingModule = () => {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     className="w-full p-4 bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-slate-200 rounded-[1.3rem] outline-none font-medium text-slate-800 placeholder:text-slate-400 transition-smooth focus:bg-white resize-none"
-                    style={{ "--tw-ring-color": primaryColor, borderColor: `${primaryColor}30` }}
+                    style={{
+                      "--tw-ring-color": primaryColor,
+                      borderColor: `${primaryColor}30`,
+                    }}
                     placeholder="כתבו כאן את הברכה שלכם..."
                   />
                 </div>
@@ -297,10 +325,13 @@ const BlessingModule = () => {
                       className="w-full py-8 border-2 border-dashed rounded-[1.5rem] flex flex-col items-center justify-center gap-3 transition-all group"
                       style={{
                         borderColor: `${primaryColor}40`,
-                        backgroundColor: `${primaryColor}08`
+                        backgroundColor: `${primaryColor}08`,
                       }}
                     >
-                      <div className="bg-white p-4 rounded-full shadow-elevated group-hover:scale-125 transition-transform" style={{ boxShadow: `0 8px 20px ${primaryColor}25` }}>
+                      <div
+                        className="bg-white p-4 rounded-full shadow-elevated group-hover:scale-125 transition-transform"
+                        style={{ boxShadow: `0 8px 20px ${primaryColor}25` }}
+                      >
                         <UploadCloud
                           size={28}
                           style={{ color: primaryColor }}
@@ -357,9 +388,10 @@ const BlessingModule = () => {
                       isSubmitting || !guestName.trim() || !message.trim()
                         ? undefined
                         : primaryColor,
-                    boxShadow: isSubmitting || !guestName.trim() || !message.trim()
-                      ? undefined
-                      : `0 10px 30px ${primaryColor}40`
+                    boxShadow:
+                      isSubmitting || !guestName.trim() || !message.trim()
+                        ? undefined
+                        : `0 10px 30px ${primaryColor}40`,
                   }}
                 >
                   {isSubmitting ? (

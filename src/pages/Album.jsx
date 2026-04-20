@@ -125,7 +125,10 @@ const Album = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col items-center justify-center">
         <div className="relative">
           <Loader2 className="animate-spin text-slate-400 mb-6" size={56} />
-          <div className="absolute inset-0 rounded-full animate-pulse opacity-20 bg-slate-400" style={{ width: '72px', height: '72px', left: '-8px', top: '-8px' }} />
+          <div
+            className="absolute inset-0 rounded-full animate-pulse opacity-20 bg-slate-400"
+            style={{ width: "72px", height: "72px", left: "-8px", top: "-8px" }}
+          />
         </div>
         <p className="text-slate-600 font-black text-lg animate-pulse">
           מכין את הרגעים שלכם...
@@ -195,7 +198,7 @@ const Album = () => {
         className="rounded-b-[3.5rem] pt-20 pb-28 px-6 relative z-10 shadow-deep flex flex-col items-center text-center transition-colors duration-1000 overflow-hidden"
         style={{
           background: `linear-gradient(135deg, ${primaryColor} 0%, ${primaryColor}dd 100%)`,
-          boxShadow: `0 20px 50px ${primaryColor}30`
+          boxShadow: `0 20px 50px ${primaryColor}30`,
         }}
       >
         {/* Decorative floating elements */}
@@ -209,7 +212,10 @@ const Album = () => {
           <p className="text-white/70 font-bold text-xs uppercase tracking-widest mb-2">
             האלבום הדיגיטלי של
           </p>
-          <h1 className="text-4xl md:text-5xl font-black text-white leading-tight drop-shadow-lg" style={{ fontFamily: "'Playfair Display', serif" }}>
+          <h1
+            className="text-4xl md:text-5xl font-black text-white leading-tight drop-shadow-lg"
+            style={{ fontFamily: "'Playfair Display', serif" }}
+          >
             {eventData.name}
           </h1>
         </div>
@@ -280,9 +286,17 @@ const Album = () => {
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-900/30 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-6">
                     <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                       <p className="text-white/70 text-[11px] font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
-                        <Heart size={12} className="fill-rose-500" style={{ color: primaryColor }} /> צולם ע"י
+                        <Heart
+                          size={12}
+                          className="fill-rose-500"
+                          style={{ color: primaryColor }}
+                        />{" "}
+                        צולם ע"י
                       </p>
-                      <p className="text-white text-lg font-black tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
+                      <p
+                        className="text-white text-lg font-black tracking-tight"
+                        style={{ fontFamily: "'Playfair Display', serif" }}
+                      >
                         {photo.guest_name}
                       </p>
                     </div>
@@ -344,7 +358,10 @@ const Album = () => {
                     </p>
                     <p
                       className="text-lg font-black"
-                      style={{ color: primaryColor, fontFamily: "'Playfair Display', serif" }}
+                      style={{
+                        color: primaryColor,
+                        fontFamily: "'Playfair Display', serif",
+                      }}
                     >
                       {blessing.guest_name}
                     </p>
@@ -367,7 +384,10 @@ const Album = () => {
               <p className="text-white/60 text-xs font-bold uppercase tracking-widest mb-1">
                 צלם/ת הרגע
               </p>
-              <p className="text-white text-2xl font-black" style={{ fontFamily: "'Playfair Display', serif" }}>
+              <p
+                className="text-white text-2xl font-black"
+                style={{ fontFamily: "'Playfair Display', serif" }}
+              >
                 {photos[selectedIndex].guest_name}
               </p>
             </div>

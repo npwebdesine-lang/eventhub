@@ -1,5 +1,6 @@
 import React, { Suspense } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Analytics } from "@vercel/analytics/react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import OfflineBanner from "./components/OfflineBanner";
 import { ToastProvider } from "./components/Toast";
@@ -32,6 +33,7 @@ function App() {
   return (
     <ToastProvider>
       <Router>
+        <Analytics />
         {/* Suspense עוטף את כל הראוטים ומציג את ה-Loader שלנו בזמן הטעינה */}
         <Suspense fallback={<GlobalLoader />}>
           <Routes>

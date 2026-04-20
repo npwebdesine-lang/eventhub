@@ -325,7 +325,10 @@ const Photos = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="relative">
           <Loader2 className="animate-spin text-slate-400 mb-6" size={56} />
-          <div className="absolute inset-0 rounded-full animate-pulse opacity-20 bg-slate-400" style={{ width: '72px', height: '72px', left: '-8px', top: '-8px' }} />
+          <div
+            className="absolute inset-0 rounded-full animate-pulse opacity-20 bg-slate-400"
+            style={{ width: "72px", height: "72px", left: "-8px", top: "-8px" }}
+          />
         </div>
       </div>
     );
@@ -348,7 +351,7 @@ const Photos = () => {
         className="rounded-b-[3.5rem] pt-16 pb-24 px-6 relative z-10 shadow-deep flex flex-col items-center text-center transition-colors duration-1000 overflow-hidden"
         style={{
           background: `linear-gradient(135deg, ${primaryColor} 0%, ${primaryColor}dd 100%)`,
-          boxShadow: `0 20px 50px ${primaryColor}30`
+          boxShadow: `0 20px 50px ${primaryColor}30`,
         }}
       >
         {/* Decorative floating elements */}
@@ -357,11 +360,20 @@ const Photos = () => {
 
         <div className="relative z-10 flex items-center gap-3 mb-2">
           <Camera size={28} style={{ color: primaryTextColor, opacity: 0.9 }} />
-          <h1 className="text-3xl md:text-4xl font-black" style={{ color: primaryTextColor, fontFamily: "'Playfair Display', serif" }}>
+          <h1
+            className="text-3xl md:text-4xl font-black"
+            style={{
+              color: primaryTextColor,
+              fontFamily: "'Playfair Display', serif",
+            }}
+          >
             כל אחד צלם
           </h1>
         </div>
-        <p className="text-white/70 font-bold text-xs uppercase tracking-widest" style={{ color: `${primaryTextColor}aa` }}>
+        <p
+          className="text-white/70 font-bold text-xs uppercase tracking-widest"
+          style={{ color: `${primaryTextColor}aa` }}
+        >
           שתפו את הרגעים המיוחדים
         </p>
 
@@ -379,11 +391,19 @@ const Photos = () => {
         {/* Upload Card עם glass morphism */}
         <div className="fade-up-item glass-card p-7 rounded-[2.5rem] shadow-deep mb-8 text-center">
           {uploadSuccess ? (
-            <div className="py-8 animate-in zoom-in" style={{ animation: 'bounce-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+            <div
+              className="py-8 animate-in zoom-in"
+              style={{
+                animation: "bounce-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)",
+              }}
+            >
               <div className="w-20 h-20 bg-emerald-50 rounded-[1.5rem] flex items-center justify-center mx-auto mb-4 shadow-elevated">
                 <CheckCircle2 size={40} className="text-emerald-500" />
               </div>
-              <h3 className="font-black text-slate-900 text-xl" style={{ fontFamily: "'Playfair Display', serif" }}>
+              <h3
+                className="font-black text-slate-900 text-xl"
+                style={{ fontFamily: "'Playfair Display', serif" }}
+              >
                 התמונה הועלתה! ✨
               </h3>
               <p className="text-slate-500 font-medium text-sm mt-2">
@@ -396,22 +416,30 @@ const Photos = () => {
                 className="w-20 h-20 rounded-[1.5rem] flex items-center justify-center mx-auto mb-5 shadow-elevated group-hover:scale-110 transition-transform"
                 style={{
                   backgroundColor: `${primaryColor}18`,
-                  boxShadow: `0 10px 30px ${primaryColor}25`
+                  boxShadow: `0 10px 30px ${primaryColor}25`,
                 }}
               >
                 <UploadCloud size={32} style={{ color: primaryColor }} />
               </div>
-              <h2 className="text-2xl font-black text-slate-900 mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
+              <h2
+                className="text-2xl font-black text-slate-900 mb-2"
+                style={{ fontFamily: "'Playfair Display', serif" }}
+              >
                 צלמו או העלו תמונה
               </h2>
               <p className="text-slate-500 font-medium text-sm mb-6">
                 <span
                   className={`font-black text-lg ${myUploadCount >= MAX_PHOTOS_PER_GUEST ? "text-rose-500" : ""}`}
-                  style={{ color: myUploadCount >= MAX_PHOTOS_PER_GUEST ? undefined : primaryColor }}
+                  style={{
+                    color:
+                      myUploadCount >= MAX_PHOTOS_PER_GUEST
+                        ? undefined
+                        : primaryColor,
+                  }}
                 >
                   {myUploadCount}/{MAX_PHOTOS_PER_GUEST}
-                </span>
-                {" "}תמונות הועלו
+                </span>{" "}
+                תמונות הועלו
               </p>
 
               {/* Progress bar */}
@@ -422,7 +450,7 @@ const Photos = () => {
                     style={{
                       width: `${uploadProgress}%`,
                       backgroundColor: primaryColor,
-                      boxShadow: `0 0 10px ${primaryColor}60`
+                      boxShadow: `0 0 10px ${primaryColor}60`,
                     }}
                   />
                 </div>
@@ -433,7 +461,7 @@ const Photos = () => {
                   className="w-full font-black py-4 rounded-[1.3rem] flex justify-center items-center gap-2 cursor-pointer transition-all shadow-elevated active:scale-[0.97] button-pulse text-white"
                   style={{
                     backgroundColor: primaryColor,
-                    boxShadow: `0 10px 30px ${primaryColor}40`
+                    boxShadow: `0 10px 30px ${primaryColor}40`,
                   }}
                 >
                   {uploading ? (
@@ -466,12 +494,25 @@ const Photos = () => {
         {/* Gallery עם עיטורים */}
         <div className="fade-up-item">
           <div className="flex items-center gap-3 mb-6">
-            <h3 className="font-black text-slate-800 text-xl" style={{ fontFamily: "'Playfair Display', serif" }}>
+            <h3
+              className="font-black text-slate-800 text-xl"
+              style={{ fontFamily: "'Playfair Display', serif" }}
+            >
               האלבום המשותף
             </h3>
-            <Sparkles size={18} style={{ color: primaryColor }} className="animate-pulse" />
+            <Sparkles
+              size={18}
+              style={{ color: primaryColor }}
+              className="animate-pulse"
+            />
             {photos.length > 0 && (
-              <span className="text-white font-black text-sm px-3 py-1.5 rounded-full" style={{ backgroundColor: primaryColor, boxShadow: `0 4px 12px ${primaryColor}40` }}>
+              <span
+                className="text-white font-black text-sm px-3 py-1.5 rounded-full"
+                style={{
+                  backgroundColor: primaryColor,
+                  boxShadow: `0 4px 12px ${primaryColor}40`,
+                }}
+              >
                 {photos.length}
               </span>
             )}
@@ -482,7 +523,9 @@ const Photos = () => {
           ) : photos.length === 0 ? (
             <div className="text-center py-16 glass-card rounded-[2rem] shadow-elevated">
               <ImageIcon size={52} className="mx-auto mb-4 text-slate-300" />
-              <p className="text-slate-600 font-black text-lg mb-2">האלבום עדיין ריק</p>
+              <p className="text-slate-600 font-black text-lg mb-2">
+                האלבום עדיין ריק
+              </p>
               <p className="text-slate-500 font-medium text-sm leading-relaxed px-4">
                 היו הראשונים להעלות תמונה ולחלוק רגעים מיוחדים! 📸
               </p>
@@ -559,7 +602,10 @@ const Photos = () => {
               <p className="text-white/60 text-xs font-bold uppercase tracking-widest mb-1">
                 צולם ע"י
               </p>
-              <p className="text-white text-xl font-black" style={{ fontFamily: "'Playfair Display', serif" }}>
+              <p
+                className="text-white text-xl font-black"
+                style={{ fontFamily: "'Playfair Display', serif" }}
+              >
                 {photos[lightbox].guest_name}
               </p>
             </div>
@@ -573,7 +619,9 @@ const Photos = () => {
 
           {/* Counter & Download */}
           <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-4 text-white/70 text-sm font-bold bg-black/40 backdrop-blur-md px-6 py-3 rounded-full">
-            <span>{lightbox + 1} / {photos.length}</span>
+            <span>
+              {lightbox + 1} / {photos.length}
+            </span>
             <button
               onClick={(e) => {
                 e.stopPropagation();

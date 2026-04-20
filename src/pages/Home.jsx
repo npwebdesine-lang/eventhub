@@ -155,14 +155,21 @@ const PhotoMarqueeCard = ({
 
       {/* Bottom with enhanced styling */}
       <div className="p-6 text-center bg-gradient-to-br from-white to-slate-50/50">
-        <h3 className="font-black text-slate-900 text-lg mb-1" style={{ color: primaryColor }}>כל אחד צלם</h3>
-        <p className="text-slate-500 text-sm mb-5 font-medium">העלו תמונות לאלבום המשותף</p>
+        <h3
+          className="font-black text-slate-900 text-lg mb-1"
+          style={{ color: primaryColor }}
+        >
+          כל אחד צלם
+        </h3>
+        <p className="text-slate-500 text-sm mb-5 font-medium">
+          העלו תמונות לאלבום המשותף
+        </p>
         <button
           onClick={() => navigate(`/photos?event=${eventId}`)}
           className="w-full font-bold py-3 rounded-[1.2rem] text-sm flex items-center justify-center gap-2 hover:opacity-85 active:scale-[0.97] transition-all text-white shadow-elevated button-pulse"
           style={{
             backgroundColor: primaryColor,
-            boxShadow: `0 10px 30px ${primaryColor}40`
+            boxShadow: `0 10px 30px ${primaryColor}40`,
           }}
         >
           <Camera size={18} /> פתח מצלמה / גלריה
@@ -208,7 +215,10 @@ const ActionModuleCard = ({
         <info.icon size={24} className={info.color} />
       </div>
 
-      <h3 className="font-black text-slate-900 text-sm leading-tight mb-1.5" style={{ fontSize: '1.1rem' }}>
+      <h3
+        className="font-black text-slate-900 text-sm leading-tight mb-1.5"
+        style={{ fontSize: "1.1rem" }}
+      >
         {info.title}
       </h3>
       <p className="text-slate-500 text-xs leading-relaxed line-clamp-3 mb-4 flex-1 font-medium">
@@ -221,7 +231,7 @@ const ActionModuleCard = ({
         style={{
           backgroundColor: `${primaryColor}15`,
           color: primaryColor,
-          border: `1.5px solid ${primaryColor}30`
+          border: `1.5px solid ${primaryColor}30`,
         }}
       >
         כניסה <ChevronLeft size={14} />
@@ -232,7 +242,9 @@ const ActionModuleCard = ({
 
 // ---- Rideshare Card (2 role buttons) ----
 const RideshareHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
-  <div className={`${GLASS} p-5 flex flex-col items-center text-center h-full group`}>
+  <div
+    className={`${GLASS} p-5 flex flex-col items-center text-center h-full group`}
+  >
     <button
       onClick={(e) => openInfo(e, "rideshare")}
       className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 z-10 p-2 bg-white/50 hover:bg-white/80 rounded-full transition-smooth"
@@ -245,7 +257,12 @@ const RideshareHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
       <Car size={24} className="text-amber-500" />
     </div>
 
-    <h3 className="font-black text-slate-900 text-sm mb-1.5" style={{ fontSize: '1.1rem' }}>לוח טרמפים</h3>
+    <h3
+      className="font-black text-slate-900 text-sm mb-1.5"
+      style={{ fontSize: "1.1rem" }}
+    >
+      לוח טרמפים
+    </h3>
     <p className="text-slate-500 text-xs mb-4 leading-relaxed flex-1 line-clamp-3 font-medium">
       שתפו נסיעות לאחר האירוע
     </p>
@@ -256,7 +273,7 @@ const RideshareHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
         className="w-full font-bold py-2.5 rounded-[1rem] text-xs hover:opacity-85 active:scale-[0.97] transition-smooth text-white flex items-center justify-center gap-1.5 button-pulse shadow-elevated"
         style={{
           backgroundColor: primaryColor,
-          boxShadow: `0 8px 20px ${primaryColor}40`
+          boxShadow: `0 8px 20px ${primaryColor}40`,
         }}
       >
         <Car size={14} /> אני מציע 🚗
@@ -267,7 +284,7 @@ const RideshareHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
         style={{
           backgroundColor: `${primaryColor}10`,
           color: primaryColor,
-          borderColor: `${primaryColor}30`
+          borderColor: `${primaryColor}30`,
         }}
       >
         <Users size={14} /> אני מחפש 🙋
@@ -278,7 +295,9 @@ const RideshareHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
 
 // ---- Blessings Card ----
 const BlessingsHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
-  <div className={`${GLASS} p-5 flex flex-col items-center text-center h-full group`}>
+  <div
+    className={`${GLASS} p-5 flex flex-col items-center text-center h-full group`}
+  >
     <button
       onClick={(e) => openInfo(e, "blessings")}
       className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 z-10 p-2 bg-white/50 hover:bg-white/80 rounded-full transition-smooth"
@@ -291,7 +310,12 @@ const BlessingsHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
       <MessageCircle size={26} className="text-purple-500" />
     </div>
 
-    <h3 className="font-black text-slate-900 text-sm mb-1.5" style={{ fontSize: '1.1rem' }}>ספר ברכות</h3>
+    <h3
+      className="font-black text-slate-900 text-sm mb-1.5"
+      style={{ fontSize: "1.1rem" }}
+    >
+      ספר ברכות
+    </h3>
     <p className="text-slate-500 text-xs mb-5 leading-relaxed font-medium flex-1">
       כתבו ברכה לבעלי השמחה
     </p>
@@ -301,7 +325,7 @@ const BlessingsHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
       className="w-full font-bold py-2.5 rounded-[1rem] text-xs hover:opacity-85 active:scale-[0.97] transition-smooth text-white flex items-center justify-center gap-1.5 button-pulse shadow-elevated"
       style={{
         backgroundColor: primaryColor,
-        boxShadow: `0 10px 25px ${primaryColor}40`
+        boxShadow: `0 10px 25px ${primaryColor}40`,
       }}
     >
       <MessageCircle size={15} /> הוסף ברכה ✍️
@@ -616,7 +640,9 @@ const Home = () => {
         },
         (payload) => {
           if (!isMounted || !payload?.old?.id) return;
-          setCarouselPhotos((prev) => prev.filter((p) => p.id !== payload.old.id));
+          setCarouselPhotos((prev) =>
+            prev.filter((p) => p.id !== payload.old.id),
+          );
         },
       )
       .subscribe();
@@ -756,7 +782,12 @@ const Home = () => {
         style={{ backgroundColor: background }}
         dir="rtl"
       >
-        <div className="glass-card shadow-deep p-8 rounded-[2.5rem] w-full max-w-sm text-center animate-in zoom-in duration-500" style={{ animation: 'bounce-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+        <div
+          className="glass-card shadow-deep p-8 rounded-[2.5rem] w-full max-w-sm text-center animate-in zoom-in duration-500"
+          style={{
+            animation: "bounce-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)",
+          }}
+        >
           <div
             className="w-16 h-16 rounded-[1.2rem] flex items-center justify-center mx-auto mb-5"
             style={{ backgroundColor: `${primary}18` }}
@@ -781,7 +812,10 @@ const Home = () => {
               }}
               placeholder="שם מלא (לדוגמה: תקווה משולם)"
               className="w-full p-4 bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-slate-200 rounded-[1.2rem] focus:ring-2 outline-none text-center text-lg font-bold transition-smooth"
-              style={{ "--tw-ring-color": primary, borderColor: `${primary}40` }}
+              style={{
+                "--tw-ring-color": primary,
+                borderColor: `${primary}40`,
+              }}
               required
               disabled={isRegistering}
             />
@@ -834,7 +868,7 @@ const Home = () => {
               className="w-full text-white font-black py-4 rounded-[1.2rem] text-lg shadow-deep hover:opacity-85 active:scale-[0.97] transition-smooth mt-4 flex items-center justify-center gap-2 disabled:opacity-60 disabled:scale-100 button-pulse"
               style={{
                 backgroundColor: primary,
-                boxShadow: `0 12px 35px ${primary}50`
+                boxShadow: `0 12px 35px ${primary}50`,
               }}
             >
               {isRegistering ? (
@@ -871,7 +905,7 @@ const Home = () => {
         className="rounded-b-[3.5rem] pt-16 pb-28 px-6 relative z-10 shadow-deep text-center flex flex-col items-center transition-colors duration-1000 overflow-hidden"
         style={{
           background: `linear-gradient(135deg, ${primary} 0%, ${primary}dd 100%)`,
-          boxShadow: `0 20px 50px ${primary}30`
+          boxShadow: `0 20px 50px ${primary}30`,
         }}
       >
         {/* Decorative floating elements */}
@@ -882,7 +916,10 @@ const Home = () => {
           <p className="text-white/70 font-bold text-xs uppercase tracking-widest mb-2">
             {getGreeting()}
           </p>
-          <h1 className="text-4xl md:text-5xl font-black text-white mb-2 leading-tight drop-shadow-lg" style={{ fontFamily: "'Playfair Display', serif" }}>
+          <h1
+            className="text-4xl md:text-5xl font-black text-white mb-2 leading-tight drop-shadow-lg"
+            style={{ fontFamily: "'Playfair Display', serif" }}
+          >
             {name}
           </h1>
           {eventData.event_date && (
@@ -929,7 +966,12 @@ const Home = () => {
           {active_modules.seating && (
             <div className={`${GLASS} p-6 relative overflow-hidden group`}>
               {/* Decorative background */}
-              <div className="absolute inset-0 opacity-5" style={{ background: `linear-gradient(135deg, ${primary} 0%, transparent 100%)` }} />
+              <div
+                className="absolute inset-0 opacity-5"
+                style={{
+                  background: `linear-gradient(135deg, ${primary} 0%, transparent 100%)`,
+                }}
+              />
 
               <button
                 onClick={(e) => openInfo(e, "seating")}
@@ -954,7 +996,7 @@ const Home = () => {
                       className="w-16 h-16 rounded-full flex items-center justify-center mb-3 shadow-elevated group-hover:scale-110 transition-smooth"
                       style={{
                         backgroundColor: `${primary}18`,
-                        boxShadow: `0 10px 30px ${primary}25`
+                        boxShadow: `0 10px 30px ${primary}25`,
                       }}
                     >
                       <MapPin size={28} style={{ color: primary }} />
@@ -967,7 +1009,7 @@ const Home = () => {
                       style={{
                         color: primary,
                         fontFamily: "'Playfair Display', serif",
-                        textShadow: `0 4px 12px ${primary}30`
+                        textShadow: `0 4px 12px ${primary}30`,
                       }}
                     >
                       {myTable.number}
