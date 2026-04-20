@@ -2439,38 +2439,112 @@ const Admin = () => {
         </div>
       )}
       {isDatingManagerOpen && (
-        <div className="fixed inset-0 z-[200] bg-slate-900/80 backdrop-blur-md flex flex-col animate-in fade-in duration-300">
-          <div className="p-6 md:p-8 flex justify-between items-center bg-white shadow-sm z-10">
-            <div>
-              <h2 className="text-3xl font-black text-slate-800">
-                משתמשי דייטליין
-              </h2>
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[200]">
+          <div className="bg-white w-full max-w-5xl rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]">
+            <div className="p-6 md:p-8 border-b border-slate-100 flex justify-between items-center bg-rose-50/50 shrink-0">
+              <div>
+                <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
+                  <Heart className="text-rose-500" /> ניהול דייטליין (פרופילים)
+                </h2>
+                <p className="text-rose-600 font-bold mt-1">
+                  סה"כ פרופילים: {datingProfiles.length}
+                </p>
+              </div>
+              <button
+                onClick={() => setIsDatingManagerOpen(false)}
+                className="p-2 hover:bg-rose-100 text-rose-600 rounded-full transition-colors"
+              >
+                <X size={24} />
+              </button>
             </div>
-            <button
-              onClick={() => setIsDatingManagerOpen(false)}
-              className="bg-slate-100 p-3 rounded-xl"
-            >
-              <X size={24} />
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-6 md:p-10">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {datingProfiles.map((profile) => (
-                <div
-                  key={profile.id}
-                  className="bg-white rounded-[2rem] p-5 shadow-xl flex items-center gap-4 border border-slate-100"
-                >
-                  <h3 className="font-black">{profile.name}</h3>
-                  <button
-                    onClick={() =>
-                      handleDeleteDatingProfile(profile.id, profile.name)
-                    }
-                    className="text-rose-500"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+
+            <div className="flex-1 bg-slate-50 p-6 md:p-8 overflow-y-auto">
+              {datingLoading ? (
+                <div className="flex justify-center py-20">
+                  <Loader2 className="animate-spin text-rose-500" size={48} />
                 </div>
-              ))}
+              ) : datingProfiles.length === 0 ? (
+                <div className="text-center py-20 text-slate-400">
+                  <Heart size={48} className="mx-auto mb-3 opacity-20" />
+                  <p className="font-medium text-lg">אין פרופילים בדייטליין</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {datingProfiles.map((profile) => (
+                    <div
+                      key={profile.id}
+                      className="bg-white rounded-[1.5rem] overflow-hidden shadow-sm border border-slate-100 hover:border-rose-200 hover:shadow-md transition-all flex flex-col"
+                    >
+                      {/* Profile Image */}
+                      <div className="w-full h-40 bg-gradient-to-br from-rose-100 to-pink-100 flex items-center justify-center overflow-hidden">
+                        {profile.photo_url ? (
+                          <img
+                            src={profile.photo_url}
+                            alt={profile.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Heart
+                            size={48}
+                            className="text-rose-300 opacity-50"
+                          />
+                        )}
+                      </div>
+
+                      {/* Profile Info */}
+                      <div className="p-4 flex flex-col flex-1">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h3 className="font-black text-slate-800 text-lg">
+                              {profile.name}
+                            </h3>
+                            {profile.age && (
+                              <p className="text-sm text-slate-500 font-semibold">
+                                {profile.age} שנים
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Connection & Location */}
+                        {(profile.connection || profile.location) && (
+                          <div className="text-xs text-slate-600 mb-3 space-y-1">
+                            {profile.connection && (
+                              <p className="font-semibold">
+                                <span className="text-slate-400">קשר:</span>{" "}
+                                {profile.connection}
+                              </p>
+                            )}
+                            {profile.location && (
+                              <p className="font-semibold">
+                                <span className="text-slate-400">מיקום:</span>{" "}
+                                {profile.location}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Bio */}
+                        {profile.bio && (
+                          <p className="text-sm text-slate-600 mb-4 line-clamp-2 flex-1">
+                            {profile.bio}
+                          </p>
+                        )}
+
+                        {/* Delete Button */}
+                        <button
+                          onClick={() =>
+                            handleDeleteDatingProfile(profile.id, profile.name)
+                          }
+                          className="w-full mt-auto bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
+                        >
+                          <Trash2 size={16} /> מחק פרופיל
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
