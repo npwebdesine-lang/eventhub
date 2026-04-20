@@ -272,11 +272,10 @@ const Invite = () => {
         submitter_phone: submitterPhone,
         guest_name: name.trim(),
       }));
-      // שימוש ב-upsert כדי למנוע כפילויות במקרה של שליחה כפולה. (מומלץ להוסיף Unique Constraint בבסיס הנתונים על event_id + guest_name)
-      const { error } = await supabase.from("rsvps").upsert(inserts, {
-        onConflict: "event_id, guest_name",
-        ignoreDuplicates: true,
-      });
+
+      // מעבר מ-upsert ל-insert רגיל כדי למנוע את שגיאת 400 של ה-Unique Constraint
+      const { error } = await supabase.from("rsvps").insert(inserts);
+
       if (error) throw error;
 
       setRsvpStep(4);
@@ -288,6 +287,7 @@ const Invite = () => {
         setSubmitterPhone("");
       }, 4000);
     } catch (err) {
+      console.error("Submit Error:", err);
       alert("שגיאה בשמירת אישור ההגעה.");
     } finally {
       setIsSubmitting(false);
