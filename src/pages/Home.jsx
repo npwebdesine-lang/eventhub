@@ -424,6 +424,21 @@ const Home = () => {
   const [activeModuleIdx, setActiveModuleIdx] = useState(0);
   const modulesCarouselRef = useRef(null);
 
+  // Diagnostic: log Supabase env vars on mount
+  useEffect(() => {
+    const url = import.meta.env.VITE_SUPABASE_URL;
+    const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY;
+    console.log(
+      "[Supabase config] URL defined:",
+      !!url,
+      "| Key defined:",
+      !!key,
+    );
+    if (!url || !key) {
+      console.error("[Supabase config] MISSING ENV VARS!", { url, key });
+    }
+  }, []);
+
   // Fetch event data
   useEffect(() => {
     const savedName = localStorage.getItem("guest_name");
@@ -607,18 +622,13 @@ const Home = () => {
       localStorage.setItem("guest_id", data.guest_id);
       setIsRegistered(true);
     } catch (err) {
-      console.error("Registration error:", err);
-      const errorMsg = err?.message || "Unknown error";
-      const errorStatus = err?.status || err?.statusCode;
-      console.error("Error details:", { errorMsg, errorStatus, fullError: err });
-
-      if (errorStatus === 404 || errorMsg.includes("not found")) {
-        setRegistrationError("אירוע זה לא נמצא. בדקו את קוד ה-QR.");
-      } else if (errorStatus === 400 || errorMsg.includes("duplicate")) {
-        setRegistrationError("השם הזה כבר רשום ממכשיר אחר. אנא השתמשו בשם אחר.");
-      } else {
-        setRegistrationError("שגיאה בהתחברות. בדקו את החיבור לאינטרנט.");
-      }
+      console.error("Registration error full details:", err);
+      const detail =
+        err?.message ||
+        err?.hint ||
+        err?.details ||
+        (typeof err === "string" ? err : JSON.stringify(err));
+      setRegistrationError(`שגיאה: ${detail}`);
     } finally {
       setIsRegistering(false);
     }
