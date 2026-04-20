@@ -77,11 +77,6 @@ const getGreeting = () => {
 const GLASS =
   "module-card-anim relative rounded-[2rem] overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.09)] bg-white/80 backdrop-blur-md border border-white/60";
 
-// ---- Photo Marquee Card ----
-// Uses a pure-CSS @keyframes loop so the track never "jumps" on reset.
-// The track contains two identical copies of the images; the animation
-// moves exactly -50% (one full copy), then wraps back to 0 — invisible
-// because both positions look identical.
 const PhotoMarqueeCard = ({
   photos,
   primaryColor,
@@ -89,8 +84,6 @@ const PhotoMarqueeCard = ({
   navigate,
   openInfo,
 }) => {
-  // Ensure each logical "copy" has at least MIN_VISIBLE photos so the strip
-  // always fills the visible area even when few photos exist.
   const MIN_VISIBLE = 5;
   const repeatsPerCopy = Math.max(
     1,
@@ -101,14 +94,12 @@ const PhotoMarqueeCard = ({
     () => photos,
   ).flat();
 
-  // Use 4 copies total; animate by exactly -25% (= 1 copy) so the loop is seamless.
   const LOOP_COPIES = 4;
   const allPhotos = Array.from(
     { length: LOOP_COPIES },
     () => singleCopy,
   ).flat();
 
-  // Slower for few photos, faster for many — keeps visual rhythm pleasant.
   const duration = Math.max(18, photos.length * 3);
 
   return (
@@ -126,7 +117,6 @@ const PhotoMarqueeCard = ({
         className="relative h-36 md:h-44 overflow-hidden rounded-t-[1.8rem]"
         style={{
           background: "linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)",
-          // Fade the strip edges so the loop is completely invisible
           WebkitMaskImage:
             "linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)",
           maskImage:
@@ -355,7 +345,7 @@ const BlessingsStrip = ({ eventId, primaryColor }) => {
 
   if (!blessing) return null;
 
-  const text = `✨  "${blessing.message}"  —  ${blessing.guest_name}  `;
+  const text = `✨  "${blessing.message}"  —  ${blessing.guest_name}  `;
 
   return (
     <div
@@ -402,16 +392,6 @@ const Home = () => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [registrationError, setRegistrationError] = useState(null);
 
-  // Persistent device fingerprint — created once, never wiped on "change user"
-  const [deviceId] = useState(() => {
-    let did = localStorage.getItem("device_id");
-    if (!did) {
-      did = crypto.randomUUID();
-      localStorage.setItem("device_id", did);
-    }
-    return did;
-  });
-
   const [myTable, setMyTable] = useState(null);
   const [showMatesModal, setShowMatesModal] = useState(false);
   const [tableMates, setTableMates] = useState([]);
@@ -423,21 +403,6 @@ const Home = () => {
   const [carouselPhotos, setCarouselPhotos] = useState([]);
   const [activeModuleIdx, setActiveModuleIdx] = useState(0);
   const modulesCarouselRef = useRef(null);
-
-  // Diagnostic: log Supabase env vars on mount
-  useEffect(() => {
-    const url = import.meta.env.VITE_SUPABASE_URL;
-    const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY;
-    console.log(
-      "[Supabase config] URL defined:",
-      !!url,
-      "| Key defined:",
-      !!key,
-    );
-    if (!url || !key) {
-      console.error("[Supabase config] MISSING ENV VARS!", { url, key });
-    }
-  }, []);
 
   // Fetch event data
   useEffect(() => {
@@ -591,6 +556,7 @@ const Home = () => {
     }
   }, [isRegistered, eventData, loading]);
 
+  // פונקציית ההרשמה הפשוטה והאמינה!
   const handleRegister = async (e) => {
     e.preventDefault();
     if (!nameInput.trim() || !termsAccepted || isRegistering) return;
@@ -599,36 +565,19 @@ const Home = () => {
     setRegistrationError(null);
 
     try {
-      const tentativeGuestId = crypto.randomUUID();
+      // שמירה מקומית בלבד, ללא קריאות מורכבות ל-DB שעשויות להיכשל
+      localStorage.setItem("guest_name", nameInput.trim());
 
-      const { data, error } = await supabase.rpc("register_guest", {
-        p_event_id: id,
-        p_guest_name: nameInput.trim(),
-        p_device_id: deviceId,
-        p_guest_id: tentativeGuestId,
-      });
-
-      if (error) throw error;
-
-      if (!data.ok) {
-        setRegistrationError(
-          "השם הזה כבר רשום ממכשיר אחר. אנא השתמשו בשם אחר.",
-        );
-        return;
+      let guestId = localStorage.getItem("guest_id");
+      if (!guestId) {
+        guestId = crypto.randomUUID();
+        localStorage.setItem("guest_id", guestId);
       }
 
-      // Use the guest_id returned from DB (preserves identity for returning users)
-      localStorage.setItem("guest_name", nameInput.trim());
-      localStorage.setItem("guest_id", data.guest_id);
       setIsRegistered(true);
     } catch (err) {
-      console.error("Registration error full details:", err);
-      const detail =
-        err?.message ||
-        err?.hint ||
-        err?.details ||
-        (typeof err === "string" ? err : JSON.stringify(err));
-      setRegistrationError(`שגיאה: ${detail}`);
+      console.error(err);
+      setRegistrationError("אירעה שגיאה. אנא נסו שוב.");
     } finally {
       setIsRegistering(false);
     }
