@@ -608,7 +608,17 @@ const Home = () => {
       setIsRegistered(true);
     } catch (err) {
       console.error("Registration error:", err);
-      setRegistrationError("שגיאה בהתחברות. בדקו את החיבור לאינטרנט.");
+      const errorMsg = err?.message || "Unknown error";
+      const errorStatus = err?.status || err?.statusCode;
+      console.error("Error details:", { errorMsg, errorStatus, fullError: err });
+
+      if (errorStatus === 404 || errorMsg.includes("not found")) {
+        setRegistrationError("אירוע זה לא נמצא. בדקו את קוד ה-QR.");
+      } else if (errorStatus === 400 || errorMsg.includes("duplicate")) {
+        setRegistrationError("השם הזה כבר רשום ממכשיר אחר. אנא השתמשו בשם אחר.");
+      } else {
+        setRegistrationError("שגיאה בהתחברות. בדקו את החיבור לאינטרנט.");
+      }
     } finally {
       setIsRegistering(false);
     }
