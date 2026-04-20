@@ -114,6 +114,10 @@ const Admin = () => {
   const [icebreakerProfiles, setIcebreakerProfiles] = useState([]);
   const [icebreakerUsersLoading, setIcebreakerUsersLoading] = useState(false);
 
+  const [isRideshareManagerOpen, setIsRideshareManagerOpen] = useState(false);
+  const [rideshareList, setRideshareList] = useState([]);
+  const [rideshareLoading, setRideshareLoading] = useState(false);
+
   const [isRsvpManagerOpen, setIsRsvpManagerOpen] = useState(false);
   const [rsvpList, setRsvpList] = useState([]);
   const [rsvpLoading, setRsvpLoading] = useState(false);
@@ -570,6 +574,34 @@ const Admin = () => {
       alert("תקלה במחיקה");
     }
   };
+
+  const openRideshareManager = async () => {
+    setIsRideshareManagerOpen(true);
+    setRideshareLoading(true);
+    try {
+      const { data } = await supabase
+        .from("rideshares")
+        .select("*")
+        .eq("event_id", selectedEvent.id)
+        .order("created_at", { ascending: false });
+      setRideshareList(data || []);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setRideshareLoading(false);
+    }
+  };
+
+  const handleDeleteRideshare = async (id, name) => {
+    if (!window.confirm(`למחוק את המודעה של ${name}?`)) return;
+    try {
+      await supabase.from("rideshares").delete().eq("id", id);
+      setRideshareList((prev) => prev.filter((r) => r.id !== id));
+    } catch (error) {
+      alert("תקלה במחיקה");
+    }
+  };
+
   const openIcebreakerManager = async () => {
     setIsIcebreakerModalOpen(true);
     setIcebreakerLoading(true);
@@ -1814,6 +1846,17 @@ const Admin = () => {
                         <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
                       </label>
                     </div>
+                    {formData.active_modules.rideshare &&
+                      !selectedEvent.isNew && (
+                        <div className="animate-in fade-in">
+                          <button
+                            onClick={openRideshareManager}
+                            className="w-full py-3 bg-white border border-amber-200 text-amber-600 font-bold rounded-xl hover:bg-amber-50 transition-colors flex justify-center items-center gap-2 shadow-sm"
+                          >
+                            <Car size={18} /> ניהול לוח טרמפים
+                          </button>
+                        </div>
+                      )}
                   </div>
                 </div>
               </div>
@@ -2038,6 +2081,111 @@ const Admin = () => {
                           </div>
                         </>
                       )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- ניהול טרמפים --- */}
+      {isRideshareManagerOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[200]">
+          <div className="bg-white w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]">
+            <div className="p-6 md:p-8 border-b border-slate-100 flex justify-between items-center bg-amber-50/50 shrink-0">
+              <div>
+                <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
+                  <Car className="text-amber-500" /> ניהול טרמפים
+                </h2>
+                <p className="text-amber-600 font-bold mt-1">
+                  סה"כ מודעות: {rideshareList.length}
+                </p>
+              </div>
+              <button
+                onClick={() => setIsRideshareManagerOpen(false)}
+                className="p-2 hover:bg-amber-100 text-amber-600 rounded-full transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="flex-1 bg-slate-50 p-6 md:p-8 overflow-y-auto">
+              {rideshareLoading ? (
+                <div className="flex justify-center py-20">
+                  <Loader2 className="animate-spin text-amber-500" size={48} />
+                </div>
+              ) : rideshareList.length === 0 ? (
+                <div className="text-center py-20 text-slate-400">
+                  <CheckCircle2 size={48} className="mx-auto mb-3 opacity-20" />
+                  <p className="font-medium text-lg">אין מודעות טרמפים בלוח</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {rideshareList.map((ride) => (
+                    <div
+                      key={ride.id}
+                      className="bg-white p-4 rounded-2xl border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between shadow-sm hover:border-amber-200 transition-colors gap-4"
+                    >
+                      <div className="flex-1 w-full">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span
+                            className="text-[10px] font-black px-2.5 py-1 rounded-md"
+                            style={{
+                              backgroundColor:
+                                ride.role === "driver"
+                                  ? "#f59e0b15"
+                                  : "#3b82f615",
+                              color:
+                                ride.role === "driver" ? "#d97706" : "#2563eb",
+                            }}
+                          >
+                            {ride.role === "driver"
+                              ? "מציע/ה טרמפ"
+                              : "מחפש/ת טרמפ"}
+                          </span>
+                          <h4 className="font-bold text-slate-800">
+                            {ride.guest_name}
+                          </h4>
+                        </div>
+                        <div className="text-sm text-slate-600 space-y-1">
+                          <p className="font-semibold">{ride.phone}</p>
+                          {ride.direction && (
+                            <p className="text-xs text-slate-500">
+                              {ride.direction === "there"
+                                ? "הלוך בלבד"
+                                : ride.direction === "back"
+                                  ? "חזור בלבד"
+                                  : "הלוך וחזור"}
+                            </p>
+                          )}
+                          {ride.from_location && (
+                            <p className="text-xs text-slate-500">
+                              הלוך:{" "}
+                              <span className="font-semibold">
+                                {ride.from_location}
+                              </span>
+                            </p>
+                          )}
+                          {ride.to_location && (
+                            <p className="text-xs text-slate-500">
+                              חזור:{" "}
+                              <span className="font-semibold">
+                                {ride.to_location}
+                              </span>
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() =>
+                          handleDeleteRideshare(ride.id, ride.guest_name)
+                        }
+                        className="px-4 py-2 bg-rose-100 hover:bg-rose-200 text-rose-600 font-bold rounded-xl transition-colors flex items-center gap-2 text-sm shrink-0"
+                      >
+                        <Trash2 size={16} /> מחק
+                      </button>
                     </div>
                   ))}
                 </div>

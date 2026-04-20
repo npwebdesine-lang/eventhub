@@ -107,6 +107,7 @@ const Rideshare = () => {
   const [eventData, setEventData] = useState(null);
   const [rides, setRides] = useState([]);
   const [step, setStep] = useState("welcome");
+  const [tempName, setTempName] = useState("");
   const [formData, setFormData] = useState({
     role: roleParam === "driver" ? "driver" : "seeker",
     direction: "",
@@ -178,12 +179,25 @@ const Rideshare = () => {
     setStep("form");
   };
 
+  const handleInlineNameSubmit = (e) => {
+    e.preventDefault();
+    if (!tempName.trim()) return;
+
+    const trimmedName = tempName.trim();
+    localStorage.setItem("guest_name", trimmedName);
+
+    let guestId = localStorage.getItem("guest_id");
+    if (!guestId) {
+      guestId = crypto.randomUUID();
+      localStorage.setItem("guest_id", guestId);
+    }
+
+    setFormData((prev) => ({ ...prev, guest_name: trimmedName }));
+    setTempName("");
+  };
+
   const submitForm = async (e) => {
     e.preventDefault();
-    if (!localGuestId) {
-      showToast("אנא היכנסו לאירוע עם שם כדי להשתמש בלוח", "warning");
-      return;
-    }
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
@@ -366,6 +380,43 @@ const Rideshare = () => {
           </h1>
           <div className="w-9" />
         </div>
+
+        {!formData.guest_name && (
+          <form
+            onSubmit={handleInlineNameSubmit}
+            className="px-5 -mt-8 relative z-20 max-w-md mx-auto w-full space-y-4"
+          >
+            <div className="fade-up-item bg-white p-6 rounded-[1.5rem] shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-slate-100 space-y-4">
+              <h3 className="font-bold text-slate-700 text-sm border-b border-slate-50 pb-2">
+                בואו נתחיל עם שמך
+              </h3>
+              <div>
+                <label className="text-xs font-bold text-slate-400 mb-1 block">
+                  הכנס שם כדי להשתמש בלוח הטרמפים
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  value={tempName}
+                  onChange={(e) => setTempName(e.target.value)}
+                  placeholder="איך קוראים לך?"
+                  className="w-full p-4 bg-slate-50 border border-slate-100 rounded-[1.2rem] outline-none font-bold focus:ring-2 focus:ring-offset-0 transition-all"
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full font-black py-4 rounded-[1.2rem] shadow-md hover:opacity-90 active:scale-[0.98] transition-all mt-4"
+                style={{
+                  backgroundColor: primaryColor,
+                  color: primaryTextColor,
+                }}
+              >
+                המשך
+              </button>
+            </div>
+          </form>
+        )}
 
         <form
           onSubmit={submitForm}
