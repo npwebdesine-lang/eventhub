@@ -77,6 +77,7 @@ const Admin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [authLoading, setAuthLoading] = useState(true);
+  const [loginError, setLoginError] = useState(null); // נוסף: לניהול שגיאות התחברות
   const [events, setEvents] = useState([]);
   const [dataLoading, setDataLoading] = useState(false);
 
@@ -143,7 +144,7 @@ const Admin = () => {
     photos: 0,
     dating: 0,
     reports: 0,
-    blessings: 0, // התווסף נתון לברכות
+    blessings: 0,
   });
 
   useEffect(() => {
@@ -218,11 +219,14 @@ const Admin = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setAuthLoading(true);
+    setLoginError(null);
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    if (error) alert("פרטים שגויים");
+    if (error) {
+      setLoginError("אימייל או סיסמה שגויים. נסה שוב.");
+    }
     setAuthLoading(false);
   };
 
@@ -240,7 +244,7 @@ const Admin = () => {
         icebreaker: false,
         rideshare: false,
         rsvp: false,
-        blessings: false, // הוספת מודול ברכות
+        blessings: false,
         ...event.active_modules,
       },
       design_config: {
@@ -269,7 +273,7 @@ const Admin = () => {
         icebreaker: false,
         rideshare: false,
         rsvp: false,
-        blessings: false, // הוספת מודול ברכות
+        blessings: false,
       },
       design_config: {
         template: "glass",
@@ -345,7 +349,7 @@ const Admin = () => {
         supabase.from("rsvps").delete().eq("event_id", selectedEvent.id),
         supabase.from("rideshares").delete().eq("event_id", selectedEvent.id),
         supabase.from("reports").delete().eq("event_id", selectedEvent.id),
-        supabase.from("blessings").delete().eq("event_id", selectedEvent.id), // מחיקת ברכות
+        supabase.from("blessings").delete().eq("event_id", selectedEvent.id),
       ]);
       const { error } = await supabase
         .from("events")
@@ -920,6 +924,7 @@ const Admin = () => {
               placeholder="אימייל"
               className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
               dir="ltr"
+              required
             />
             <input
               type="password"
@@ -928,10 +933,16 @@ const Admin = () => {
               placeholder="סיסמה"
               className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
               dir="ltr"
+              required
             />
+            {loginError && (
+              <p className="text-rose-500 text-sm font-bold text-center mt-2 animate-in fade-in">
+                {loginError}
+              </p>
+            )}
             <button
               type="submit"
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all"
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all mt-2"
             >
               התחבר למערכת
             </button>
@@ -962,6 +973,7 @@ const Admin = () => {
               <button
                 onClick={() => supabase.auth.signOut()}
                 className="bg-slate-100 p-4 rounded-2xl text-slate-600 hover:bg-slate-200 transition-colors"
+                title="התנתק"
               >
                 <LogOut size={22} />
               </button>
