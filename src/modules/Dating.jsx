@@ -72,35 +72,49 @@ const Dating = () => {
     // Validate guestId is a valid UUIDv4 before using in queries
     if (!eventId || !guestId || !isValidUUIDv4(guestId)) return navigate("/");
     let isMounted = true;
+
     const init = async () => {
       try {
-        const { data: event } = await supabase
+        console.log("Dating Init: Checking for guest_id:", guestId);
+
+        const { data: event, error: eventError } = await supabase
           .from("events")
           .select("id, name, design_config")
           .eq("id", eventId)
           .single();
+
+        if (eventError) throw eventError;
         if (!isMounted) return;
         setEventData(event);
 
-        const { data: profile } = await supabase
+        // שימוש ב-maybeSingle במקום single כדי למנוע קריסה אם הפרופיל לא קיים
+        const { data: profile, error: profileError } = await supabase
           .from("dating_profiles")
           .select(
             "id, guest_id, name, age, gender, seeking, connection, location, bio, photo_url",
           )
           .eq("event_id", eventId)
           .eq("guest_id", guestId)
-          .single();
+          .maybeSingle();
+
+        if (profileError) {
+          console.error("Error fetching dating profile:", profileError);
+        }
 
         if (!isMounted) return;
+
         if (profile) {
+          console.log("Profile found! Auto-logging in:", profile.name);
           setMyProfile(profile);
           setFormData(profile);
           setView("gallery");
           await loadGalleryData(profile, isMounted);
         } else {
+          console.log("No profile found for this device. Sending to register.");
           setView("register");
         }
-      } catch {
+      } catch (err) {
+        console.error("Init process failed:", err);
         if (isMounted) setView("register");
       }
     };
@@ -108,7 +122,7 @@ const Dating = () => {
     return () => {
       isMounted = false;
     };
-  }, [eventId, guestId]);
+  }, [eventId, guestId, navigate]);
 
   const loadGalleryData = async (me, isMounted = true) => {
     let query = supabase
@@ -120,8 +134,13 @@ const Dating = () => {
       .neq("guest_id", guestId)
       .order("created_at", { ascending: false })
       .limit(PROFILES_PAGE);
+
     if (me.seeking !== "הכל") query = query.eq("gender", me.seeking);
-    const { data: others } = await query;
+    const { data: others, error: othersError } = await query;
+
+    if (othersError) {
+      console.error("Error loading gallery data:", othersError);
+    }
 
     const matched = (others || []).filter(
       (p) =>
@@ -131,13 +150,17 @@ const Dating = () => {
     if (isMounted) setProfiles(matched);
 
     // Load messages — only last 50, newest first, then reverse for display
-    const { data: msgs } = await supabase
+    const { data: msgs, error: msgsError } = await supabase
       .from("dating_messages")
       .select("id, sender_id, receiver_id, message, is_read, created_at")
       .eq("event_id", eventId)
       .or(`sender_id.eq.${guestId},receiver_id.eq.${guestId}`)
       .order("created_at", { ascending: false })
       .limit(MESSAGES_LIMIT);
+
+    if (msgsError) {
+      console.error("Error loading messages:", msgsError);
+    }
 
     if (msgs && isMounted) {
       const historyIds = new Set();
