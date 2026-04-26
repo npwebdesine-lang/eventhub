@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { getOrCreateDeviceId, isValidUUIDv4 } from "../utils/deviceId";
 import { getLuminance } from "../lib/colors";
 import { useToast } from "../components/Toast";
 import {
@@ -98,7 +99,11 @@ const Rideshare = () => {
   const { showToast } = useToast();
 
   const localGuestName = localStorage.getItem("guest_name") || "";
-  const localGuestId = localStorage.getItem("guest_id") || "";
+  // Retrieve device ID with secure validation
+  const localGuestId = (() => {
+    const id = localStorage.getItem("guest_id");
+    return (id && isValidUUIDv4(id)) ? id : "";
+  })()
 
   const roleParam = searchParams.get("role"); // "driver" | "seeker" from home page
 
@@ -186,10 +191,10 @@ const Rideshare = () => {
     const trimmedName = tempName.trim();
     localStorage.setItem("guest_name", trimmedName);
 
-    let guestId = localStorage.getItem("guest_id");
-    if (!guestId) {
-      guestId = crypto.randomUUID();
-      localStorage.setItem("guest_id", guestId);
+    // Use secure device ID with validation
+    const guestId = getOrCreateDeviceId();
+    if (!isValidUUIDv4(guestId)) {
+      throw new Error("Failed to create valid device ID");
     }
 
     setFormData((prev) => ({ ...prev, guest_name: trimmedName }));

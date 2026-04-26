@@ -4,6 +4,8 @@ import { supabase } from "../lib/supabase";
 import { getLuminance } from "../lib/colors";
 import { compressImage, isAllowedImageType } from "../lib/imageUtils";
 import { useToast } from "../components/Toast";
+import { sanitize } from "../utils/sanitize";
+import { isValidUUIDv4, getOrCreateDeviceId } from "../utils/deviceId";
 import {
   Heart,
   Camera,
@@ -67,7 +69,8 @@ const Dating = () => {
 
   // Initial load
   useEffect(() => {
-    if (!eventId || !guestId) return navigate("/");
+    // Validate guestId is a valid UUIDv4 before using in queries
+    if (!eventId || !guestId || !isValidUUIDv4(guestId)) return navigate("/");
     let isMounted = true;
     const init = async () => {
       try {
@@ -815,13 +818,13 @@ const Dating = () => {
                     <div className="flex items-end justify-between mb-2">
                       <div>
                         <h3 className="font-black text-3xl text-white leading-tight">
-                          {p.name}, {p.age}
+                          {sanitize(p.name || "")}, {p.age}
                         </h3>
                         <p
                           className="text-sm font-bold mt-0.5"
                           style={{ color: primaryColor }}
                         >
-                          {p.connection}
+                          {sanitize(p.connection || "")}
                         </p>
                       </div>
                       <button
@@ -838,14 +841,14 @@ const Dating = () => {
 
                     {p.bio && (
                       <p className="text-white/80 text-sm font-medium line-clamp-2 mb-3">
-                        "{p.bio}"
+                        "{sanitize(p.bio)}"
                       </p>
                     )}
 
                     <div className="flex gap-2 flex-wrap">
                       {p.location && (
                         <span className="bg-white/90 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
-                          <MapPin size={11} /> {p.location}
+                          <MapPin size={11} /> {sanitize(p.location)}
                         </span>
                       )}
                       <span className="bg-white/90 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-full">
@@ -903,7 +906,7 @@ const Dating = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-black text-slate-800 truncate">
-                      {p.name}, {p.age}
+                      {sanitize(p.name || "")}, {p.age}
                     </h3>
                     <p className="text-xs text-slate-400 font-medium truncate mt-0.5">
                       {unreadCounts[p.guest_id] > 0 ? (
@@ -959,11 +962,11 @@ const Dating = () => {
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="font-black text-base leading-tight truncate">
-              {activeChat.name}
+              {sanitize(activeChat.name || "")}
             </h2>
             {activeChat.location && (
               <span className="text-[11px] font-bold opacity-70">
-                📍 {activeChat.location}
+                📍 {sanitize(activeChat.location)}
               </span>
             )}
           </div>
@@ -1017,7 +1020,7 @@ const Dating = () => {
                   }
                 >
                   <p className="text-sm font-medium leading-relaxed">
-                    {m.message}
+                    {sanitize(m.message)}
                   </p>
                   <span className="text-[10px] opacity-50 mt-1 block" dir="ltr">
                     {new Date(m.created_at).toLocaleTimeString("he-IL", {

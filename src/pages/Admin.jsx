@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "../lib/supabase";
+import { sanitize } from "../utils/sanitize";
 import {
   Settings,
   Plus,
@@ -2256,11 +2257,11 @@ const Admin = () => {
                         ) : (
                           <div>
                             <h4 className="font-bold text-slate-800 text-lg">
-                              {guest.guest_name}
+                              {sanitize(guest.guest_name || "")}
                             </h4>
                             <p className="text-xs text-slate-500 font-medium mt-1">
-                              נרשם ע"י: {guest.submitter_name} |{" "}
-                              {guest.submitter_phone}
+                              נרשם ע"י: {sanitize(guest.submitter_name || "")} |{" "}
+                              {sanitize(guest.submitter_phone || "")}
                             </p>
                           </div>
                         )}
@@ -2398,7 +2399,7 @@ const Admin = () => {
                           {guest.table_number}
                         </div>
                         <span className="font-bold text-slate-700">
-                          {guest.guest_name}
+                          {sanitize(guest.guest_name || "")}
                         </span>
                       </div>
                       <button

@@ -4,6 +4,8 @@ import { supabase } from "../lib/supabase";
 import { getLuminance } from "../lib/colors";
 import { compressImage, isAllowedImageType } from "../lib/imageUtils";
 import { useToast } from "../components/Toast";
+import { sanitize } from "../utils/sanitize";
+import { isValidUUIDv4 } from "../utils/deviceId";
 import {
   Loader2,
   Camera,
@@ -41,7 +43,8 @@ const Icebreaker = () => {
   const rouletteRef = useRef(null);
 
   useEffect(() => {
-    if (!eventId || !guestId) return navigate("/");
+    // Validate guestId is a valid UUIDv4 before using in queries
+    if (!eventId || !guestId || !isValidUUIDv4(guestId)) return navigate("/");
     let isMounted = true;
     checkStatus(isMounted);
     return () => {
@@ -508,7 +511,7 @@ const Icebreaker = () => {
             )}
           </div>
           <h1 className="text-4xl font-black text-slate-800 mb-8">
-            {currentMatch.partner?.name}
+            {sanitize(currentMatch.partner?.name || "")}
           </h1>
 
           {/* Mission card */}

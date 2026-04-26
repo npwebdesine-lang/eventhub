@@ -36,3 +36,20 @@ android/app/release/
 *.aab
 *.jks
 *.keystore
+
+# ---------------------------------------------------
+# Claude AI, Security Audits & Local Documentation
+# ---------------------------------------------------
+*_AUDIT.md
+*_SUMMARY.md
+*_SUMMARY.txt
+RLS_*.md
+RLS_*.txt
+DEVICE_ID_*.md
+DEVICE_ID_*.txt
+
+# Database Migration Scripts (Contains DB Schema)
+*.sql
+
+# Claude settings
+.clauderc

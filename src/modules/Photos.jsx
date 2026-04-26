@@ -21,6 +21,7 @@ import { compressImage, isAllowedImageType } from "../lib/imageUtils";
 import { useToast } from "../components/Toast";
 import { PhotoGridSkeleton } from "../components/SkeletonCard";
 import gsap from "gsap";
+import { isValidUUIDv4 } from "../utils/deviceId";
 
 const MAX_PHOTOS_PER_GUEST = 3;
 const PAGE_SIZE = 12;
@@ -101,7 +102,8 @@ const Photos = () => {
 
         await fetchPage(0);
 
-        if (guestId) {
+        // Only query with guestId if it's a valid UUIDv4
+        if (guestId && isValidUUIDv4(guestId)) {
           const { count } = await supabase
             .from("photos")
             .select("id", { count: "exact", head: true })

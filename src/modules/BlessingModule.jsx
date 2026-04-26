@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import gsap from "gsap";
+import { sanitize } from "../utils/sanitize";
 import {
   Send,
   Image as ImageIcon,
@@ -238,7 +239,7 @@ const BlessingModule = () => {
                 הברכה נשלחה! ✨
               </h3>
               <p className="text-slate-600 font-medium text-sm mb-8 px-4 leading-relaxed">
-                המילים המרגשות שלך צורפו לספר הברכות של {eventData?.name}.
+                המילים המרגשות שלך צורפו לספר הברכות של {sanitize(eventData?.name || "")}.
               </p>
 
               <button
