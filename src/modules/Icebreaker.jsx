@@ -54,30 +54,43 @@ const Icebreaker = () => {
 
   const checkStatus = async (isMounted = true) => {
     try {
-      const { data: event } = await supabase
+      console.log("Icebreaker Init: Checking status for guest_id:", guestId);
+
+      const { data: event, error: eventError } = await supabase
         .from("events")
         .select("id, name, design_config")
         .eq("id", eventId)
         .single();
+
+      if (eventError) throw eventError;
       if (!isMounted) return;
       setEventData(event);
 
-      const { data: profile } = await supabase
+      // שימוש ב-maybeSingle במקום single כדי למנוע קריסה אם אין פרופיל
+      const { data: profile, error: profileError } = await supabase
         .from("icebreaker_profiles")
         .select("id, guest_id, name, photo_url")
         .eq("event_id", eventId)
         .eq("guest_id", guestId)
-        .single();
+        .maybeSingle();
+
+      if (profileError) {
+        console.error("Error fetching icebreaker profile:", profileError);
+      }
 
       if (!isMounted) return;
 
       if (!profile) {
+        console.log("No profile found. Sending to register.");
         setView("register");
         return;
       }
+
+      console.log("Profile found! Logging in as:", profile.name);
       setMyProfile(profile);
 
-      const { data: activeMatch } = await supabase
+      // שימוש ב-maybeSingle עבור המשימה הפעילה
+      const { data: activeMatch, error: matchError } = await supabase
         .from("icebreaker_matches")
         .select(
           "id, guest1_id, guest2_id, mission_text, status, photo_url, completed_at, created_at",
@@ -87,41 +100,50 @@ const Icebreaker = () => {
         .or(`guest1_id.eq.${guestId},guest2_id.eq.${guestId}`)
         .order("created_at", { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
+
+      if (matchError) {
+        console.error("Error fetching active match:", matchError);
+      }
 
       if (activeMatch) {
         const partnerId =
           activeMatch.guest1_id === guestId
             ? activeMatch.guest2_id
             : activeMatch.guest1_id;
+
         const { data: partner } = await supabase
           .from("icebreaker_profiles")
           .select("id, guest_id, name, photo_url")
           .eq("event_id", eventId)
           .eq("guest_id", partnerId)
-          .single();
+          .maybeSingle();
+
         if (isMounted) {
           setCurrentMatch({ ...activeMatch, partner });
           setView("active_mission");
         }
       } else {
+        // אין משימה פעילה, עוברים ללוח הראשי (Hub)
         await fetchFeed(isMounted);
         if (isMounted) setView("hub");
       }
     } catch (err) {
-      console.error(err);
+      console.error("Icebreaker Init failed:", err);
       if (isMounted) setView("register");
     }
   };
 
   const fetchFeed = async (isMounted = true) => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("icebreaker_matches")
       .select("id, mission_text, photo_url, completed_at, guest1_id, guest2_id")
       .eq("event_id", eventId)
       .eq("status", "completed")
       .order("completed_at", { ascending: false })
       .limit(20);
+
+    if (error) console.error("Error fetching feed:", error);
     if (isMounted) setFeed(data || []);
   };
 
@@ -177,15 +199,41 @@ const Icebreaker = () => {
     if (isJoining) return;
     setIsJoining(true);
     try {
-      const { error } = await supabase.from("icebreaker_profiles").upsert({
+      const payload = {
         event_id: eventId,
         guest_id: guestId,
         name: guestName,
         photo_url: photoUrl,
-      });
-      if (error) throw error;
+      };
+
+      // מעבר ל-Update ו-Insert מפורש כדי למנוע את שגיאת 409 Conflict
+      const { data: existingProfile } = await supabase
+        .from("icebreaker_profiles")
+        .select("id")
+        .eq("event_id", eventId)
+        .eq("guest_id", guestId)
+        .maybeSingle();
+
+      let saveError;
+
+      if (existingProfile) {
+        const { error } = await supabase
+          .from("icebreaker_profiles")
+          .update(payload)
+          .eq("id", existingProfile.id);
+        saveError = error;
+      } else {
+        const { error } = await supabase
+          .from("icebreaker_profiles")
+          .insert([payload]);
+        saveError = error;
+      }
+
+      if (saveError) throw saveError;
+
       await checkStatus();
-    } catch {
+    } catch (err) {
+      console.error("Join game error:", err);
       showToast("שגיאה בהצטרפות למשחק, נסה שוב", "error");
     } finally {
       setIsJoining(false);
@@ -259,7 +307,7 @@ const Icebreaker = () => {
             },
           ])
           .select()
-          .single();
+          .maybeSingle();
 
         if (!error && matchData) {
           setCurrentMatch({ ...matchData, partner: randomPartner });
