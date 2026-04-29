@@ -4,7 +4,8 @@
       "Bash(npm run *)",
       "Bash(npm test *)",
       "Bash(npm audit *)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(pkill -f \"vite\")"
     ]
   }
 }

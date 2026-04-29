@@ -2432,14 +2432,14 @@ const Admin = () => {
       )}
       {isQrModalOpen && selectedEvent && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[200]">
-          <div className="bg-white w-full max-w-md rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-6 flex justify-between items-center bg-slate-50">
+          <div className="bg-white w-full max-w-md rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh]">
+            <div className="p-6 flex justify-between items-center bg-slate-50 shrink-0">
               <h2 className="text-2xl font-black text-slate-800">QR מעוצב</h2>
               <button onClick={() => setIsQrModalOpen(false)}>
                 <X size={24} />
               </button>
             </div>
-            <div className="p-6">
+            <div className="p-6 overflow-y-auto flex-1 pb-8">
               <AdminQRGenerator
                 key={selectedEvent.id}
                 defaultUrl={`${window.location.origin}/event/${selectedEvent.id}`}
