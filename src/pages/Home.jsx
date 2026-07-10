@@ -18,6 +18,7 @@ import {
   UserX,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import { getOrCreateDeviceId } from "../utils/deviceId";
 import gsap from "gsap";
 
 const MODULES_INFO = {
@@ -511,8 +512,7 @@ const Home = () => {
   // Fetch event data
   useEffect(() => {
     const savedName = localStorage.getItem("guest_name");
-    const savedId = localStorage.getItem("guest_id");
-    if (savedName && savedId) setIsRegistered(true);
+    if (savedName) setIsRegistered(true);
 
     let isMounted = true;
     const fetchEvent = async () => {
@@ -572,8 +572,7 @@ const Home = () => {
   // Check unread dating messages
   useEffect(() => {
     if (!isRegistered || !eventData?.active_modules?.dating) return;
-    const guestId = localStorage.getItem("guest_id");
-    if (!guestId) return;
+    const guestId = getOrCreateDeviceId();
     let isMounted = true;
     const checkUnread = async () => {
       try {
@@ -687,11 +686,8 @@ const Home = () => {
       // שמירה מקומית בלבד, ללא קריאות מורכבות ל-DB שעשויות להיכשל
       localStorage.setItem("guest_name", nameInput.trim());
 
-      let guestId = localStorage.getItem("guest_id");
-      if (!guestId) {
-        guestId = crypto.randomUUID();
-        localStorage.setItem("guest_id", guestId);
-      }
+      // Ensure a stable device identity exists before entering the app.
+      getOrCreateDeviceId();
 
       setIsRegistered(true);
     } catch (err) {
@@ -703,8 +699,10 @@ const Home = () => {
   };
 
   const handleChangeName = () => {
+    // Only the display name is cleared; the device identity stays stable so the
+    // guest keeps ownership of any rows they already created (dating profile,
+    // photos, etc.) and the x-device-id request header remains consistent.
     localStorage.removeItem("guest_name");
-    localStorage.removeItem("guest_id");
     setNameInput("");
     setTermsAccepted(false);
     setMyTable(null);

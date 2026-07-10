@@ -21,7 +21,7 @@ import { compressImage, isAllowedImageType } from "../lib/imageUtils";
 import { useToast } from "../components/Toast";
 import { PhotoGridSkeleton } from "../components/SkeletonCard";
 import gsap from "gsap";
-import { isValidUUIDv4 } from "../utils/deviceId";
+import { isValidUUIDv4, getOrCreateDeviceId } from "../utils/deviceId";
 
 const MAX_PHOTOS_PER_GUEST = 3;
 const PAGE_SIZE = 12;
@@ -44,7 +44,7 @@ const Photos = () => {
   const { showToast } = useToast();
 
   const guestName = localStorage.getItem("guest_name") || "";
-  const guestId = localStorage.getItem("guest_id") || "";
+  const guestId = getOrCreateDeviceId();
 
   const [loading, setLoading] = useState(true);
   const [eventData, setEventData] = useState(null);

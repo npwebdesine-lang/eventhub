@@ -5,7 +5,7 @@ import { getLuminance } from "../lib/colors";
 import { compressImage, isAllowedImageType } from "../lib/imageUtils";
 import { useToast } from "../components/Toast";
 import { sanitize } from "../utils/sanitize";
-import { isValidUUIDv4 } from "../utils/deviceId";
+import { isValidUUIDv4, getOrCreateDeviceId } from "../utils/deviceId";
 import {
   Loader2,
   Camera,
@@ -28,7 +28,7 @@ const Icebreaker = () => {
   const { showToast } = useToast();
 
   const guestName = localStorage.getItem("guest_name");
-  const guestId = localStorage.getItem("guest_id");
+  const guestId = getOrCreateDeviceId();
 
   const [eventData, setEventData] = useState(null);
   const [view, setView] = useState("loading");
@@ -43,8 +43,9 @@ const Icebreaker = () => {
   const rouletteRef = useRef(null);
 
   useEffect(() => {
-    // Validate guestId is a valid UUIDv4 before using in queries
-    if (!eventId || !guestId || !isValidUUIDv4(guestId)) return navigate("/");
+    // Require a registered guest (name set on Home) and a valid device ID
+    if (!eventId || !guestName || !guestId || !isValidUUIDv4(guestId))
+      return navigate("/");
     let isMounted = true;
     checkStatus(isMounted);
     return () => {
@@ -220,7 +221,8 @@ const Icebreaker = () => {
         const { error } = await supabase
           .from("icebreaker_profiles")
           .update(payload)
-          .eq("id", existingProfile.id);
+          .eq("id", existingProfile.id)
+          .eq("guest_id", guestId);
         saveError = error;
       } else {
         const { error } = await supabase
@@ -360,7 +362,8 @@ const Icebreaker = () => {
           status: "completed",
           completed_at: new Date().toISOString(),
         })
-        .eq("id", currentMatch.id);
+        .eq("id", currentMatch.id)
+        .or(`guest1_id.eq.${guestId},guest2_id.eq.${guestId}`);
 
       setCurrentMatch(null);
       await fetchFeed();

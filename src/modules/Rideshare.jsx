@@ -99,11 +99,11 @@ const Rideshare = () => {
   const { showToast } = useToast();
 
   const localGuestName = localStorage.getItem("guest_name") || "";
-  // Retrieve device ID with secure validation
+  // Stable device identity (matches the x-device-id header used by RLS)
   const localGuestId = (() => {
-    const id = localStorage.getItem("guest_id");
-    return (id && isValidUUIDv4(id)) ? id : "";
-  })()
+    const id = getOrCreateDeviceId();
+    return isValidUUIDv4(id) ? id : "";
+  })();
 
   const roleParam = searchParams.get("role"); // "driver" | "seeker" from home page
 

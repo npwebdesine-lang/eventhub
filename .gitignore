@@ -50,6 +50,9 @@ DEVICE_ID_*.txt
 
 # Database Migration Scripts (Contains DB Schema)
 *.sql
+# ...but keep the versioned Supabase migrations under source control
+!supabase/migrations/
+!supabase/migrations/*.sql
 
 # Claude settings
 .clauderc
