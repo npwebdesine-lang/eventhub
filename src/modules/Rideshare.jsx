@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { getOrCreateDeviceId, isValidUUIDv4 } from "../utils/deviceId";
-import { getLuminance } from "../lib/colors";
+import { getTextColor } from "../lib/colors";
 import { useToast } from "../components/Toast";
 import {
   Loader2,
@@ -278,8 +278,7 @@ const Rideshare = () => {
 
   const primaryColor = eventData.design_config?.colors?.primary || "#3b82f6";
   const bgColor = eventData.design_config?.colors?.background || "#f8fafc";
-  const primaryTextColor =
-    getLuminance(primaryColor) > 150 ? "#1e293b" : "#ffffff";
+  const primaryTextColor = getTextColor(primaryColor);
 
   // ---- Welcome ----
   if (step === "welcome") {

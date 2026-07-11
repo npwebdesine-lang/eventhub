@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { getLuminance } from "../lib/colors";
+import { getTextColor } from "../lib/colors";
 import { compressImage, isAllowedImageType } from "../lib/imageUtils";
 import { useToast } from "../components/Toast";
 import { sanitize } from "../utils/sanitize";
@@ -419,8 +419,7 @@ const Icebreaker = () => {
 
   const primaryColor = eventData.design_config?.colors?.primary || "#3b82f6";
   const bgColor = eventData.design_config?.colors?.background || "#f8fafc";
-  const primaryTextColor =
-    getLuminance(primaryColor) > 150 ? "#1e293b" : "#ffffff";
+  const primaryTextColor = getTextColor(primaryColor);
 
   // ---- Register ----
   if (view === "register") {

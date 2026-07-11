@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { getOrCreateDeviceId } from "../utils/deviceId";
+import { useModalBehavior } from "../components/Modal";
 import gsap from "gsap";
 
 const MODULES_INFO = {
@@ -738,6 +739,13 @@ const Home = () => {
     setInfoModal(MODULES_INFO[moduleKey]);
   };
 
+  // Escape-to-close + body scroll-lock for the two dialogs on this page.
+  useModalBehavior({ open: !!infoModal, onClose: () => setInfoModal(null) });
+  useModalBehavior({
+    open: showMatesModal,
+    onClose: () => setShowMatesModal(false),
+  });
+
   if (loading) {
     return (
       <div
@@ -1166,8 +1174,11 @@ const Home = () => {
       {/* Info Modal */}
       {infoModal && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-6 animate-in fade-in"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6 animate-in fade-in"
           onClick={() => setInfoModal(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={infoModal.title}
         >
           <div
             className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl relative animate-in zoom-in-95 max-h-[90vh] overflow-y-auto"
@@ -1176,6 +1187,7 @@ const Home = () => {
             <button
               onClick={() => setInfoModal(null)}
               className="absolute top-4 right-4 text-slate-400 bg-slate-50 hover:bg-slate-100 p-2 rounded-full transition-colors"
+              aria-label="סגור"
             >
               <X size={20} />
             </button>
@@ -1204,8 +1216,11 @@ const Home = () => {
       {/* Table Mates Modal */}
       {showMatesModal && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in"
           onClick={() => setShowMatesModal(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="השותפים לשולחן"
         >
           <div
             className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl relative animate-in zoom-in-95 max-h-[80vh] flex flex-col"
@@ -1214,6 +1229,7 @@ const Home = () => {
             <button
               onClick={() => setShowMatesModal(false)}
               className="absolute top-4 right-4 text-slate-400 bg-slate-50 hover:bg-slate-100 p-2 rounded-full transition-colors z-10"
+              aria-label="סגור"
             >
               <X size={20} />
             </button>

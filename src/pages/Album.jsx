@@ -13,6 +13,7 @@ import {
   Quote,
 } from "lucide-react";
 import gsap from "gsap";
+import { useModalBehavior } from "../components/Modal";
 
 const PAGE_SIZE = 24;
 
@@ -188,6 +189,21 @@ const Album = () => {
     }
   }, [loading, activeTab, photos.length, blessings.length]);
 
+  // Lightbox keyboard: Escape closes; arrows step through photos (this screen
+  // lays the "next" control on the right, so ArrowRight advances).
+  useModalBehavior({
+    open: selectedIndex !== null && activeTab === "photos",
+    onClose: () => setSelectedIndex(null),
+    onArrowRight: () =>
+      setSelectedIndex((p) =>
+        p === null ? p : p === photos.length - 1 ? 0 : p + 1,
+      ),
+    onArrowLeft: () =>
+      setSelectedIndex((p) =>
+        p === null ? p : p === 0 ? photos.length - 1 : p - 1,
+      ),
+  });
+
   if (loading)
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col items-center justify-center">
@@ -211,11 +227,11 @@ const Album = () => {
     );
 
   const handleNext = (e) => {
-    e.stopPropagation();
+    e?.stopPropagation();
     setSelectedIndex((prev) => (prev === photos.length - 1 ? 0 : prev + 1));
   };
   const handlePrev = (e) => {
-    e.stopPropagation();
+    e?.stopPropagation();
     setSelectedIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1));
   };
 
@@ -458,6 +474,9 @@ const Album = () => {
         <div
           className="fixed inset-0 z-[200] bg-slate-950/98 backdrop-blur-2xl flex items-center justify-center animate-in fade-in duration-300"
           onClick={() => setSelectedIndex(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="תצוגת תמונה"
         >
           {/* Info bar */}
           <div className="absolute top-0 left-0 right-0 p-8 flex justify-between items-center z-50 bg-gradient-to-b from-black/70 via-black/40 to-transparent pointer-events-none">
@@ -475,6 +494,7 @@ const Album = () => {
             <button
               onClick={() => setSelectedIndex(null)}
               className="pointer-events-auto text-white/50 hover:text-white bg-white/15 hover:bg-white/25 p-3 rounded-full transition-all backdrop-blur-md button-pulse"
+              aria-label="סגור תצוגה"
             >
               <X size={26} />
             </button>
@@ -492,6 +512,7 @@ const Album = () => {
             <button
               onClick={handleNext}
               className="absolute right-6 md:right-12 z-50 text-white/40 hover:text-white bg-white/10 hover:bg-white/20 p-5 rounded-[1.5rem] transition-all backdrop-blur-md group button-pulse"
+              aria-label="התמונה הבאה"
             >
               <ChevronRight
                 size={32}
@@ -507,6 +528,7 @@ const Album = () => {
             <button
               onClick={handlePrev}
               className="absolute left-6 md:left-12 z-50 text-white/40 hover:text-white bg-white/10 hover:bg-white/20 p-5 rounded-[1.5rem] transition-all backdrop-blur-md group button-pulse"
+              aria-label="התמונה הקודמת"
             >
               <ChevronLeft
                 size={32}

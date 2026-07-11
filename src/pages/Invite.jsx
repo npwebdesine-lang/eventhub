@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import gsap from "gsap";
 import { getLuminance } from "../lib/colors";
+import { useToast } from "../components/Toast";
+import { useModalBehavior } from "../components/Modal";
 
 // כפתורי פעולה משותפים (Moved outside to prevent re-mounting)
 const ActionButtons = ({
@@ -78,6 +80,7 @@ const ActionButtons = ({
 const Invite = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [eventData, setEventData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState({
@@ -101,6 +104,15 @@ const Invite = () => {
   // Refs לאנימציות רקע
   const bgDecor1 = useRef(null);
   const bgDecor2 = useRef(null);
+
+  // Lock background scroll while the RSVP sheet is open; Escape closes it
+  // (except on the success step, which auto-dismisses).
+  useModalBehavior({
+    open: showRsvp,
+    onClose: () => {
+      if (rsvpStep !== 4) setShowRsvp(false);
+    },
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -246,7 +258,8 @@ const Invite = () => {
   const handleVerifyBeforeSubmit = async (e) => {
     e.preventDefault();
     if (guestNames.some((name) => !name.trim()) || !submitterPhone.trim()) {
-      return alert("אנא מלאו את כל השמות ואת מספר הטלפון");
+      showToast("אנא מלאו את כל השמות ואת מספר הטלפון", "warning");
+      return;
     }
     setIsSubmitting(true);
     try {
@@ -267,7 +280,7 @@ const Invite = () => {
       }
     } catch (err) {
       console.error(err);
-      alert("תקלה בבדיקת הנתונים");
+      showToast("תקלה בבדיקת הנתונים", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -301,7 +314,7 @@ const Invite = () => {
       }, 4000);
     } catch (err) {
       console.error("Submit Error:", err);
-      alert("שגיאה בשמירת אישור ההגעה.");
+      showToast("שגיאה בשמירת אישור ההגעה", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -727,14 +740,24 @@ const Invite = () => {
       {/* פופ-אפ אישורי הגעה רב שלבי */}
       {showRsvp && (
         <div
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-end md:items-center justify-center animate-in fade-in"
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-end md:items-center justify-center animate-in fade-in"
           dir="rtl"
+          role="dialog"
+          aria-modal="true"
+          aria-label="אישור הגעה"
+          onClick={() => {
+            if (rsvpStep !== 4) setShowRsvp(false);
+          }}
         >
-          <div className="bg-white w-full max-w-lg md:rounded-[2.5rem] rounded-t-[2.5rem] p-6 md:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto hide-scrollbar">
+          <div
+            className="bg-white w-full max-w-lg md:rounded-[2.5rem] rounded-t-[2.5rem] p-6 md:p-8 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl relative max-h-[90vh] overflow-y-auto hide-scrollbar"
+            onClick={(e) => e.stopPropagation()}
+          >
             {rsvpStep !== 4 && (
               <button
                 onClick={() => setShowRsvp(false)}
                 className="absolute top-6 right-6 p-2 bg-slate-50 hover:bg-slate-100 rounded-full text-slate-600 z-10 transition-colors"
+                aria-label="סגור"
               >
                 <X size={20} />
               </button>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { getLuminance } from "../lib/colors";
+import { getTextColor } from "../lib/colors";
 import { compressImage, isAllowedImageType } from "../lib/imageUtils";
 import { useToast } from "../components/Toast";
 import { sanitize } from "../utils/sanitize";
@@ -440,8 +440,7 @@ const Dating = () => {
 
   const primaryColor = eventData.design_config?.colors?.primary || "#f43f5e";
   const bgColor = eventData.design_config?.colors?.background || "#f8fafc";
-  const primaryTextColor =
-    getLuminance(primaryColor) > 150 ? "#1e293b" : "#ffffff";
+  const primaryTextColor = getTextColor(primaryColor);
 
   // ---- Registration ----
   if (view === "register") {
@@ -1074,7 +1073,7 @@ const Dating = () => {
           <button
             type="submit"
             disabled={!newMessage.trim() || isSending}
-            className="w-13 h-13 min-w-[52px] min-h-[52px] rounded-full shadow-lg flex items-center justify-center disabled:opacity-40 hover:opacity-90 active:scale-95 transition-all"
+            className="w-[52px] h-[52px] rounded-full shadow-lg flex items-center justify-center disabled:opacity-40 hover:opacity-90 active:scale-95 transition-all"
             style={{ backgroundColor: primaryColor, color: primaryTextColor }}
           >
             {isSending ? (

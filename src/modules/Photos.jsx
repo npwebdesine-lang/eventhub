@@ -16,9 +16,10 @@ import {
   ChevronRight as ChevRight,
   ZoomIn,
 } from "lucide-react";
-import { getLuminance } from "../lib/colors";
+import { getTextColor } from "../lib/colors";
 import { compressImage, isAllowedImageType } from "../lib/imageUtils";
 import { useToast } from "../components/Toast";
+import { useModalBehavior } from "../components/Modal";
 import { PhotoGridSkeleton } from "../components/SkeletonCard";
 import gsap from "gsap";
 import { isValidUUIDv4, getOrCreateDeviceId } from "../utils/deviceId";
@@ -333,6 +334,14 @@ const Photos = () => {
     });
   };
 
+  // Escape closes; arrow keys navigate (RTL: right = previous, left = next).
+  useModalBehavior({
+    open: lightbox !== null,
+    onClose: () => setLightbox(null),
+    onArrowRight: () => lightboxGo(-1),
+    onArrowLeft: () => lightboxGo(1),
+  });
+
   if (loading || !eventData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -349,8 +358,7 @@ const Photos = () => {
 
   const primaryColor = eventData.design_config?.colors?.primary || "#3b82f6";
   const bgColor = eventData.design_config?.colors?.background || "#f8fafc";
-  const primaryTextColor =
-    getLuminance(primaryColor) > 150 ? "#1e293b" : "#ffffff";
+  const primaryTextColor = getTextColor(primaryColor);
   const canUploadMore = myUploadCount < MAX_PHOTOS_PER_GUEST;
 
   return (
@@ -606,8 +614,11 @@ const Photos = () => {
       {/* Lightbox עם אנימציות וControls */}
       {lightbox !== null && photos[lightbox] && (
         <div
-          className="fixed inset-0 z-[100] bg-slate-950/98 backdrop-blur-md flex items-center justify-center animate-in fade-in duration-300"
+          className="fixed inset-0 z-[200] bg-slate-950/98 backdrop-blur-md flex items-center justify-center animate-in fade-in duration-300"
           onClick={() => setLightbox(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="תצוגת תמונה"
         >
           {/* Header bar */}
           <div className="absolute top-0 left-0 right-0 p-8 flex justify-between items-center z-50 bg-gradient-to-b from-black/70 via-black/40 to-transparent pointer-events-none">
@@ -625,6 +636,7 @@ const Photos = () => {
             <button
               className="pointer-events-auto text-white/50 hover:text-white bg-white/15 hover:bg-white/25 p-3 rounded-full transition-all backdrop-blur-md button-pulse"
               onClick={() => setLightbox(null)}
+              aria-label="סגור תצוגה"
             >
               <X size={26} />
             </button>
@@ -660,6 +672,7 @@ const Photos = () => {
                   e.stopPropagation();
                   lightboxGo(-1);
                 }}
+                aria-label="התמונה הקודמת"
               >
                 <ChevRight
                   size={32}
@@ -684,6 +697,7 @@ const Photos = () => {
                   e.stopPropagation();
                   lightboxGo(1);
                 }}
+                aria-label="התמונה הבאה"
               >
                 <ChevronLeft
                   size={32}

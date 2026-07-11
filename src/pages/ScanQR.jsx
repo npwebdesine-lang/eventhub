@@ -5,9 +5,11 @@ import { QrCode, Sparkles, Keyboard, Loader2, PartyPopper } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import gsap from "gsap";
 import { getLuminance } from "../lib/colors";
+import { useToast } from "../components/Toast";
 
 const ScanQR = () => {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [manualMode, setManualMode] = useState(false);
   const [manualCode, setManualCode] = useState("");
   const [processing, setProcessing] = useState(false);
@@ -88,11 +90,11 @@ const ScanQR = () => {
           colors: data.design_config?.colors || { primary: "#3b82f6" },
         });
       } else {
-        alert("הקוד שגוי או שהאירוע לא קיים. נסו שוב.");
+        showToast("הקוד שגוי או שהאירוע לא קיים. נסו שוב.", "error");
         setProcessing(false);
       }
     } catch (error) {
-      alert("שגיאה בפענוח הנתונים. נסו שוב.");
+      showToast("שגיאה בפענוח הנתונים. נסו שוב.", "error");
       setProcessing(false);
     }
   };

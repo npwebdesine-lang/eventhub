@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import { sanitize } from "../utils/sanitize";
+import { useModalBehavior } from "../components/Modal";
 import {
   Settings,
   Plus,
@@ -138,6 +139,35 @@ const Admin = () => {
   const [editingBlessingId, setEditingBlessingId] = useState(null);
   const [editBlessingName, setEditBlessingName] = useState("");
   const [editBlessingMessage, setEditBlessingMessage] = useState("");
+
+  // Escape-to-close + body scroll-lock for every Admin dialog. Only one is
+  // open at a time, so closing them all on Escape is safe.
+  const anyModalOpen =
+    isGalleryOpen ||
+    isSeatingModalOpen ||
+    isQrModalOpen ||
+    isDatingManagerOpen ||
+    isIcebreakerModalOpen ||
+    isIcebreakerUserManagerOpen ||
+    isRideshareManagerOpen ||
+    isRsvpManagerOpen ||
+    isReportsModalOpen ||
+    isBlessingsManagerOpen;
+  useModalBehavior({
+    open: anyModalOpen,
+    onClose: () => {
+      setIsGalleryOpen(false);
+      setIsSeatingModalOpen(false);
+      setIsQrModalOpen(false);
+      setIsDatingManagerOpen(false);
+      setIsIcebreakerModalOpen(false);
+      setIsIcebreakerUserManagerOpen(false);
+      setIsRideshareManagerOpen(false);
+      setIsRsvpManagerOpen(false);
+      setIsReportsModalOpen(false);
+      setIsBlessingsManagerOpen(false);
+    },
+  });
 
   const [eventStats, setEventStats] = useState({
     rsvps: 0,
