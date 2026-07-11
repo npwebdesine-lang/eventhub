@@ -151,60 +151,73 @@ const Invite = () => {
     if (loading || !eventData) return;
 
     const template = eventData.design_config?.invite_template || "modern";
+    // Collect every tween so the infinite (repeat: -1) background loops are
+    // killed on unmount / template change instead of running forever.
+    const tweens = [];
 
     // אנימציית כניסה משותפת לכל התבניות (Fade Up Stagger)
-    gsap.fromTo(
-      ".fade-up-item",
-      { y: 40, opacity: 0 },
-      {
-        y: 0,
-        opacity: 1,
-        duration: 1,
-        stagger: 0.1,
-        ease: "power3.out",
-        delay: 0.1,
-      },
+    tweens.push(
+      gsap.fromTo(
+        ".fade-up-item",
+        { y: 40, opacity: 0 },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 1,
+          stagger: 0.1,
+          ease: "power3.out",
+          delay: 0.1,
+        },
+      ),
     );
 
     // אנימציות רקע ייחודיות לכל תבנית
     if (template === "modern") {
-      gsap.to([bgDecor1.current, bgDecor2.current], {
-        x: "random(-60, 60)",
-        y: "random(-60, 60)",
-        scale: "random(0.8, 1.2)",
-        duration: "random(4, 8)",
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-      });
+      tweens.push(
+        gsap.to([bgDecor1.current, bgDecor2.current], {
+          x: "random(-60, 60)",
+          y: "random(-60, 60)",
+          scale: "random(0.8, 1.2)",
+          duration: "random(4, 8)",
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+        }),
+      );
     } else if (template === "elegant") {
-      gsap.to(".elegant-particle", {
-        y: "random(-80, 80)",
-        x: "random(-40, 40)",
-        scale: "random(0.6, 1.4)",
-        opacity: "random(0.1, 0.4)",
-        duration: "random(4, 9)",
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-        stagger: { amount: 2, from: "random" },
-      });
-      gsap.to(".pulse-ring", {
-        scale: 1.05,
-        opacity: 0.4,
-        duration: 2,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-      });
+      tweens.push(
+        gsap.to(".elegant-particle", {
+          y: "random(-80, 80)",
+          x: "random(-40, 40)",
+          scale: "random(0.6, 1.4)",
+          opacity: "random(0.1, 0.4)",
+          duration: "random(4, 9)",
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+          stagger: { amount: 2, from: "random" },
+        }),
+        gsap.to(".pulse-ring", {
+          scale: 1.05,
+          opacity: 0.4,
+          duration: 2,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+        }),
+      );
     } else if (template === "corporate") {
-      gsap.to(bgDecor1.current, {
-        rotation: 360,
-        duration: 60,
-        repeat: -1,
-        ease: "linear",
-      });
+      tweens.push(
+        gsap.to(bgDecor1.current, {
+          rotation: 360,
+          duration: 60,
+          repeat: -1,
+          ease: "linear",
+        }),
+      );
     }
+
+    return () => tweens.forEach((t) => t.kill());
   }, [loading, eventData]);
 
   useEffect(() => {

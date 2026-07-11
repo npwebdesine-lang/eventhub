@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom"; // הסרנו את useNavigate כי אין כפתור חזרה
 import { supabase } from "../lib/supabase";
 import {
@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import gsap from "gsap";
 
+const PAGE_SIZE = 24;
+
 const Album = () => {
   const { id } = useParams();
 
@@ -24,11 +26,61 @@ const Album = () => {
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [activeTab, setActiveTab] = useState("photos"); // 'photos' | 'blessings'
 
+  const [photosHasMore, setPhotosHasMore] = useState(true);
+  const [blessingsHasMore, setBlessingsHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const photosOffset = useRef(0);
+  const blessingsOffset = useRef(0);
+
   const headerRef = useRef(null);
   const gridRef = useRef(null);
   const decorationsRef = useRef([]);
+  const sentinelRef = useRef(null);
 
+  const fetchPhotos = useCallback(
+    async (pageOffset = 0) => {
+      const { data, error } = await supabase
+        .from("photos")
+        .select("id, image_url, guest_name")
+        .eq("event_id", id)
+        .order("created_at", { ascending: false })
+        .range(pageOffset, pageOffset + PAGE_SIZE - 1);
+      if (error) {
+        console.error(error);
+        return;
+      }
+      const rows = data || [];
+      if (rows.length < PAGE_SIZE) setPhotosHasMore(false);
+      setPhotos((prev) => (pageOffset === 0 ? rows : [...prev, ...rows]));
+      photosOffset.current = pageOffset + rows.length;
+    },
+    [id],
+  );
+
+  const fetchBlessings = useCallback(
+    async (pageOffset = 0) => {
+      const { data, error } = await supabase
+        .from("blessings")
+        .select("id, guest_name, message, image_url")
+        .eq("event_id", id)
+        .eq("is_approved", true)
+        .order("created_at", { ascending: false })
+        .range(pageOffset, pageOffset + PAGE_SIZE - 1);
+      if (error) {
+        console.error(error);
+        return;
+      }
+      const rows = data || [];
+      if (rows.length < PAGE_SIZE) setBlessingsHasMore(false);
+      setBlessings((prev) => (pageOffset === 0 ? rows : [...prev, ...rows]));
+      blessingsOffset.current = pageOffset + rows.length;
+    },
+    [id],
+  );
+
+  // Initial load — first page only; the rest streams in on scroll
   useEffect(() => {
+    let isMounted = true;
     const fetchAlbumData = async () => {
       try {
         const { data: event, error: eventError } = await supabase
@@ -37,56 +89,70 @@ const Album = () => {
           .eq("id", id)
           .single();
         if (eventError) throw eventError;
+        if (!isMounted) return;
         setEventData(event);
 
-        const queries = [
-          supabase
-            .from("photos")
-            .select("*")
-            .eq("event_id", id)
-            .order("created_at", { ascending: false }),
-        ];
-
+        await fetchPhotos(0);
         if (event.active_modules?.blessings) {
-          queries.push(
-            supabase
-              .from("blessings")
-              .select("*")
-              .eq("event_id", id)
-              .eq("is_approved", true)
-              .order("created_at", { ascending: false }),
-          );
-        }
-
-        const results = await Promise.all(queries);
-
-        if (results[0].error) throw results[0].error;
-        setPhotos(results[0].data || []);
-
-        if (event.active_modules?.blessings && results[1]) {
-          if (results[1].error) throw results[1].error;
-          setBlessings(results[1].data || []);
+          await fetchBlessings(0);
+        } else {
+          setBlessingsHasMore(false);
         }
       } catch (error) {
         console.error("Error fetching album:", error);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
     fetchAlbumData();
-  }, [id]);
+    return () => {
+      isMounted = false;
+    };
+  }, [id, fetchPhotos, fetchBlessings]);
 
+  // Infinite scroll for whichever tab is active
   useEffect(() => {
-    if (!loading && eventData) {
-      const tl = gsap.timeline();
-      tl.fromTo(
+    const hasMore = activeTab === "photos" ? photosHasMore : blessingsHasMore;
+    if (!sentinelRef.current || !hasMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loadingMore && hasMore) {
+          setLoadingMore(true);
+          const loader =
+            activeTab === "photos"
+              ? fetchPhotos(photosOffset.current)
+              : fetchBlessings(blessingsOffset.current);
+          loader.finally(() => setLoadingMore(false));
+        }
+      },
+      { rootMargin: "300px" },
+    );
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+  }, [
+    activeTab,
+    photosHasMore,
+    blessingsHasMore,
+    loadingMore,
+    fetchPhotos,
+    fetchBlessings,
+  ]);
+
+  // Header entrance + floating decorations. The decoration tweens loop forever
+  // (repeat: -1), so they are captured and killed on cleanup to avoid leaking
+  // into GSAP's global ticker after unmount.
+  useEffect(() => {
+    if (loading || !eventData) return;
+    const tweens = [
+      gsap.fromTo(
         headerRef.current,
         { y: -80, opacity: 0 },
         { y: 0, opacity: 1, duration: 1.2, ease: "power3.out" },
-      );
-
-      decorationsRef.current.forEach((el, index) => {
-        if (el) {
+      ),
+    ];
+    decorationsRef.current.forEach((el, index) => {
+      if (el) {
+        tweens.push(
           gsap.to(el, {
             y: "random(-30, 30)",
             x: "random(-30, 30)",
@@ -96,15 +162,16 @@ const Album = () => {
             yoyo: true,
             ease: "sine.inOut",
             delay: index * 0.2,
-          });
-        }
-      });
-    }
+          }),
+        );
+      }
+    });
+    return () => tweens.forEach((t) => t.kill());
   }, [loading, eventData]);
 
   useEffect(() => {
     if (!loading && (photos.length > 0 || blessings.length > 0)) {
-      gsap.fromTo(
+      const tween = gsap.fromTo(
         ".media-card",
         { scale: 0.8, opacity: 0, y: 50 },
         {
@@ -117,6 +184,7 @@ const Album = () => {
           clearProps: "all",
         },
       );
+      return () => tween.kill();
     }
   }, [loading, activeTab, photos.length, blessings.length]);
 
@@ -280,8 +348,9 @@ const Album = () => {
                   <img
                     src={photo.image_url}
                     alt={`Photo by ${photo.guest_name}`}
-                    className="w-full h-auto object-cover transition-all duration-700 group-hover:scale-110"
+                    className="w-full h-auto object-cover transition-all duration-700 group-hover:scale-110 bg-slate-100"
                     loading="lazy"
+                    decoding="async"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-900/30 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-6">
                     <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
@@ -342,6 +411,8 @@ const Album = () => {
                         src={blessing.image_url}
                         alt="Selfie"
                         className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+                        loading="lazy"
+                        decoding="async"
                       />
                     </div>
                   )}
@@ -370,6 +441,16 @@ const Album = () => {
               ))}
             </div>
           ))}
+
+        {/* Infinite-scroll sentinel for the active tab */}
+        {((activeTab === "photos" && photosHasMore) ||
+          (activeTab === "blessings" && blessingsHasMore)) && (
+          <div ref={sentinelRef} className="flex justify-center py-10">
+            {loadingMore && (
+              <Loader2 className="animate-spin text-slate-400" size={28} />
+            )}
+          </div>
+        )}
       </div>
 
       {/* Lightbox - אלגנטי עם אנימציות חלקות */}

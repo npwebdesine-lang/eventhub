@@ -63,6 +63,13 @@ const Photos = () => {
 
   // Sentinel for infinite scroll
   const sentinelRef = useRef(null);
+  // Track upload-progress timeouts so they can be cleared on unmount
+  const timeoutsRef = useRef([]);
+
+  useEffect(() => {
+    const timeouts = timeoutsRef.current;
+    return () => timeouts.forEach((t) => clearTimeout(t));
+  }, []);
 
   const fetchPage = useCallback(
     async (pageOffset = 0) => {
@@ -198,8 +205,10 @@ const Photos = () => {
   // Simulated upload progress
   const simulateProgress = () => {
     setUploadProgress(15);
-    setTimeout(() => setUploadProgress(45), 300);
-    setTimeout(() => setUploadProgress(78), 900);
+    timeoutsRef.current.push(
+      setTimeout(() => setUploadProgress(45), 300),
+      setTimeout(() => setUploadProgress(78), 900),
+    );
   };
 
   const handleFileUpload = async (e) => {
@@ -270,10 +279,12 @@ const Photos = () => {
       setPhotos((prev) => [newPhoto, ...prev]);
       setMyUploadCount((prev) => prev + 1);
       setUploadSuccess(true);
-      setTimeout(() => {
-        setUploadSuccess(false);
-        setUploadProgress(0);
-      }, 3000);
+      timeoutsRef.current.push(
+        setTimeout(() => {
+          setUploadSuccess(false);
+          setUploadProgress(0);
+        }, 3000),
+      );
     } catch (err) {
       showToast("שגיאה בהעלאה: " + (err.message || "נסו שוב"), "error");
       setUploadProgress(0);

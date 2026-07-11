@@ -41,6 +41,18 @@ const Icebreaker = () => {
   const [isJoining, setIsJoining] = useState(false);
   const proofInputRef = useRef(null);
   const rouletteRef = useRef(null);
+  const rouletteTimeoutRef = useRef(null);
+  const isMountedRef = useRef(true);
+
+  // Track mount state and clear the roulette timeout on unmount so it can't
+  // insert a match row or call setState after the component is gone.
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      if (rouletteTimeoutRef.current) clearTimeout(rouletteTimeoutRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     // Require a registered guest (name set on Home) and a valid device ID
@@ -265,12 +277,14 @@ const Icebreaker = () => {
         .from("icebreaker_profiles")
         .select("id, guest_id, name, photo_url")
         .eq("event_id", eventId)
-        .neq("guest_id", guestId);
+        .neq("guest_id", guestId)
+        .limit(200);
 
       const { data: missions } = await supabase
         .from("icebreaker_missions")
         .select("id, content")
-        .eq("event_id", eventId);
+        .eq("event_id", eventId)
+        .limit(100);
 
       if (!others?.length) {
         showToast("עדיין אין עוד אנשים במשחק! תגידו לחבר'ה להירשם.", "warning");
@@ -296,7 +310,8 @@ const Icebreaker = () => {
         });
       }
 
-      setTimeout(async () => {
+      rouletteTimeoutRef.current = setTimeout(async () => {
+        if (!isMountedRef.current) return;
         const { data: matchData, error } = await supabase
           .from("icebreaker_matches")
           .insert([
@@ -311,6 +326,7 @@ const Icebreaker = () => {
           .select()
           .maybeSingle();
 
+        if (!isMountedRef.current) return;
         if (!error && matchData) {
           setCurrentMatch({ ...matchData, partner: randomPartner });
           setView("active_mission");

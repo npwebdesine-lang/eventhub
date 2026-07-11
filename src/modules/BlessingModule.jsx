@@ -3,6 +3,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import gsap from "gsap";
 import { sanitize } from "../utils/sanitize";
+import { compressImage, isAllowedImageType } from "../lib/imageUtils";
+import { useToast } from "../components/Toast";
 import {
   Send,
   Image as ImageIcon,
@@ -18,6 +20,7 @@ import {
 
 const BlessingModule = () => {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [searchParams] = useSearchParams();
   const eventId = searchParams.get("event");
 
@@ -59,18 +62,40 @@ const BlessingModule = () => {
     fetchEvent();
   }, [eventId]);
 
+  // Revoke the object URL when the preview changes or the component unmounts,
+  // so blob previews don't accumulate in memory.
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
+
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImageFile(file);
-      const previewUrl = URL.createObjectURL(file);
-      setImagePreview(previewUrl);
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!isAllowedImageType(file)) {
+      showToast("יש להעלות קובץ תמונה בלבד (JPG, PNG, WEBP)", "error");
+      e.target.value = "";
+      return;
     }
+    if (file.size > 15 * 1024 * 1024) {
+      showToast("הקובץ גדול מדי (מקסימום 15MB)", "error");
+      e.target.value = "";
+      return;
+    }
+    setImageFile(file);
+    setImagePreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
   };
 
   const removeImage = () => {
     setImageFile(null);
-    setImagePreview(null);
+    setImagePreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -85,13 +110,18 @@ const BlessingModule = () => {
       let imageUrl = null;
 
       if (imageFile) {
-        const fileExt = imageFile.name.split(".").pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        // Compress to a bounded JPEG (matches the other uploaders) so a raw
+        // multi-MB phone photo never lands in storage or the album feed.
+        const compressed = await compressImage(imageFile, {
+          maxWidth: 1600,
+          quality: 0.82,
+        });
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
         const filePath = `${eventId}/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from("blessings-uploads")
-          .upload(filePath, imageFile);
+          .upload(filePath, compressed, { contentType: "image/jpeg" });
 
         if (uploadError) throw uploadError;
 
