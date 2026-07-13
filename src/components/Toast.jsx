@@ -66,7 +66,7 @@ export const ToastProvider = ({ children }) => {
           return (
             <div
               key={toast.id}
-              className={`${bg} text-white rounded-2xl px-4 py-3 shadow-xl flex items-center gap-3 pointer-events-auto animate-in slide-in-from-top-2 fade-in duration-300 max-w-sm mx-auto w-full`}
+              className={`${bg} text-white rounded-full px-5 py-3 shadow-[5px_5px_14px_rgba(0,0,0,0.18),inset_2px_2px_4px_rgba(255,255,255,0.3),inset_-2px_-2px_4px_rgba(0,0,0,0.15)] flex items-center gap-3 pointer-events-auto animate-in slide-in-from-top-2 fade-in duration-300 max-w-sm mx-auto w-full`}
             >
               <Icon size={18} className="shrink-0" />
               <span className="flex-1 text-sm font-bold leading-tight">

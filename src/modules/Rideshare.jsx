@@ -20,42 +20,65 @@ import gsap from "gsap";
 
 const formatDialer = (phone) => `tel:${phone.replace(/\D/g, "")}`;
 
-// Improved Ride Card (Moved outside)
+/* ============================================================
+   SOFT-CLAY / NEUMORPHISM DESIGN TOKENS  (shared across modules)
+   ------------------------------------------------------------ */
+const CLAY_BG = "#eceadf";
+const CLAY_PAGE_BG =
+  "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)";
+const CLAY =
+  "rounded-[2rem] bg-[#f0eee7] shadow-[8px_8px_20px_rgba(0,0,0,0.09),-8px_-8px_20px_rgba(255,255,255,0.9)]";
+const CLAY_INSET =
+  "bg-[#eeece5] shadow-[inset_5px_5px_10px_rgba(0,0,0,0.07),inset_-5px_-5px_10px_rgba(255,255,255,0.85)]";
+const clayBtn = (color) => ({
+  backgroundColor: color,
+  boxShadow: `5px 5px 14px rgba(0,0,0,0.14), -4px -4px 12px rgba(255,255,255,0.7), inset 2px 2px 4px rgba(255,255,255,0.35), inset -2px -2px 4px rgba(0,0,0,0.12)`,
+});
+// A neutral field styled as a debossed well (replaces flat inputs)
+const clayFieldCls =
+  "w-full p-4 rounded-[1.4rem] outline-none font-bold text-slate-700 placeholder:text-slate-400 bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.07),inset_-4px_-4px_9px_rgba(255,255,255,0.85)] focus:shadow-[inset_5px_5px_11px_rgba(0,0,0,0.09),inset_-5px_-5px_11px_rgba(255,255,255,0.9)] transition-all";
+
+// Improved Ride Card — sculpted in clay
 const RideCard = ({ ride, primaryColor }) => {
   const isDriver = ride.role === "driver";
   const accentColor = isDriver ? "#f59e0b" : primaryColor;
   const cleanPhone = ride.phone?.replace(/\D/g, "").replace(/^0/, "972");
 
   return (
-    <div className="bg-white p-5 rounded-[1.5rem] shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-slate-100 flex flex-col gap-3 hover:shadow-md transition-shadow">
+    <div className={`${CLAY} p-5 flex flex-col gap-3`}>
       {/* Header */}
       <div className="flex items-center gap-3">
         <div
-          className="w-11 h-11 rounded-[1rem] flex items-center justify-center shrink-0"
-          style={{ backgroundColor: `${accentColor}15` }}
+          className="w-12 h-12 rounded-[1rem] flex items-center justify-center shrink-0 text-white"
+          style={clayBtn(accentColor)}
         >
-          <Car size={20} style={{ color: accentColor }} />
+          <Car size={20} />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-black text-slate-800 truncate">
+          <h3 className="font-black text-slate-700 truncate">
             {ride.guest_name}
           </h3>
           <span
-            className="text-[10px] font-bold px-2 py-0.5 rounded-md"
-            style={{ backgroundColor: `${accentColor}15`, color: accentColor }}
+            className="inline-block text-[10px] font-bold px-2.5 py-1 rounded-full mt-1"
+            style={{
+              color: accentColor,
+              backgroundColor: "#eeece5",
+              boxShadow:
+                "inset 2px 2px 4px rgba(0,0,0,0.06), inset -2px -2px 4px rgba(255,255,255,0.8)",
+            }}
           >
             {isDriver ? "מציע/ה טרמפ" : "מחפש/ת טרמפ"}
           </span>
         </div>
       </div>
 
-      {/* Route */}
-      <div className="bg-slate-50 border border-slate-100 rounded-[1rem] p-3 space-y-1.5">
+      {/* Route — debossed well */}
+      <div className={`rounded-[1.2rem] p-3.5 space-y-1.5 ${CLAY_INSET}`}>
         {["there", "both"].includes(ride.direction) && ride.from_location && (
           <div className="flex items-center gap-2 text-sm">
             <ArrowRight size={13} className="text-slate-400 shrink-0" />
             <span className="text-slate-400 text-xs">הלוך מ:</span>
-            <span className="font-bold text-slate-700 truncate">
+            <span className="font-bold text-slate-600 truncate">
               {ride.from_location}
             </span>
           </div>
@@ -64,7 +87,7 @@ const RideCard = ({ ride, primaryColor }) => {
           <div className="flex items-center gap-2 text-sm">
             <ChevronLeft size={13} className="text-slate-400 shrink-0" />
             <span className="text-slate-400 text-xs">חזור ל:</span>
-            <span className="font-bold text-slate-700 truncate">
+            <span className="font-bold text-slate-600 truncate">
               {ride.to_location}
             </span>
           </div>
@@ -72,18 +95,19 @@ const RideCard = ({ ride, primaryColor }) => {
       </div>
 
       {/* Contact buttons */}
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2.5">
         <a
           href={`https://wa.me/${cleanPhone}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center gap-1.5 bg-[#25D366] text-white hover:bg-[#20b859] active:scale-[0.97] transition-all py-3 rounded-xl font-bold text-sm shadow-sm"
+          className="flex items-center justify-center gap-1.5 text-white active:scale-[0.97] transition-all py-3 rounded-full font-bold text-sm"
+          style={clayBtn("#25D366")}
         >
           <MessageCircle size={15} /> WhatsApp
         </a>
         <a
           href={formatDialer(ride.phone)}
-          className="flex items-center justify-center gap-1.5 bg-slate-100 text-slate-700 hover:bg-slate-200 active:scale-[0.97] transition-all py-3 rounded-xl font-bold text-sm"
+          className="flex items-center justify-center gap-1.5 text-slate-600 active:scale-[0.97] transition-all py-3 rounded-full font-bold text-sm bg-[#f0eee7] shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)]"
         >
           <Phone size={15} /> חיוג
         </a>
@@ -99,7 +123,6 @@ const Rideshare = () => {
   const { showToast } = useToast();
 
   const localGuestName = localStorage.getItem("guest_name") || "";
-  // Stable device identity (matches the x-device-id header used by RLS)
   const localGuestId = (() => {
     const id = getOrCreateDeviceId();
     return isValidUUIDv4(id) ? id : "";
@@ -191,7 +214,6 @@ const Rideshare = () => {
     const trimmedName = tempName.trim();
     localStorage.setItem("guest_name", trimmedName);
 
-    // Use secure device ID with validation
     const guestId = getOrCreateDeviceId();
     if (!isValidUUIDv4(guestId)) {
       throw new Error("Failed to create valid device ID");
@@ -264,74 +286,68 @@ const Rideshare = () => {
     }
   };
 
-  const formatWhatsApp = (phone) =>
-    `https://wa.me/${phone.replace(/\D/g, "").replace(/^0/, "972")}`;
-  const formatDialer = (phone) => `tel:${phone.replace(/\D/g, "")}`;
-
   if (loading || !eventData) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <Loader2 className="animate-spin text-white" size={48} />
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: CLAY_PAGE_BG }}
+      >
+        <Loader2 className="animate-spin text-slate-400" size={48} />
       </div>
     );
   }
 
-  const primaryColor = eventData.design_config?.colors?.primary || "#3b82f6";
-  const bgColor = eventData.design_config?.colors?.background || "#f8fafc";
-  const primaryTextColor = getTextColor(primaryColor);
+  const primaryColor = eventData.design_config?.colors?.primary || "#8fa7b8";
 
   // ---- Welcome ----
   if (step === "welcome") {
     return (
       <div
-        className="min-h-screen flex flex-col p-6 font-sans transition-colors duration-1000"
-        style={{ backgroundColor: bgColor }}
+        className="min-h-screen flex flex-col p-6 font-sans"
+        style={{ background: CLAY_PAGE_BG }}
         dir="rtl"
       >
         <button
           onClick={() => navigate(-1)}
-          className="self-end p-2 bg-black/5 hover:bg-black/10 rounded-full text-slate-500 transition-colors mb-8"
+          className="self-end p-3 rounded-full text-slate-500 mb-8 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
         >
           <X size={20} />
         </button>
 
-        <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full text-center animate-in zoom-in-95 duration-500">
+        <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full text-center">
           <div
-            className="w-24 h-24 bg-white rounded-[2rem] shadow-xl flex items-center justify-center mx-auto mb-6"
-            style={{ border: `2px solid ${primaryColor}20` }}
+            className="w-24 h-24 rounded-[2rem] flex items-center justify-center mx-auto mb-6 bg-[#f0eee7] shadow-[10px_10px_24px_rgba(0,0,0,0.1),-9px_-9px_22px_rgba(255,255,255,0.9)]"
           >
             <Car size={40} style={{ color: primaryColor }} />
           </div>
-          <h1 className="text-3xl font-black text-slate-800 mb-2">
-            לוח טרמפים
-          </h1>
+          <h1 className="text-3xl font-black text-slate-700 mb-2">לוח טרמפים</h1>
           <p className="text-slate-400 font-medium mb-10 text-sm">
             שתפו נסיעות — יחד זה יותר כיף
           </p>
 
-          <div className="space-y-3 text-right">
+          <div className="space-y-4 text-right">
             <button
               onClick={() => handleRoleSelect("seeker")}
-              className="w-full p-5 rounded-[1.5rem] shadow-lg flex items-center justify-between hover:scale-[1.02] active:scale-[0.98] transition-transform"
-              style={{ backgroundColor: primaryColor, color: primaryTextColor }}
+              className="w-full p-5 rounded-[1.8rem] flex items-center justify-between active:scale-[0.98] transition-transform text-white"
+              style={clayBtn(primaryColor)}
             >
               <div>
                 <h3 className="text-lg font-black mb-0.5">
                   אני מחפש/ת טרמפ 🙋
                 </h3>
-                <p className="text-xs font-medium opacity-75">
+                <p className="text-xs font-medium opacity-80">
                   צריך/ה עזרה להגיע או לחזור
                 </p>
               </div>
-              <ChevronLeft className="opacity-60 shrink-0" />
+              <ChevronLeft className="opacity-70 shrink-0" />
             </button>
 
             <button
               onClick={() => handleRoleSelect("driver")}
-              className="w-full bg-white border border-slate-100 p-5 rounded-[1.5rem] shadow-sm flex items-center justify-between hover:scale-[1.02] active:scale-[0.98] transition-transform group text-right"
+              className="w-full p-5 rounded-[1.8rem] flex items-center justify-between active:scale-[0.98] transition-transform group text-right bg-[#f0eee7] shadow-[7px_7px_18px_rgba(0,0,0,0.09),-6px_-6px_16px_rgba(255,255,255,0.9)]"
             >
               <div>
-                <h3 className="text-lg font-black text-slate-800 mb-0.5">
+                <h3 className="text-lg font-black text-slate-700 mb-0.5">
                   אני מציע/ת טרמפ 🚗
                 </h3>
                 <p className="text-xs font-medium text-slate-400">
@@ -361,41 +377,34 @@ const Rideshare = () => {
     const isSeeker = formData.role === "seeker";
     return (
       <div
-        className="min-h-screen flex flex-col font-sans transition-colors duration-1000 pb-10"
-        style={{ backgroundColor: bgColor }}
+        className="min-h-screen flex flex-col font-sans pb-10"
+        style={{ background: CLAY_PAGE_BG }}
         dir="rtl"
       >
-        <div
-          className="rounded-b-[3rem] pt-10 pb-16 px-6 relative z-10 shadow-lg flex justify-between items-center"
-          style={{ backgroundColor: primaryColor }}
-        >
+        <div className="pt-10 pb-4 px-6 relative z-10 flex justify-between items-center max-w-md mx-auto w-full">
           <button
             onClick={() => setStep("welcome")}
-            className="p-2 rounded-full bg-black/10 hover:bg-black/20 transition-colors"
-            style={{ color: primaryTextColor }}
+            className="p-3 rounded-full text-slate-500 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
           >
             <ChevronLeft size={20} />
           </button>
-          <h1
-            className="text-xl font-black"
-            style={{ color: primaryTextColor }}
-          >
+          <h1 className="text-2xl font-black text-slate-700">
             {isSeeker ? "חיפוש טרמפ 🙋" : "הצעת טרמפ 🚗"}
           </h1>
-          <div className="w-9" />
+          <div className="w-11" />
         </div>
 
         {!formData.guest_name && (
           <form
             onSubmit={handleInlineNameSubmit}
-            className="px-5 -mt-8 relative z-20 max-w-md mx-auto w-full space-y-4"
+            className="px-5 relative z-20 max-w-md mx-auto w-full space-y-4"
           >
-            <div className="fade-up-item bg-white p-6 rounded-[1.5rem] shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-slate-100 space-y-4">
-              <h3 className="font-bold text-slate-700 text-sm border-b border-slate-50 pb-2">
+            <div className={`fade-up-item ${CLAY} p-6 space-y-4`}>
+              <h3 className="font-bold text-slate-600 text-sm">
                 בואו נתחיל עם שמך
               </h3>
               <div>
-                <label className="text-xs font-bold text-slate-400 mb-1 block">
+                <label className="text-xs font-bold text-slate-400 mb-1.5 block">
                   הכנס שם כדי להשתמש בלוח הטרמפים
                 </label>
                 <input
@@ -405,16 +414,13 @@ const Rideshare = () => {
                   value={tempName}
                   onChange={(e) => setTempName(e.target.value)}
                   placeholder="איך קוראים לך?"
-                  className="w-full p-4 bg-slate-50 border border-slate-100 rounded-[1.2rem] outline-none font-bold focus:ring-2 focus:ring-offset-0 transition-all"
+                  className={clayFieldCls}
                 />
               </div>
               <button
                 type="submit"
-                className="w-full font-black py-4 rounded-[1.2rem] shadow-md hover:opacity-90 active:scale-[0.98] transition-all mt-4"
-                style={{
-                  backgroundColor: primaryColor,
-                  color: primaryTextColor,
-                }}
+                className="w-full font-black py-4 rounded-full active:scale-[0.98] transition-all mt-4 text-white"
+                style={clayBtn(primaryColor)}
               >
                 המשך
               </button>
@@ -424,15 +430,13 @@ const Rideshare = () => {
 
         <form
           onSubmit={submitForm}
-          className="px-5 -mt-8 relative z-20 max-w-md mx-auto w-full space-y-4"
+          className="px-5 relative z-20 max-w-md mx-auto w-full space-y-4 mt-2"
         >
           {/* Contact info */}
-          <div className="fade-up-item bg-white p-6 rounded-[1.5rem] shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-slate-100 space-y-4">
-            <h3 className="font-bold text-slate-700 text-sm border-b border-slate-50 pb-2">
-              פרטי התקשרות
-            </h3>
+          <div className={`fade-up-item ${CLAY} p-6 space-y-4`}>
+            <h3 className="font-bold text-slate-600 text-sm">פרטי התקשרות</h3>
             <div>
-              <label className="text-xs font-bold text-slate-400 mb-1 block">
+              <label className="text-xs font-bold text-slate-400 mb-1.5 block">
                 שם מלא
               </label>
               <input
@@ -442,11 +446,11 @@ const Rideshare = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, guest_name: e.target.value })
                 }
-                className="w-full p-4 bg-slate-50 border border-slate-100 rounded-[1.2rem] outline-none font-bold focus:ring-2 transition-all"
+                className={clayFieldCls}
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-slate-400 mb-1 block">
+              <label className="text-xs font-bold text-slate-400 mb-1.5 block">
                 טלפון לתיאום
               </label>
               <input
@@ -458,16 +462,14 @@ const Rideshare = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, phone: e.target.value })
                 }
-                className="w-full p-4 bg-slate-50 border border-slate-100 rounded-[1.2rem] outline-none font-bold text-left focus:ring-2 transition-all"
+                className={`${clayFieldCls} text-left`}
               />
             </div>
           </div>
 
           {/* Direction */}
-          <div className="fade-up-item bg-white p-6 rounded-[1.5rem] shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-slate-100 space-y-3">
-            <h3 className="font-bold text-slate-700 text-sm border-b border-slate-50 pb-2">
-              כיוון נסיעה
-            </h3>
+          <div className={`fade-up-item ${CLAY} p-6 space-y-3`}>
+            <h3 className="font-bold text-slate-600 text-sm">כיוון נסיעה</h3>
             {[
               {
                 value: "there",
@@ -484,61 +486,61 @@ const Rideshare = () => {
                 label: isSeeker ? "הלוך וגם חזור" : "שני הכיוונים",
                 icon: "↔",
               },
-            ].map((opt) => (
-              <label
-                key={opt.value}
-                className={`border-2 p-4 rounded-[1.2rem] cursor-pointer transition-all flex items-center gap-3 ${
-                  formData.direction === opt.value
-                    ? "shadow-md"
-                    : "border-slate-100 hover:bg-slate-50"
-                }`}
-                style={
-                  formData.direction === opt.value
-                    ? {
-                        borderColor: primaryColor,
-                        backgroundColor: primaryColor,
-                        color: primaryTextColor,
-                      }
-                    : { color: "#475569" }
-                }
-              >
-                <input
-                  type="radio"
-                  name="dir"
-                  value={opt.value}
-                  className="hidden"
-                  required
-                  onChange={() =>
-                    setFormData({
-                      ...formData,
-                      direction: opt.value,
-                      from_location:
-                        opt.value === "back" ? "" : formData.from_location,
-                      to_location:
-                        opt.value === "there" ? "" : formData.to_location,
-                    })
+            ].map((opt) => {
+              const active = formData.direction === opt.value;
+              return (
+                <label
+                  key={opt.value}
+                  className="p-4 rounded-[1.4rem] cursor-pointer transition-all flex items-center gap-3"
+                  style={
+                    active
+                      ? { ...clayBtn(primaryColor), color: "#fff" }
+                      : {
+                          color: "#475569",
+                          backgroundColor: "#eeece5",
+                          boxShadow:
+                            "inset 4px 4px 9px rgba(0,0,0,0.07), inset -4px -4px 9px rgba(255,255,255,0.85)",
+                        }
                   }
-                />
-                <span className="text-base font-mono">{opt.icon}</span>
-                <span className="font-bold text-sm">{opt.label}</span>
-              </label>
-            ))}
+                >
+                  <input
+                    type="radio"
+                    name="dir"
+                    value={opt.value}
+                    className="hidden"
+                    required
+                    onChange={() =>
+                      setFormData({
+                        ...formData,
+                        direction: opt.value,
+                        from_location:
+                          opt.value === "back" ? "" : formData.from_location,
+                        to_location:
+                          opt.value === "there" ? "" : formData.to_location,
+                      })
+                    }
+                  />
+                  <span className="text-base font-mono">{opt.icon}</span>
+                  <span className="font-bold text-sm">{opt.label}</span>
+                </label>
+              );
+            })}
           </div>
 
           {/* Locations */}
           {formData.direction && (
-            <div className="fade-up-item bg-white p-6 rounded-[1.5rem] shadow-[0_4px_20px_rgb(0,0,0,0.06)] border border-slate-100 space-y-4 animate-in slide-in-from-top-2">
-              <h3 className="font-bold text-slate-700 text-sm border-b border-slate-50 pb-2">
+            <div className={`fade-up-item ${CLAY} p-6 space-y-4 animate-in slide-in-from-top-2`}>
+              <h3 className="font-bold text-slate-600 text-sm">
                 מאיפה / לאיפה?
               </h3>
               {["there", "both"].includes(formData.direction) && (
                 <div>
-                  <label className="text-xs font-bold text-slate-400 mb-1 block">
+                  <label className="text-xs font-bold text-slate-400 mb-1.5 block">
                     מאיפה בהלוך?
                   </label>
                   <div className="relative">
                     <MapPin
-                      className="absolute right-4 top-4 text-slate-300"
+                      className="absolute right-4 top-4 text-slate-300 z-10"
                       size={18}
                     />
                     <input
@@ -552,19 +554,19 @@ const Rideshare = () => {
                         })
                       }
                       placeholder="עיר, שכונה או צומת"
-                      className="w-full p-4 pr-11 bg-slate-50 border border-slate-100 rounded-[1.2rem] outline-none font-bold focus:ring-2 transition-all"
+                      className={`${clayFieldCls} pr-11`}
                     />
                   </div>
                 </div>
               )}
               {["back", "both"].includes(formData.direction) && (
                 <div>
-                  <label className="text-xs font-bold text-slate-400 mb-1 block">
+                  <label className="text-xs font-bold text-slate-400 mb-1.5 block">
                     לאן בחזור?
                   </label>
                   <div className="relative">
                     <MapPin
-                      className="absolute right-4 top-4 text-slate-300"
+                      className="absolute right-4 top-4 text-slate-300 z-10"
                       size={18}
                     />
                     <input
@@ -578,7 +580,7 @@ const Rideshare = () => {
                         })
                       }
                       placeholder="עיר, שכונה או צומת"
-                      className="w-full p-4 pr-11 bg-slate-50 border border-slate-100 rounded-[1.2rem] outline-none font-bold focus:ring-2 transition-all"
+                      className={`${clayFieldCls} pr-11`}
                     />
                   </div>
                 </div>
@@ -589,8 +591,8 @@ const Rideshare = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full font-black py-5 rounded-[1.5rem] shadow-xl flex justify-center items-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 mt-4 mb-8"
-            style={{ backgroundColor: primaryColor, color: primaryTextColor }}
+            className="w-full font-black py-5 rounded-full flex justify-center items-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50 mt-4 mb-8 text-white"
+            style={clayBtn(primaryColor)}
           >
             {isSubmitting ? (
               <>
@@ -610,25 +612,24 @@ const Rideshare = () => {
     return (
       <div
         className="min-h-screen p-6 flex flex-col font-sans"
-        style={{ backgroundColor: primaryColor, color: primaryTextColor }}
+        style={{ background: CLAY_PAGE_BG }}
         dir="rtl"
       >
         <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full text-center">
-          <div className="inline-flex items-center justify-center p-5 rounded-full mx-auto mb-5 bg-white/20 border border-white/30 animate-pulse">
-            <Sparkles size={44} />
+          <div
+            className="inline-flex items-center justify-center w-24 h-24 rounded-full mx-auto mb-5 text-white"
+            style={clayBtn(primaryColor)}
+          >
+            <Sparkles size={44} className="animate-pulse" />
           </div>
-          <h2 className="text-4xl font-black mb-2">יש התאמה!</h2>
-          <p className="font-medium mb-8 opacity-80">
+          <h2 className="text-4xl font-black text-slate-700 mb-2">יש התאמה!</h2>
+          <p className="font-medium mb-8 text-slate-500">
             מצאנו אנשים שכבר פרסמו מודעה לאותו אזור:
           </p>
 
           <div className="space-y-4 text-right mb-8">
             {matches.map((match) => (
-              <RideCard
-                key={match.id}
-                ride={match}
-                primaryColor={primaryColor}
-              />
+              <RideCard key={match.id} ride={match} primaryColor={primaryColor} />
             ))}
           </div>
         </div>
@@ -638,7 +639,7 @@ const Rideshare = () => {
             setBoardTab(formData.role === "driver" ? "seeker" : "driver");
             setStep("board");
           }}
-          className="w-full bg-black/20 hover:bg-black/30 font-bold py-5 rounded-[1.5rem] transition-colors"
+          className="w-full font-bold py-5 rounded-full transition-all active:scale-[0.98] text-slate-600 bg-[#f0eee7] shadow-[6px_6px_16px_rgba(0,0,0,0.09),-6px_-6px_16px_rgba(255,255,255,0.9)] active:shadow-[inset_4px_4px_9px_rgba(0,0,0,0.1),inset_-4px_-4px_9px_rgba(255,255,255,0.8)]"
         >
           המשך ללוח הטרמפים המלא
         </button>
@@ -649,64 +650,57 @@ const Rideshare = () => {
   // ---- Board ----
   return (
     <div
-      className="min-h-screen font-sans transition-colors duration-1000 pb-12"
-      style={{ backgroundColor: bgColor }}
+      className="min-h-screen font-sans pb-12"
+      style={{ background: CLAY_PAGE_BG }}
       dir="rtl"
     >
-      <div
-        className="rounded-b-[3rem] pt-10 pb-16 px-6 relative z-10 shadow-lg flex justify-between items-center"
-        style={{ backgroundColor: primaryColor }}
-      >
+      <div className="pt-10 pb-4 px-6 relative z-10 flex justify-between items-center max-w-md mx-auto w-full">
         <button
           onClick={() => navigate(-1)}
-          className="p-2 bg-black/10 hover:bg-black/20 rounded-full transition-colors"
-          style={{ color: primaryTextColor }}
+          className="p-3 rounded-full text-slate-500 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
         >
           <ChevronLeft size={20} />
         </button>
-        <h1 className="text-xl font-black" style={{ color: primaryTextColor }}>
-          הלוח המרכזי
-        </h1>
+        <h1 className="text-2xl font-black text-slate-700">הלוח המרכזי</h1>
         <button
           onClick={() => setStep("welcome")}
-          className="text-xs font-bold px-3 py-1.5 rounded-xl transition-colors"
-          style={{ backgroundColor: primaryTextColor, color: primaryColor }}
+          className="text-xs font-bold px-4 py-2.5 rounded-full transition-all text-white"
+          style={clayBtn(primaryColor)}
         >
           + מודעה
         </button>
       </div>
 
-      <div className="px-5 -mt-8 relative z-20 max-w-md mx-auto">
-        {/* Tabs */}
-        <div className="flex bg-white p-1.5 rounded-[1.2rem] mb-5 shadow-sm border border-slate-100">
+      <div className="px-5 relative z-20 max-w-md mx-auto">
+        {/* Tabs — segmented control in a debossed track */}
+        <div className={`flex p-1.5 rounded-full mb-5 ${CLAY_INSET}`}>
           {[
             { key: "driver", label: "מציעים טרמפ 🚗" },
             { key: "seeker", label: "מחפשים טרמפ 🙋" },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setBoardTab(tab.key)}
-              className={`flex-1 py-3 font-bold text-sm rounded-[1rem] transition-all ${
-                boardTab === tab.key
-                  ? "shadow-md"
-                  : "text-slate-500 hover:bg-slate-50"
-              }`}
-              style={
-                boardTab === tab.key
-                  ? { backgroundColor: primaryColor, color: primaryTextColor }
-                  : {}
-              }
-            >
-              {tab.label}
-            </button>
-          ))}
+          ].map((tab) => {
+            const active = boardTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setBoardTab(tab.key)}
+                className="flex-1 py-3 font-bold text-sm rounded-full transition-all"
+                style={
+                  active
+                    ? { ...clayBtn(primaryColor), color: "#fff" }
+                    : { color: "#64748b" }
+                }
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Rides list */}
         <div className="space-y-4">
           {rides.filter((r) => r.role === boardTab).length === 0 ? (
-            <div className="fade-up-item text-center py-14 bg-white rounded-[2rem] border border-slate-100 shadow-sm">
-              <AlertCircle size={36} className="mx-auto mb-4 text-slate-200" />
+            <div className={`fade-up-item text-center py-14 ${CLAY}`}>
+              <AlertCircle size={36} className="mx-auto mb-4 text-slate-300" />
               <h3 className="text-base font-bold text-slate-600 mb-1">
                 הלוח עדיין ריק
               </h3>

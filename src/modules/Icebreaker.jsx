@@ -21,6 +21,21 @@ import {
 } from "lucide-react";
 import gsap from "gsap";
 
+/* ============================================================
+   SOFT-CLAY / NEUMORPHISM DESIGN TOKENS  (shared across modules)
+   ------------------------------------------------------------ */
+const CLAY_BG = "#eceadf";
+const CLAY_PAGE_BG =
+  "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)";
+const clayBtn = (color) => ({
+  backgroundColor: color,
+  boxShadow: `5px 5px 14px rgba(0,0,0,0.14), -4px -4px 12px rgba(255,255,255,0.7), inset 2px 2px 4px rgba(255,255,255,0.35), inset -2px -2px 4px rgba(0,0,0,0.12)`,
+});
+const clayRaised =
+  "bg-[#f0eee7] shadow-[8px_8px_20px_rgba(0,0,0,0.09),-8px_-8px_20px_rgba(255,255,255,0.9)]";
+const clayInsetShadow =
+  "inset 5px 5px 10px rgba(0,0,0,0.07), inset -5px -5px 10px rgba(255,255,255,0.85)";
+
 const Icebreaker = () => {
   const [searchParams] = useSearchParams();
   const eventId = searchParams.get("event");
@@ -44,8 +59,6 @@ const Icebreaker = () => {
   const rouletteTimeoutRef = useRef(null);
   const isMountedRef = useRef(true);
 
-  // Track mount state and clear the roulette timeout on unmount so it can't
-  // insert a match row or call setState after the component is gone.
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
@@ -55,7 +68,6 @@ const Icebreaker = () => {
   }, []);
 
   useEffect(() => {
-    // Require a registered guest (name set on Home) and a valid device ID
     if (!eventId || !guestName || !guestId || !isValidUUIDv4(guestId))
       return navigate("/");
     let isMounted = true;
@@ -67,8 +79,6 @@ const Icebreaker = () => {
 
   const checkStatus = async (isMounted = true) => {
     try {
-      console.log("Icebreaker Init: Checking status for guest_id:", guestId);
-
       const { data: event, error: eventError } = await supabase
         .from("events")
         .select("id, name, design_config")
@@ -79,7 +89,6 @@ const Icebreaker = () => {
       if (!isMounted) return;
       setEventData(event);
 
-      // שימוש ב-maybeSingle במקום single כדי למנוע קריסה אם אין פרופיל
       const { data: profile, error: profileError } = await supabase
         .from("icebreaker_profiles")
         .select("id, guest_id, name, photo_url")
@@ -94,15 +103,12 @@ const Icebreaker = () => {
       if (!isMounted) return;
 
       if (!profile) {
-        console.log("No profile found. Sending to register.");
         setView("register");
         return;
       }
 
-      console.log("Profile found! Logging in as:", profile.name);
       setMyProfile(profile);
 
-      // שימוש ב-maybeSingle עבור המשימה הפעילה
       const { data: activeMatch, error: matchError } = await supabase
         .from("icebreaker_matches")
         .select(
@@ -137,7 +143,6 @@ const Icebreaker = () => {
           setView("active_mission");
         }
       } else {
-        // אין משימה פעילה, עוברים ללוח הראשי (Hub)
         await fetchFeed(isMounted);
         if (isMounted) setView("hub");
       }
@@ -219,7 +224,6 @@ const Icebreaker = () => {
         photo_url: photoUrl,
       };
 
-      // מעבר ל-Update ו-Insert מפורש כדי למנוע את שגיאת 409 Conflict
       const { data: existingProfile } = await supabase
         .from("icebreaker_profiles")
         .select("id")
@@ -411,70 +415,60 @@ const Icebreaker = () => {
 
   if (view === "loading" || !eventData) {
     return (
-      <div className="min-h-screen bg-slate-900 flex justify-center items-center">
-        <Loader2 className="animate-spin text-white" size={48} />
+      <div
+        className="min-h-screen flex justify-center items-center"
+        style={{ background: CLAY_PAGE_BG }}
+      >
+        <Loader2 className="animate-spin text-slate-400" size={48} />
       </div>
     );
   }
 
-  const primaryColor = eventData.design_config?.colors?.primary || "#3b82f6";
-  const bgColor = eventData.design_config?.colors?.background || "#f8fafc";
-  const primaryTextColor = getTextColor(primaryColor);
+  const primaryColor = eventData.design_config?.colors?.primary || "#8fa7b8";
 
   // ---- Register ----
   if (view === "register") {
     return (
       <div
-        className="min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-1000"
-        style={{ backgroundColor: bgColor }}
+        className="min-h-screen flex flex-col items-center justify-center p-6"
+        style={{ background: CLAY_PAGE_BG }}
         dir="rtl"
       >
         <button
           onClick={() => navigate(-1)}
-          className="absolute right-6 top-8 p-2 bg-slate-200/50 hover:bg-slate-200 rounded-full z-10 transition-colors"
+          className="absolute right-6 top-8 p-3 rounded-full z-10 text-slate-500 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
         >
-          <ChevronLeft size={24} className="text-slate-700" />
+          <ChevronLeft size={24} />
         </button>
 
-        <div className="w-full max-w-sm text-center relative z-10 animate-in zoom-in-95 duration-500">
+        <div className="w-full max-w-sm text-center relative z-10">
           <div
-            className="inline-flex p-5 rounded-[1.5rem] mb-6 shadow-sm bg-white border"
-            style={{ borderColor: `${primaryColor}30` }}
+            className="inline-flex p-5 rounded-[1.5rem] mb-6 text-white"
+            style={clayBtn(primaryColor)}
           >
-            <Zap size={48} style={{ color: primaryColor }} />
+            <Zap size={48} />
           </div>
-          <h1 className="text-4xl font-black mb-2 text-slate-800">
-            IceBreaker
-          </h1>
+          <h1 className="text-4xl font-black mb-2 text-slate-700">IceBreaker</h1>
           <p className="text-slate-500 font-medium mb-8 text-sm leading-relaxed">
             מצאו אנשים, בצעו משימות מצחיקות, ותעדו הכל.
           </p>
 
-          <div className="bg-white border border-slate-100 p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.07)]">
-            <h2 className="text-lg font-bold mb-2 text-slate-800">
-              תמונת זיהוי
-            </h2>
+          <div className={`p-8 rounded-[2.5rem] ${clayRaised}`}>
+            <h2 className="text-lg font-bold mb-2 text-slate-700">תמונת זיהוי</h2>
             <p className="text-slate-400 text-sm mb-5">כדי שימצאו אתכם בקלות</p>
             <label className="relative cursor-pointer inline-block group mb-6">
               <div
-                className="w-36 h-36 mx-auto rounded-full bg-slate-50 border-4 border-dashed border-slate-200 flex items-center justify-center overflow-hidden transition-all shadow-inner"
-                style={{ borderColor: uploading ? primaryColor : undefined }}
+                className="w-36 h-36 mx-auto rounded-full flex items-center justify-center overflow-hidden p-2 bg-[#eeece5]"
+                style={{ boxShadow: clayInsetShadow }}
               >
                 {photoUrl ? (
-                  <img
-                    src={photoUrl}
-                    className="w-full h-full object-cover"
-                    alt="profile"
-                  />
+                  <img src={photoUrl} className="w-full h-full object-cover rounded-full" alt="profile" />
                 ) : (
                   <Camera size={36} className="text-slate-300" />
                 )}
                 {uploading && (
-                  <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center">
-                    <Loader2
-                      className="animate-spin"
-                      style={{ color: primaryColor }}
-                    />
+                  <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-full">
+                    <Loader2 className="animate-spin" style={{ color: primaryColor }} />
                   </div>
                 )}
               </div>
@@ -490,8 +484,8 @@ const Icebreaker = () => {
             <button
               onClick={handleJoinGame}
               disabled={isJoining}
-              className="w-full font-black py-4 rounded-[1.2rem] text-xl shadow-lg transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-50"
-              style={{ backgroundColor: primaryColor, color: primaryTextColor }}
+              className="w-full font-black py-4 rounded-full text-xl transition-all active:scale-[0.98] disabled:opacity-50 text-white"
+              style={clayBtn(primaryColor)}
             >
               {isJoining ? (
                 <Loader2 className="animate-spin mx-auto" size={24} />
@@ -510,22 +504,22 @@ const Icebreaker = () => {
     return (
       <div
         className="min-h-screen flex flex-col items-center justify-center text-center p-6"
-        style={{ backgroundColor: primaryColor, color: primaryTextColor }}
+        style={{ background: CLAY_PAGE_BG }}
         dir="rtl"
       >
         <div
           ref={rouletteRef}
-          className="bg-white/20 p-12 rounded-[3rem] backdrop-blur-md shadow-2xl border border-white/20"
+          className={`p-12 rounded-[3rem] ${clayRaised}`}
         >
           <Loader2
             className="animate-spin mx-auto mb-8"
             size={72}
-            style={{ color: primaryTextColor }}
+            style={{ color: primaryColor }}
           />
-          <h2 className="text-3xl font-black mb-2 drop-shadow-md">
+          <h2 className="text-3xl font-black mb-2 text-slate-700">
             מאתר קורבן...
           </h2>
-          <p className="text-lg font-medium mt-3 animate-pulse opacity-70">
+          <p className="text-lg font-medium mt-3 animate-pulse text-slate-400">
             מגריל משימה חשאית
           </p>
         </div>
@@ -537,21 +531,18 @@ const Icebreaker = () => {
   if (view === "active_mission" && currentMatch) {
     return (
       <div
-        className="min-h-screen flex flex-col transition-colors duration-1000"
-        style={{ backgroundColor: bgColor }}
+        className="min-h-screen flex flex-col"
+        style={{ background: CLAY_PAGE_BG }}
         dir="rtl"
       >
-        <header
-          className="p-6 flex justify-between items-center rounded-b-[3rem] shadow-md z-10"
-          style={{ backgroundColor: primaryColor }}
-        >
+        <header className="p-5 flex justify-between items-center z-10 mx-3 mt-3 rounded-[1.8rem] bg-[#f0eee7] shadow-[7px_7px_18px_rgba(0,0,0,0.09),-6px_-6px_16px_rgba(255,255,255,0.9)]">
           <button
             onClick={() => setView("hub")}
-            className="p-2 bg-black/10 hover:bg-black/20 rounded-full transition-colors"
+            className="p-2.5 rounded-full text-slate-500 bg-[#f0eee7] shadow-[4px_4px_9px_rgba(0,0,0,0.09),-4px_-4px_9px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)] transition-all"
           >
-            <ChevronLeft size={24} style={{ color: primaryTextColor }} />
+            <ChevronLeft size={24} />
           </button>
-          <span className="bg-white text-slate-900 px-5 py-2 rounded-full text-sm font-bold shadow-sm flex items-center gap-2">
+          <span className="px-5 py-2 rounded-full text-sm font-bold flex items-center gap-2 text-slate-700 bg-[#f0eee7] shadow-[4px_4px_9px_rgba(0,0,0,0.09),-4px_-4px_9px_rgba(255,255,255,0.9)]">
             <Sparkles size={15} className="text-amber-500" /> משימה פעילה!
           </span>
           <div className="w-10" />
@@ -563,38 +554,35 @@ const Icebreaker = () => {
           </p>
 
           <div
-            className="w-32 h-32 rounded-full overflow-hidden bg-slate-100 border-[5px] shadow-2xl mb-4 mx-auto"
-            style={{ borderColor: primaryColor }}
+            className="w-32 h-32 rounded-full overflow-hidden mb-4 mx-auto p-2 bg-[#eeece5]"
+            style={{ boxShadow: clayInsetShadow }}
           >
             {currentMatch.partner?.photo_url ? (
               <img
                 src={currentMatch.partner.photo_url}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover rounded-full"
                 alt={currentMatch.partner.name}
               />
             ) : (
-              <User size={44} className="m-auto mt-10 text-slate-300" />
+              <User size={44} className="m-auto mt-8 text-slate-300" />
             )}
           </div>
-          <h1 className="text-4xl font-black text-slate-800 mb-8">
+          <h1 className="text-4xl font-black text-slate-700 mb-8">
             {sanitize(currentMatch.partner?.name || "")}
           </h1>
 
           {/* Mission card */}
-          <div className="bg-white border border-slate-100 p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.07)] w-full max-w-md relative">
+          <div className={`p-8 rounded-[2.5rem] w-full max-w-md relative ${clayRaised}`}>
             <div
-              className="absolute -top-5 right-6 w-11 h-11 rounded-full flex items-center justify-center shadow-lg border-4 border-white"
-              style={{ backgroundColor: primaryColor }}
+              className="absolute -top-5 right-6 w-12 h-12 rounded-full flex items-center justify-center text-white"
+              style={clayBtn(primaryColor)}
             >
-              <Target style={{ color: primaryTextColor }} size={18} />
+              <Target size={18} />
             </div>
-            <p
-              className="text-[10px] font-bold uppercase tracking-widest mb-3 opacity-50"
-              style={{ color: primaryColor }}
-            >
+            <p className="text-[10px] font-bold uppercase tracking-widest mb-3 opacity-60" style={{ color: primaryColor }}>
               פקודת מבצע
             </p>
-            <p className="text-2xl font-black text-slate-800 leading-snug">
+            <p className="text-2xl font-black text-slate-700 leading-snug">
               {currentMatch.mission_text}
             </p>
           </div>
@@ -611,8 +599,8 @@ const Icebreaker = () => {
             <button
               onClick={() => proofInputRef.current?.click()}
               disabled={uploading}
-              className="w-full font-black py-5 rounded-[1.5rem] text-lg shadow-xl flex justify-center items-center gap-3 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50"
-              style={{ backgroundColor: primaryColor, color: primaryTextColor }}
+              className="w-full font-black py-5 rounded-full text-lg flex justify-center items-center gap-3 active:scale-[0.98] transition-all disabled:opacity-50 text-white"
+              style={clayBtn(primaryColor)}
             >
               {uploading ? (
                 <>
@@ -636,69 +624,46 @@ const Icebreaker = () => {
   // ---- Hub / Wall of Fame ----
   return (
     <div
-      className="min-h-screen font-sans transition-colors duration-1000 pb-12"
-      style={{ backgroundColor: bgColor }}
+      className="min-h-screen font-sans pb-12"
+      style={{ background: CLAY_PAGE_BG }}
       dir="rtl"
     >
-      <div
-        className="rounded-b-[3rem] pt-12 pb-24 px-6 relative z-10 shadow-lg flex justify-between items-center"
-        style={{ backgroundColor: primaryColor }}
-      >
+      <div className="pt-12 pb-6 px-6 relative z-10 flex justify-between items-center max-w-md mx-auto w-full">
         <button
           onClick={() => navigate(-1)}
-          className="p-2 bg-black/10 hover:bg-black/20 rounded-full transition-colors"
-          style={{ color: primaryTextColor }}
+          className="p-3 rounded-full text-slate-500 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
         >
           <ChevronLeft size={22} />
         </button>
-        <h1
-          className="text-2xl font-black flex items-center gap-2"
-          style={{ color: primaryTextColor }}
-        >
-          IceBreaker{" "}
-          <Zap size={18} style={{ fill: primaryTextColor, opacity: 0.7 }} />
+        <h1 className="text-2xl font-black flex items-center gap-2 text-slate-700">
+          IceBreaker <Zap size={18} style={{ fill: primaryColor, color: primaryColor }} />
         </h1>
-        <div className="w-10 h-10 rounded-[1rem] overflow-hidden bg-black/10 shadow-inner border border-white/10">
+        <div className="w-11 h-11 rounded-[1rem] overflow-hidden bg-[#eeece5] shadow-[inset_2px_2px_5px_rgba(0,0,0,0.12),inset_-2px_-2px_5px_rgba(255,255,255,0.7)]">
           {myProfile?.photo_url ? (
-            <img
-              src={myProfile.photo_url}
-              className="w-full h-full object-cover"
-              alt="avatar"
-            />
+            <img src={myProfile.photo_url} className="w-full h-full object-cover" alt="avatar" />
           ) : (
-            <User
-              size={20}
-              className="m-auto mt-2 opacity-50"
-              style={{ color: primaryTextColor }}
-            />
+            <User size={20} className="m-auto mt-2.5 text-slate-300" />
           )}
         </div>
       </div>
 
-      <div className="px-5 -mt-14 relative z-20 max-w-md mx-auto">
-        {/* Start Button — styled as challenge card */}
+      <div className="px-5 relative z-20 max-w-md mx-auto">
+        {/* Start Button — challenge card with accent bar */}
         <button
           onClick={startRoulette}
-          className="fade-up-item w-full bg-white p-7 rounded-[2.5rem] text-center shadow-[0_12px_40px_rgb(0,0,0,0.10)] mb-7 hover:scale-[1.02] active:scale-[0.98] transition-transform group border border-slate-50 relative overflow-hidden"
+          className={`fade-up-item w-full p-7 rounded-[2.5rem] text-center mb-7 hover:scale-[1.02] active:scale-[0.98] transition-transform group relative overflow-hidden ${clayRaised}`}
         >
-          {/* accent top bar */}
           <div
-            className="absolute top-0 left-0 w-full h-1.5 rounded-t-[2.5rem]"
+            className="absolute top-0 left-0 w-full h-2 rounded-t-[2.5rem]"
             style={{ backgroundColor: primaryColor }}
           />
           <div
-            className="w-16 h-16 rounded-[1.2rem] flex items-center justify-center mx-auto mb-3"
-            style={{ backgroundColor: `${primaryColor}15` }}
+            className="w-16 h-16 rounded-[1.4rem] flex items-center justify-center mx-auto mb-3 text-white"
+            style={clayBtn(primaryColor)}
           >
-            <Zap
-              className="group-hover:animate-bounce"
-              size={30}
-              style={{ color: primaryColor }}
-            />
+            <Zap className="group-hover:animate-bounce" size={30} />
           </div>
-          <h2 className="text-2xl font-black text-slate-800">
-            הגרל משימה חדשה
-          </h2>
+          <h2 className="text-2xl font-black text-slate-700">הגרל משימה חדשה</h2>
           <p className="text-slate-400 font-medium mt-1 text-sm">
             לחצו כדי לקבל אתגר
           </p>
@@ -716,8 +681,8 @@ const Icebreaker = () => {
 
         <div className="space-y-5 pb-8">
           {feed.length === 0 ? (
-            <div className="fade-up-item text-center py-14 bg-white rounded-[2rem] shadow-sm border border-slate-100">
-              <ImagePlus size={40} className="mx-auto mb-4 text-slate-200" />
+            <div className={`fade-up-item text-center py-14 rounded-[2rem] ${clayRaised}`}>
+              <ImagePlus size={40} className="mx-auto mb-4 text-slate-300" />
               <p className="text-slate-600 font-bold">הקיר ריק.</p>
               <p className="text-slate-400 text-sm mt-1">
                 היו הראשונים לבצע משימה!
@@ -727,29 +692,30 @@ const Icebreaker = () => {
             feed.map((match) => (
               <div
                 key={match.id}
-                className="fade-up-item bg-white border border-slate-100 rounded-[2rem] overflow-hidden shadow-[0_4px_20px_rgb(0,0,0,0.06)]"
+                className={`fade-up-item rounded-[2rem] overflow-hidden ${clayRaised}`}
               >
-                {/* Mission text */}
-                <div className="p-5 bg-slate-50/60 border-b border-slate-100">
-                  <p
-                    className="text-[10px] font-bold uppercase tracking-widest mb-1 opacity-60"
-                    style={{ color: primaryColor }}
-                  >
+                {/* Mission text — debossed banner */}
+                <div
+                  className="p-5 m-2 mb-0 rounded-[1.5rem]"
+                  style={{ backgroundColor: "#eeece5", boxShadow: clayInsetShadow }}
+                >
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-1 opacity-60" style={{ color: primaryColor }}>
                     משימה שבוצעה:
                   </p>
-                  <p className="text-base font-black text-slate-800 leading-snug">
+                  <p className="text-base font-black text-slate-700 leading-snug">
                     "{match.mission_text}"
                   </p>
                 </div>
 
                 {/* Proof photo */}
                 {match.photo_url && (
-                  <div className="aspect-square bg-slate-100 w-full">
+                  <div className="aspect-square w-full p-2">
                     <img
                       src={match.photo_url}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover rounded-[1.4rem]"
                       alt="Mission Proof"
                       loading="lazy"
+                      style={{ boxShadow: "inset 2px 2px 6px rgba(0,0,0,0.15)" }}
                     />
                   </div>
                 )}
@@ -760,7 +726,7 @@ const Icebreaker = () => {
                     <span>בוצע בשטח 🎯</span>
                     <button
                       onClick={() => handleReport(match.id)}
-                      className="text-slate-200 hover:text-rose-400 transition-colors"
+                      className="text-slate-300 hover:text-rose-400 transition-colors"
                       title="דווח"
                     >
                       <AlertCircle size={13} />

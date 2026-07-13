@@ -38,7 +38,7 @@ const OfflineBanner = () => {
       dir="rtl"
     >
       <div
-        className={`flex items-center gap-3 px-5 py-3 rounded-2xl shadow-xl text-white text-sm font-bold transition-all duration-500 ${
+        className={`flex items-center gap-3 px-5 py-3 rounded-full shadow-[5px_5px_14px_rgba(0,0,0,0.18),inset_2px_2px_4px_rgba(255,255,255,0.3),inset_-2px_-2px_4px_rgba(0,0,0,0.15)] text-white text-sm font-bold transition-all duration-500 ${
           isOnline
             ? "bg-emerald-500 animate-in fade-in"
             : "bg-slate-800 animate-in slide-in-from-bottom-4"

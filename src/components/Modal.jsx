@@ -74,7 +74,7 @@ export default function Modal({
 
   return (
     <div
-      className={`fixed inset-0 z-[100] flex justify-center ${alignment} bg-slate-900/60 backdrop-blur-md sm:p-4`}
+      className={`fixed inset-0 z-[100] flex justify-center ${alignment} bg-[rgba(74,82,89,0.35)] sm:p-4`}
       onClick={onClose}
       dir="rtl"
     >
@@ -85,11 +85,11 @@ export default function Modal({
         aria-modal="true"
         aria-label={typeof title === "string" ? title : undefined}
         onClick={(e) => e.stopPropagation()}
-        className={`relative w-full ${SIZES[size] || SIZES.md} bg-white shadow-2xl flex flex-col max-h-[90vh] overflow-hidden outline-none ${radius} ${className}`}
+        className={`relative w-full ${SIZES[size] || SIZES.md} bg-[#e8e4da] shadow-[0_-14px_40px_rgba(0,0,0,0.16),0_14px_40px_rgba(0,0,0,0.12)] flex flex-col max-h-[90vh] overflow-hidden outline-none ${radius} ${className}`}
       >
         {(title || !hideClose) && (
-          <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-slate-100 shrink-0">
-            <h2 className="text-lg font-black text-slate-800 truncate">
+          <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#dcd7ca] shrink-0">
+            <h2 className="text-lg font-black text-slate-700 truncate">
               {title}
             </h2>
             {!hideClose && (
@@ -97,7 +97,7 @@ export default function Modal({
                 type="button"
                 onClick={onClose}
                 aria-label="סגור"
-                className="p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition active:scale-95 shrink-0"
+                className="p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-[#e0dccf] transition active:scale-95 shrink-0"
               >
                 <X size={20} />
               </button>
@@ -108,7 +108,7 @@ export default function Modal({
           {children}
         </div>
         {footer && (
-          <div className="shrink-0 border-t border-slate-100 px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+          <div className="shrink-0 border-t border-[#dcd7ca] px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
             {footer}
           </div>
         )}

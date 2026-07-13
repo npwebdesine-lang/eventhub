@@ -1,9 +1,10 @@
 @import "tailwindcss";
-@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700;800&display=swap");
 
-/* ==================== CELEBRATION-FORWARD TYPOGRAPHY ==================== */
+/* ==================== SOFT-CLAY TYPOGRAPHY (Eventick RSVP Clay) ==================== */
 * {
-  font-family: "Outfit", sans-serif;
+  font-family: "Assistant", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 h1,
@@ -12,8 +13,13 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: "Playfair Display", serif;
-  letter-spacing: -0.02em;
+  font-family: "Assistant", system-ui, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+/* Warm clay surface as the app-wide default backdrop */
+body {
+  background: #eceadf;
 }
 
 /* ==================== KEYFRAME ANIMATIONS ==================== */
@@ -151,18 +157,20 @@ h6 {
   animation: rotate-gradient 15s ease infinite;
 }
 
+/* Legacy aliases — remapped to the soft-clay recipe (no blur, matte surface) */
 .glass-card {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  background: #f0eee7;
+  box-shadow:
+    8px 8px 20px rgba(0, 0, 0, 0.09),
+    -8px -8px 20px rgba(255, 255, 255, 0.9);
 }
 
 .glass-dark {
-  background: rgba(15, 23, 42, 0.7);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  background: #5b6169;
+  box-shadow:
+    5px 5px 14px rgba(0, 0, 0, 0.18),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.2),
+    inset -2px -2px 4px rgba(0, 0, 0, 0.15);
 }
 
 /* ==================== HOVER & INTERACTIVE EFFECTS ==================== */
@@ -172,7 +180,9 @@ h6 {
 
 .card-hover:hover {
   transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  box-shadow:
+    12px 12px 28px rgba(0, 0, 0, 0.13),
+    -8px -8px 20px rgba(255, 255, 255, 0.85);
 }
 
 .button-pulse {

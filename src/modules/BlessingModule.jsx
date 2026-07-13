@@ -18,6 +18,20 @@ import {
   AlertCircle,
 } from "lucide-react";
 
+/* ============================================================
+   SOFT-CLAY / NEUMORPHISM DESIGN TOKENS  (shared across modules)
+   ------------------------------------------------------------ */
+const CLAY_BG = "#eceadf";
+const CLAY_PAGE_BG =
+  "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)";
+const clayBtn = (color) => ({
+  backgroundColor: color,
+  boxShadow: `5px 5px 14px rgba(0,0,0,0.14), -4px -4px 12px rgba(255,255,255,0.7), inset 2px 2px 4px rgba(255,255,255,0.35), inset -2px -2px 4px rgba(0,0,0,0.12)`,
+});
+// Debossed field (input / textarea) carved into the clay surface
+const clayFieldCls =
+  "w-full p-4 rounded-[1.4rem] outline-none font-bold text-slate-700 placeholder:text-slate-400 bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.07),inset_-4px_-4px_9px_rgba(255,255,255,0.85)] focus:shadow-[inset_5px_5px_11px_rgba(0,0,0,0.09),inset_-5px_-5px_11px_rgba(255,255,255,0.9)] transition-all";
+
 const BlessingModule = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -62,8 +76,7 @@ const BlessingModule = () => {
     fetchEvent();
   }, [eventId]);
 
-  // Revoke the object URL when the preview changes or the component unmounts,
-  // so blob previews don't accumulate in memory.
+  // Revoke the object URL when the preview changes or the component unmounts.
   useEffect(() => {
     return () => {
       if (imagePreview) URL.revokeObjectURL(imagePreview);
@@ -110,8 +123,6 @@ const BlessingModule = () => {
       let imageUrl = null;
 
       if (imageFile) {
-        // Compress to a bounded JPEG (matches the other uploaders) so a raw
-        // multi-MB phone photo never lands in storage or the album feed.
         const compressed = await compressImage(imageFile, {
           maxWidth: 1600,
           quality: 0.82,
@@ -176,115 +187,100 @@ const BlessingModule = () => {
   if (loadingEvent) {
     return (
       <div
-        className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col items-center justify-center"
+        className="min-h-screen flex flex-col items-center justify-center"
+        style={{ background: CLAY_PAGE_BG }}
         dir="rtl"
       >
-        <div className="relative">
-          <Loader2 className="animate-spin text-slate-400 mb-6" size={56} />
-          <div
-            className="absolute inset-0 rounded-full animate-pulse opacity-20 bg-slate-400"
-            style={{ width: "72px", height: "72px", left: "-8px", top: "-8px" }}
-          />
-        </div>
+        <Loader2 className="animate-spin text-slate-400" size={56} />
       </div>
     );
   }
 
   const primaryColor = eventData?.design_config?.colors?.primary || "#8b5cf6";
-  const bgColor = eventData?.design_config?.colors?.background || "#f8fafc";
 
   return (
     <div
-      className="min-h-screen flex flex-col transition-colors duration-1000 font-sans pb-16"
-      style={{ backgroundColor: bgColor }}
+      className="min-h-screen flex flex-col font-sans pb-16"
+      style={{ background: CLAY_PAGE_BG }}
       dir="rtl"
     >
-      {/* Header עם gradient ואנימציות */}
+      {/* Header — clay surface */}
       <div
         ref={headerRef}
-        className="rounded-b-[3.5rem] pt-16 pb-24 px-6 relative z-10 shadow-deep text-center transition-colors duration-1000 overflow-hidden"
-        style={{
-          background: `linear-gradient(135deg, ${primaryColor} 0%, ${primaryColor}dd 100%)`,
-          boxShadow: `0 20px 50px ${primaryColor}30`,
-        }}
+        className="pt-14 pb-6 px-6 relative z-10 max-w-md mx-auto w-full"
       >
-        {/* Decorative floating elements */}
-        <div className="absolute top-10 right-12 w-24 h-24 rounded-full opacity-10 bg-white float-effect" />
-        <div className="absolute bottom-8 left-8 w-32 h-32 rounded-full opacity-10 bg-white float-delayed" />
-
-        {/* כפתור חזרה */}
-        <button
-          onClick={() => navigate(`/event/${eventId}`)}
-          className="absolute top-8 right-6 p-3 rounded-full bg-white/20 hover:bg-white/30 transition-all backdrop-blur-md button-pulse text-white"
-          aria-label="חזרה לאירוע"
-        >
-          <ChevronRight size={24} className="mr-0.5" />
-        </button>
-
-        <div className="relative z-10 flex items-center justify-center gap-3">
-          <MessageCircle size={28} className="text-white" />
-          <div>
-            <h1
-              className="text-3xl md:text-4xl font-black text-white leading-tight drop-shadow-lg"
-              style={{ fontFamily: "'Playfair Display', serif" }}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-12 h-12 rounded-full flex items-center justify-center text-white shrink-0"
+              style={clayBtn(primaryColor)}
             >
-              ספר ברכות
-            </h1>
-            <p className="text-white/70 font-bold text-xs uppercase tracking-widest mt-1">
-              כתבו ברכה לבעלי השמחה
-            </p>
+              <MessageCircle size={24} />
+            </div>
+            <div>
+              <h1
+                className="text-3xl font-black text-slate-700 leading-tight"
+                style={{ fontFamily: "'Assistant', sans-serif" }}
+              >
+                ספר ברכות
+              </h1>
+              <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-0.5">
+                כתבו ברכה לבעלי השמחה
+              </p>
+            </div>
           </div>
+          <button
+            onClick={() => navigate(`/event/${eventId}`)}
+            className="shrink-0 p-3 rounded-full text-slate-500 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
+            aria-label="חזרה לאירוע"
+          >
+            <ChevronRight size={24} />
+          </button>
         </div>
       </div>
 
       {/* Blessing form card */}
-      <div className="px-5 -mt-12 relative z-20 w-full max-w-md mx-auto flex-1 flex flex-col gap-6">
+      <div className="px-5 relative z-20 w-full max-w-md mx-auto flex-1 flex flex-col gap-6">
         <div
           ref={cardRef}
-          className="glass-card rounded-[2.5rem] p-8 shadow-deep text-center"
+          className="rounded-[2.5rem] p-8 text-center bg-[#f0eee7] shadow-[12px_12px_30px_rgba(0,0,0,0.1),-12px_-12px_30px_rgba(255,255,255,0.9)]"
           style={{
             animation: "bounce-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)",
           }}
         >
           {status === "success" ? (
             <div
-              className="py-8 animate-in zoom-in"
+              className="py-8"
               style={{
                 animation: "bounce-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)",
               }}
             >
               <div
-                className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 shadow-elevated"
-                style={{
-                  backgroundColor: `${primaryColor}18`,
-                  boxShadow: `0 10px 30px ${primaryColor}25`,
-                }}
+                className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 bg-[#f0eee7] shadow-[inset_5px_5px_11px_rgba(0,0,0,0.1),inset_-5px_-5px_11px_rgba(255,255,255,0.85)]"
               >
                 <CheckCircle2 size={48} style={{ color: primaryColor }} />
               </div>
               <h3
-                className="text-3xl font-black text-slate-900 mb-3"
-                style={{ fontFamily: "'Playfair Display', serif" }}
+                className="text-3xl font-black text-slate-700 mb-3"
+                style={{ fontFamily: "'Assistant', sans-serif" }}
               >
                 הברכה נשלחה! ✨
               </h3>
               <p className="text-slate-600 font-medium text-sm mb-8 px-4 leading-relaxed">
-                המילים המרגשות שלך צורפו לספר הברכות של {sanitize(eventData?.name || "")}.
+                המילים המרגשות שלך צורפו לספר הברכות של{" "}
+                {sanitize(eventData?.name || "")}.
               </p>
 
               <button
                 onClick={() => setStatus(null)}
-                className="w-full py-4 mb-3 glass-card hover:bg-slate-100 text-slate-700 font-bold rounded-[1.3rem] transition-all border-2 border-slate-200 shadow-elevated"
+                className="w-full py-4 mb-3 text-slate-600 font-bold rounded-full transition-all active:scale-[0.98] bg-[#f0eee7] shadow-[6px_6px_14px_rgba(0,0,0,0.09),-6px_-6px_14px_rgba(255,255,255,0.9)] active:shadow-[inset_4px_4px_9px_rgba(0,0,0,0.1),inset_-4px_-4px_9px_rgba(255,255,255,0.8)]"
               >
                 כתבו ברכה נוספת
               </button>
               <button
                 onClick={() => navigate(`/event/${eventId}`)}
-                className="w-full py-4 text-white font-black rounded-[1.3rem] shadow-elevated transition-all active:scale-95 button-pulse"
-                style={{
-                  backgroundColor: primaryColor,
-                  boxShadow: `0 10px 30px ${primaryColor}40`,
-                }}
+                className="w-full py-4 text-white font-black rounded-full transition-all active:scale-95"
+                style={clayBtn(primaryColor)}
               >
                 חזרה לאירוע
               </button>
@@ -293,34 +289,27 @@ const BlessingModule = () => {
             <>
               <div className="mb-8">
                 <h2
-                  className="text-2xl font-black text-slate-900"
-                  style={{ fontFamily: "'Playfair Display', serif" }}
+                  className="text-2xl font-black text-slate-700"
+                  style={{ fontFamily: "'Assistant', sans-serif" }}
                 >
                   כתבו משהו מהלב
                 </h2>
-                <p className="text-slate-600 text-sm font-medium mt-2">
+                <p className="text-slate-500 text-sm font-medium mt-2">
                   הברכה והתמונה יצורפו לאלבום הדיגיטלי של האירוע
                 </p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-5 text-right">
                 <div className="relative">
-                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                    <User
-                      size={18}
-                      style={{ color: primaryColor, opacity: 0.7 }}
-                    />
+                  <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none z-10">
+                    <User size={18} style={{ color: primaryColor, opacity: 0.7 }} />
                   </div>
                   <input
                     type="text"
                     required
                     value={guestName}
                     onChange={(e) => setGuestName(e.target.value)}
-                    className="w-full p-4 pr-12 bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-slate-200 rounded-[1.3rem] outline-none font-bold text-slate-800 placeholder:text-slate-400 transition-smooth focus:bg-white"
-                    style={{
-                      "--tw-ring-color": primaryColor,
-                      borderColor: `${primaryColor}30`,
-                    }}
+                    className={`${clayFieldCls} pr-12`}
                     placeholder="איך תרצו להופיע באלבום?"
                   />
                 </div>
@@ -331,11 +320,7 @@ const BlessingModule = () => {
                     rows="5"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    className="w-full p-4 bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-slate-200 rounded-[1.3rem] outline-none font-medium text-slate-800 placeholder:text-slate-400 transition-smooth focus:bg-white resize-none"
-                    style={{
-                      "--tw-ring-color": primaryColor,
-                      borderColor: `${primaryColor}30`,
-                    }}
+                    className={`${clayFieldCls} resize-none font-medium`}
                     placeholder="כתבו כאן את הברכה שלכם..."
                   />
                 </div>
@@ -353,23 +338,16 @@ const BlessingModule = () => {
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="w-full py-8 border-2 border-dashed rounded-[1.5rem] flex flex-col items-center justify-center gap-3 transition-all group"
-                      style={{
-                        borderColor: `${primaryColor}40`,
-                        backgroundColor: `${primaryColor}08`,
-                      }}
+                      className="w-full py-8 rounded-[1.6rem] flex flex-col items-center justify-center gap-3 transition-all group bg-[#eeece5] shadow-[inset_5px_5px_10px_rgba(0,0,0,0.07),inset_-5px_-5px_10px_rgba(255,255,255,0.85)]"
                     >
                       <div
-                        className="bg-white p-4 rounded-full shadow-elevated group-hover:scale-125 transition-transform"
-                        style={{ boxShadow: `0 8px 20px ${primaryColor}25` }}
+                        className="p-4 rounded-full group-hover:scale-110 transition-transform text-white"
+                        style={clayBtn(primaryColor)}
                       >
-                        <UploadCloud
-                          size={28}
-                          style={{ color: primaryColor }}
-                        />
+                        <UploadCloud size={28} />
                       </div>
                       <div className="text-center">
-                        <span className="text-sm font-bold block text-slate-800">
+                        <span className="text-sm font-bold block text-slate-700">
                           צרפו תמונת סלפי
                         </span>
                         <span className="text-xs text-slate-500 font-medium">
@@ -378,17 +356,17 @@ const BlessingModule = () => {
                       </div>
                     </button>
                   ) : (
-                    <div className="relative rounded-[1.5rem] overflow-hidden border-2 h-56 group shadow-elevated glass-card">
+                    <div className="relative rounded-[1.6rem] overflow-hidden h-56 group p-2 bg-[#f0eee7] shadow-[6px_6px_16px_rgba(0,0,0,0.1),-5px_-5px_14px_rgba(255,255,255,0.9)]">
                       <img
                         src={imagePreview}
                         alt="Preview"
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-700"
+                        className="w-full h-full object-cover rounded-[1.2rem] hover:scale-105 transition-transform duration-700"
                       />
-                      <div className="absolute inset-0 bg-slate-900/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+                      <div className="absolute inset-2 rounded-[1.2rem] bg-slate-900/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <button
                           type="button"
                           onClick={removeImage}
-                          className="bg-white text-rose-500 p-4 rounded-full shadow-elevated transform hover:scale-110 transition-all button-pulse"
+                          className="bg-[#f0eee7] text-rose-500 p-4 rounded-full transform hover:scale-110 transition-all shadow-[5px_5px_12px_rgba(0,0,0,0.2)]"
                         >
                           <X size={24} />
                         </button>
@@ -398,7 +376,7 @@ const BlessingModule = () => {
                 </div>
 
                 {status === "error" && (
-                  <div className="text-rose-600 text-sm text-center font-bold bg-rose-50 py-4 rounded-[1.2rem] border-2 border-rose-200 shadow-elevated flex items-center justify-center gap-2">
+                  <div className="text-rose-600 text-sm text-center font-bold py-4 rounded-[1.2rem] flex items-center justify-center gap-2 bg-[#f0eee7] shadow-[inset_3px_3px_7px_rgba(0,0,0,0.07),inset_-3px_-3px_7px_rgba(255,255,255,0.8)]">
                     <AlertCircle size={18} />
                     אופס, משהו השתבש בשליחה. אנא נסו שוב.
                   </div>
@@ -406,24 +384,18 @@ const BlessingModule = () => {
 
                 <button
                   type="submit"
-                  disabled={
+                  disabled={isSubmitting || !guestName.trim() || !message.trim()}
+                  className="w-full flex items-center justify-center gap-2 py-4 mt-6 rounded-full font-black text-lg transition-all active:scale-[0.97] disabled:cursor-not-allowed"
+                  style={
                     isSubmitting || !guestName.trim() || !message.trim()
+                      ? {
+                          color: "#a8a294",
+                          backgroundColor: "#eeece5",
+                          boxShadow:
+                            "inset 4px 4px 9px rgba(0,0,0,0.07), inset -4px -4px 9px rgba(255,255,255,0.85)",
+                        }
+                      : { ...clayBtn(primaryColor), color: "#fff" }
                   }
-                  className={`w-full flex items-center justify-center gap-2 py-4 mt-6 rounded-[1.3rem] font-black text-lg transition-all button-pulse ${
-                    isSubmitting || !guestName.trim() || !message.trim()
-                      ? "bg-slate-200 text-slate-400 cursor-not-allowed"
-                      : "text-white shadow-elevated active:scale-[0.97]"
-                  }`}
-                  style={{
-                    backgroundColor:
-                      isSubmitting || !guestName.trim() || !message.trim()
-                        ? undefined
-                        : primaryColor,
-                    boxShadow:
-                      isSubmitting || !guestName.trim() || !message.trim()
-                        ? undefined
-                        : `0 10px 30px ${primaryColor}40`,
-                  }}
                 >
                   {isSubmitting ? (
                     <>

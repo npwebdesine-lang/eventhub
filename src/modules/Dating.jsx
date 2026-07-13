@@ -25,6 +25,22 @@ import gsap from "gsap";
 const PROFILES_PAGE = 20;
 const MESSAGES_LIMIT = 50;
 
+/* ============================================================
+   SOFT-CLAY / NEUMORPHISM DESIGN TOKENS  (shared across modules)
+   ------------------------------------------------------------ */
+const CLAY_BG = "#eceadf";
+const CLAY_PAGE_BG =
+  "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)";
+const clayBtn = (color) => ({
+  backgroundColor: color,
+  boxShadow: `5px 5px 14px rgba(0,0,0,0.14), -4px -4px 12px rgba(255,255,255,0.7), inset 2px 2px 4px rgba(255,255,255,0.35), inset -2px -2px 4px rgba(0,0,0,0.12)`,
+});
+const clayRaised =
+  "bg-[#f0eee7] shadow-[8px_8px_20px_rgba(0,0,0,0.09),-8px_-8px_20px_rgba(255,255,255,0.9)]";
+// Debossed field (input / select / textarea) carved into the clay surface
+const clayFieldCls =
+  "w-full p-4 rounded-[1.4rem] outline-none font-bold text-slate-700 placeholder:text-slate-400 bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.07),inset_-4px_-4px_9px_rgba(255,255,255,0.85)] focus:shadow-[inset_5px_5px_11px_rgba(0,0,0,0.09),inset_-5px_-5px_11px_rgba(255,255,255,0.9)] transition-all";
+
 const Dating = () => {
   const [searchParams] = useSearchParams();
   const eventId = searchParams.get("event");
@@ -69,15 +85,12 @@ const Dating = () => {
 
   // Initial load
   useEffect(() => {
-    // Require a registered guest (name set on Home) and a valid device ID
     if (!eventId || !guestName || !guestId || !isValidUUIDv4(guestId))
       return navigate("/");
     let isMounted = true;
 
     const init = async () => {
       try {
-        console.log("Dating Init: Checking for guest_id:", guestId);
-
         const { data: event, error: eventError } = await supabase
           .from("events")
           .select("id, name, design_config")
@@ -88,7 +101,6 @@ const Dating = () => {
         if (!isMounted) return;
         setEventData(event);
 
-        // שימוש ב-maybeSingle במקום single כדי למנוע קריסה אם הפרופיל לא קיים
         const { data: profile, error: profileError } = await supabase
           .from("dating_profiles")
           .select(
@@ -105,13 +117,11 @@ const Dating = () => {
         if (!isMounted) return;
 
         if (profile) {
-          console.log("Profile found! Auto-logging in:", profile.name);
           setMyProfile(profile);
           setFormData(profile);
           setView("gallery");
           await loadGalleryData(profile, isMounted);
         } else {
-          console.log("No profile found for this device. Sending to register.");
           setView("register");
         }
       } catch (err) {
@@ -150,7 +160,6 @@ const Dating = () => {
     );
     if (isMounted) setProfiles(matched);
 
-    // Load messages — only last 50, newest first, then reverse for display
     const { data: msgs, error: msgsError } = await supabase
       .from("dating_messages")
       .select("id, sender_id, receiver_id, message, is_read, created_at")
@@ -297,7 +306,6 @@ const Dating = () => {
         photo_url: formData.photo_url,
       };
 
-      // מעבר ל-Update ו-Insert מפורש כדי למנוע את שגיאת 409 Conflict
       const { data: existingProfile } = await supabase
         .from("dating_profiles")
         .select("id")
@@ -308,7 +316,6 @@ const Dating = () => {
       let saveError;
 
       if (existingProfile) {
-        // עדכון פרופיל קיים
         const { error } = await supabase
           .from("dating_profiles")
           .update(payload)
@@ -316,7 +323,6 @@ const Dating = () => {
           .eq("guest_id", guestId);
         saveError = error;
       } else {
-        // יצירת פרופיל חדש
         const { error } = await supabase
           .from("dating_profiles")
           .insert([payload]);
@@ -325,7 +331,6 @@ const Dating = () => {
 
       if (saveError) throw saveError;
 
-      // Reload profile
       const { data: profile } = await supabase
         .from("dating_profiles")
         .select(
@@ -389,7 +394,6 @@ const Dating = () => {
       setUnreadCounts((prev) => ({ ...prev, [partner.guest_id]: 0 }));
     }
 
-    // Load latest 50 messages, display oldest first
     const { data } = await supabase
       .from("dating_messages")
       .select("id, sender_id, receiver_id, message, is_read, created_at")
@@ -432,51 +436,42 @@ const Dating = () => {
   // ---- Render guards ----
   if (view === "loading" || !eventData) {
     return (
-      <div className="min-h-screen bg-slate-900 flex justify-center items-center">
+      <div
+        className="min-h-screen flex justify-center items-center"
+        style={{ background: CLAY_PAGE_BG }}
+      >
         <Loader2 className="animate-spin text-rose-400" size={48} />
       </div>
     );
   }
 
   const primaryColor = eventData.design_config?.colors?.primary || "#f43f5e";
-  const bgColor = eventData.design_config?.colors?.background || "#f8fafc";
-  const primaryTextColor = getTextColor(primaryColor);
 
   // ---- Registration ----
   if (view === "register") {
     return (
       <div
-        className="min-h-screen flex flex-col font-sans transition-colors duration-1000 pb-10"
-        style={{ backgroundColor: bgColor }}
+        className="min-h-screen flex flex-col font-sans pb-10"
+        style={{ background: CLAY_PAGE_BG }}
         dir="rtl"
       >
-        <div
-          className="rounded-b-[3rem] pt-12 pb-24 px-6 relative z-10 shadow-lg text-center"
-          style={{ backgroundColor: primaryColor }}
-        >
+        <div className="pt-12 pb-6 px-6 relative z-10 text-center max-w-md mx-auto w-full">
           <button
             onClick={() => navigate(-1)}
-            className="absolute right-6 top-10 p-2 bg-black/10 hover:bg-black/20 rounded-full transition-colors"
-            style={{ color: primaryTextColor }}
+            className="absolute right-6 top-10 p-3 rounded-full text-slate-500 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
           >
             <ChevronLeft size={24} />
           </button>
-          <div className="inline-flex items-center justify-center p-4 bg-white/20 rounded-[1.2rem] mb-4 border border-white/20">
-            <Heart
-              style={{ fill: primaryTextColor, color: primaryTextColor }}
-              size={32}
-            />
-          </div>
-          <h1
-            className="text-3xl font-black mb-1"
-            style={{ color: primaryTextColor }}
+          <div
+            className="inline-flex items-center justify-center w-16 h-16 rounded-[1.4rem] mb-4 text-white"
+            style={clayBtn(primaryColor)}
           >
+            <Heart style={{ fill: "currentColor" }} size={30} />
+          </div>
+          <h1 className="text-3xl font-black mb-1 text-slate-700">
             היי {guestName}!
           </h1>
-          <p
-            className="font-medium opacity-70 text-sm"
-            style={{ color: primaryTextColor }}
-          >
+          <p className="font-medium text-slate-400 text-sm">
             ספר/י לנו קצת על עצמך
           </p>
 
@@ -485,11 +480,15 @@ const Dating = () => {
             {[1, 2, 3].map((s) => (
               <div
                 key={s}
-                className="h-1.5 rounded-full transition-all duration-300"
+                className="h-2 rounded-full transition-all duration-300"
                 style={{
-                  width: s === regStep ? 24 : 8,
-                  backgroundColor:
-                    s <= regStep ? "white" : "rgba(255,255,255,0.3)",
+                  width: s === regStep ? 26 : 8,
+                  backgroundColor: s <= regStep ? primaryColor : undefined,
+                  boxShadow:
+                    s <= regStep
+                      ? `2px 2px 5px rgba(0,0,0,0.12)`
+                      : "inset 2px 2px 4px rgba(0,0,0,0.08), inset -2px -2px 4px rgba(255,255,255,0.8)",
+                  background: s <= regStep ? primaryColor : "#eeece5",
                 }}
               />
             ))}
@@ -498,12 +497,12 @@ const Dating = () => {
 
         <div
           ref={formRef}
-          className="px-5 -mt-12 relative z-20 w-full max-w-md mx-auto"
+          className="px-5 relative z-20 w-full max-w-md mx-auto"
         >
-          <div className="bg-white p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-100">
+          <div className={`p-8 rounded-[2.5rem] ${clayRaised}`}>
             {regStep === 1 && (
               <div className="space-y-5">
-                <h2 className="text-xl font-black text-slate-800 mb-4">
+                <h2 className="text-xl font-black text-slate-700 mb-4">
                   פרטים בסיסיים
                 </h2>
                 <div className="grid grid-cols-2 gap-4">
@@ -520,7 +519,7 @@ const Dating = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, age: e.target.value })
                       }
-                      className="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl outline-none font-bold text-slate-800 focus:ring-2 transition-all"
+                      className={clayFieldCls}
                       placeholder="24"
                     />
                   </div>
@@ -536,7 +535,7 @@ const Dating = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, gender: e.target.value })
                       }
-                      className="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl outline-none font-bold text-slate-800"
+                      className={clayFieldCls}
                     >
                       <option>זכר</option>
                       <option>נקבה</option>
@@ -555,7 +554,7 @@ const Dating = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, seeking: e.target.value })
                     }
-                    className="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl outline-none font-bold text-slate-800"
+                    className={clayFieldCls}
                   >
                     <option>נקבה</option>
                     <option>זכר</option>
@@ -565,11 +564,8 @@ const Dating = () => {
                 <button
                   onClick={() => setRegStep(2)}
                   disabled={!formData.age}
-                  className="w-full py-4 rounded-[1.2rem] font-black mt-4 hover:opacity-90 transition-all shadow-lg active:scale-[0.98] disabled:opacity-50"
-                  style={{
-                    backgroundColor: primaryColor,
-                    color: primaryTextColor,
-                  }}
+                  className="w-full py-4 rounded-full font-black mt-4 transition-all active:scale-[0.98] disabled:opacity-50 text-white"
+                  style={clayBtn(primaryColor)}
                 >
                   המשך
                 </button>
@@ -578,7 +574,7 @@ const Dating = () => {
 
             {regStep === 2 && (
               <div className="space-y-5">
-                <h2 className="text-xl font-black text-slate-800 mb-4">
+                <h2 className="text-xl font-black text-slate-700 mb-4">
                   ספר/י עוד קצת
                 </h2>
                 <div>
@@ -594,7 +590,7 @@ const Dating = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, connection: e.target.value })
                     }
-                    className="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl outline-none font-bold text-slate-800 focus:ring-2 transition-all"
+                    className={clayFieldCls}
                     placeholder="חבר מהצבא, בן דוד..."
                   />
                 </div>
@@ -611,7 +607,7 @@ const Dating = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, location: e.target.value })
                     }
-                    className="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl outline-none font-bold text-slate-800 focus:ring-2 transition-all"
+                    className={clayFieldCls}
                     placeholder="ליד הבר / שולחן 10"
                   />
                 </div>
@@ -627,24 +623,21 @@ const Dating = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, bio: e.target.value })
                     }
-                    className="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl outline-none font-bold text-slate-800 focus:ring-2 transition-all h-20 resize-none"
+                    className={`${clayFieldCls} h-20 resize-none`}
                     placeholder="משהו מעניין עליכם..."
                   />
                 </div>
                 <div className="flex gap-3 mt-4">
                   <button
                     onClick={() => setRegStep(1)}
-                    className="bg-slate-100 text-slate-600 px-6 py-4 rounded-[1.2rem] font-bold hover:bg-slate-200 transition-colors"
+                    className="text-slate-600 px-6 py-4 rounded-full font-bold transition-all active:scale-[0.98] bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)]"
                   >
                     חזור
                   </button>
                   <button
                     onClick={() => setRegStep(3)}
-                    className="flex-1 py-4 rounded-[1.2rem] font-black shadow-lg hover:opacity-90 transition-all active:scale-[0.98]"
-                    style={{
-                      backgroundColor: primaryColor,
-                      color: primaryTextColor,
-                    }}
+                    className="flex-1 py-4 rounded-full font-black transition-all active:scale-[0.98] text-white"
+                    style={clayBtn(primaryColor)}
                   >
                     המשך
                   </button>
@@ -654,28 +647,25 @@ const Dating = () => {
 
             {regStep === 3 && (
               <div className="space-y-6 text-center">
-                <h2 className="text-xl font-black text-slate-800 mb-2">
+                <h2 className="text-xl font-black text-slate-700 mb-2">
                   תמונה מנצחת
                 </h2>
                 <p className="text-slate-400 text-sm">
                   תמונה טובה מגדילה משמעותית את הסיכויים!
                 </p>
                 <label className="relative cursor-pointer inline-block">
-                  <div
-                    className="w-40 h-40 rounded-[2rem] bg-slate-50 border-4 border-dashed flex items-center justify-center overflow-hidden shadow-inner mx-auto"
-                    style={{ borderColor: `${primaryColor}50` }}
-                  >
+                  <div className="w-40 h-40 rounded-[2rem] flex items-center justify-center overflow-hidden mx-auto p-2 bg-[#eeece5] shadow-[inset_5px_5px_11px_rgba(0,0,0,0.1),inset_-5px_-5px_11px_rgba(255,255,255,0.85)]">
                     {formData.photo_url ? (
                       <img
                         src={formData.photo_url}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover rounded-[1.5rem]"
                         alt="profile"
                       />
                     ) : (
                       <Camera size={40} className="text-slate-300" />
                     )}
                     {uploading && (
-                      <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center">
+                      <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
                         <Loader2
                           className="animate-spin"
                           style={{ color: primaryColor }}
@@ -694,11 +684,8 @@ const Dating = () => {
                   <button
                     onClick={handleSaveProfile}
                     disabled={isSavingProfile}
-                    className="w-full py-5 rounded-[1.5rem] font-black text-xl shadow-xl hover:opacity-90 transition-all active:scale-[0.98] disabled:opacity-60"
-                    style={{
-                      backgroundColor: primaryColor,
-                      color: primaryTextColor,
-                    }}
+                    className="w-full py-5 rounded-full font-black text-xl transition-all active:scale-[0.98] disabled:opacity-60 text-white"
+                    style={clayBtn(primaryColor)}
                   >
                     {isSavingProfile ? (
                       <Loader2 className="animate-spin mx-auto" size={24} />
@@ -726,30 +713,23 @@ const Dating = () => {
     const hasUnread = Object.values(unreadCounts).some((c) => c > 0);
     return (
       <div
-        className="min-h-screen flex flex-col font-sans transition-colors duration-1000 pb-10"
-        style={{ backgroundColor: bgColor }}
+        className="min-h-screen flex flex-col font-sans pb-10"
+        style={{ background: CLAY_PAGE_BG }}
         dir="rtl"
       >
-        <div
-          className="rounded-b-[3rem] pt-10 pb-20 px-6 relative z-10 shadow-lg"
-          style={{ backgroundColor: primaryColor }}
-        >
+        <div className="pt-10 pb-4 px-6 relative z-10 max-w-md mx-auto w-full">
           <div className="flex justify-between items-center mb-5">
             <button
               onClick={() => navigate(-1)}
-              className="p-2 bg-black/10 hover:bg-black/20 rounded-full transition-colors"
-              style={{ color: primaryTextColor }}
+              className="p-3 rounded-full text-slate-500 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
             >
               <ChevronLeft size={20} />
             </button>
-            <h1
-              className="text-xl font-black flex items-center gap-2"
-              style={{ color: primaryTextColor }}
-            >
+            <h1 className="text-2xl font-black flex items-center gap-2 text-slate-700">
               Daitline{" "}
               <Heart
                 size={18}
-                style={{ fill: primaryTextColor, color: primaryTextColor }}
+                style={{ fill: primaryColor, color: primaryColor }}
               />
             </h1>
             <button
@@ -757,29 +737,38 @@ const Dating = () => {
                 setRegStep(1);
                 setView("register");
               }}
-              className="p-2 bg-black/10 hover:bg-black/20 rounded-full transition-colors"
-              style={{ color: primaryTextColor }}
+              className="p-3 rounded-full text-slate-500 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
               title="ערוך פרופיל"
             >
               <User size={20} />
             </button>
           </div>
 
-          {/* Tab switcher */}
-          <div className="flex bg-white/20 p-1.5 rounded-2xl border border-white/20 max-w-sm mx-auto">
+          {/* Tab switcher — segmented control in a debossed track */}
+          <div className="flex p-1.5 rounded-full max-w-sm mx-auto bg-[#eeece5] shadow-[inset_5px_5px_10px_rgba(0,0,0,0.07),inset_-5px_-5px_10px_rgba(255,255,255,0.85)]">
             <button
               onClick={() => setView("gallery")}
-              className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all ${view === "gallery" ? "bg-white shadow-md text-slate-900" : "text-white hover:bg-white/10"}`}
+              className="flex-1 py-3 rounded-full font-bold text-sm transition-all"
+              style={
+                view === "gallery"
+                  ? { ...clayBtn(primaryColor), color: "#fff" }
+                  : { color: "#64748b" }
+              }
             >
               התאמות
             </button>
             <button
               onClick={() => setView("chatList")}
-              className={`flex-1 py-3 rounded-xl font-bold text-sm transition-all relative ${view === "chatList" ? "bg-white shadow-md text-slate-900" : "text-white hover:bg-white/10"}`}
+              className="flex-1 py-3 rounded-full font-bold text-sm transition-all relative"
+              style={
+                view === "chatList"
+                  ? { ...clayBtn(primaryColor), color: "#fff" }
+                  : { color: "#64748b" }
+              }
             >
               הודעות
               {hasUnread && (
-                <span className="absolute top-2 left-4 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse" />
+                <span className="absolute top-2 left-4 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#eeece5] animate-pulse" />
               )}
             </button>
           </div>
@@ -788,13 +777,15 @@ const Dating = () => {
         {/* Gallery tab — Tinder-style horizontal scroll cards */}
         {view === "gallery" && (
           <div
-            className="flex-1 overflow-x-auto flex gap-4 px-5 -mt-8 relative z-20 pb-12 snap-x snap-mandatory pt-2"
+            className="flex-1 overflow-x-auto flex gap-4 px-5 relative z-20 pb-12 snap-x snap-mandatory pt-2"
             style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {profiles.length === 0 ? (
               <div className="w-full flex flex-col items-center justify-center mt-16 gap-4">
-                <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-sm">
-                  <Users size={44} className="text-slate-200" />
+                <div
+                  className={`w-24 h-24 rounded-full flex items-center justify-center ${clayRaised}`}
+                >
+                  <Users size={44} className="text-slate-300" />
                 </div>
                 <p className="font-bold text-slate-400 text-center text-sm px-8">
                   אין כרגע התאמות.
@@ -806,80 +797,79 @@ const Dating = () => {
               profiles.map((p) => (
                 <div
                   key={p.id}
-                  className="profile-card snap-center shrink-0 w-[82vw] max-w-[340px] rounded-[2.5rem] overflow-hidden relative flex flex-col shadow-[0_10px_40px_rgb(0,0,0,0.15)]"
+                  className="profile-card snap-center shrink-0 w-[82vw] max-w-[340px] rounded-[2.5rem] overflow-hidden relative flex flex-col p-2.5 bg-[#f0eee7] shadow-[10px_10px_30px_rgba(0,0,0,0.15),-8px_-8px_22px_rgba(255,255,255,0.9)]"
                   style={{ height: "65vh", maxHeight: 600 }}
                 >
-                  {/* Background photo */}
-                  <div className="absolute inset-0 bg-slate-200">
-                    {p.photo_url ? (
-                      <img
-                        src={p.photo_url}
-                        className="w-full h-full object-cover"
-                        alt={p.name}
-                      />
-                    ) : (
-                      <User
-                        size={80}
-                        className="absolute inset-0 m-auto text-slate-300"
-                      />
-                    )}
-                  </div>
-
-                  {/* Gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
-
-                  {/* Report button */}
-                  <button
-                    onClick={() => handleReportAndBlock(p.guest_id, p.name)}
-                    className="absolute top-4 left-4 bg-black/30 hover:bg-black/50 text-white/70 hover:text-white p-2 rounded-full backdrop-blur-sm transition-colors z-10"
-                    title="חסום ודווח"
-                  >
-                    <ShieldAlert size={17} />
-                  </button>
-
-                  {/* Info overlay */}
-                  <div className="absolute bottom-0 left-0 right-0 p-5">
-                    <div className="flex items-end justify-between mb-2">
-                      <div>
-                        <h3 className="font-black text-3xl text-white leading-tight">
-                          {sanitize(p.name || "")}, {p.age}
-                        </h3>
-                        <p
-                          className="text-sm font-bold mt-0.5"
-                          style={{ color: primaryColor }}
-                        >
-                          {sanitize(p.connection || "")}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => openChat(p)}
-                        className="w-14 h-14 rounded-full flex items-center justify-center shadow-xl hover:scale-110 active:scale-95 transition-transform"
-                        style={{
-                          backgroundColor: primaryColor,
-                          color: primaryTextColor,
-                        }}
-                      >
-                        <MessageCircle size={22} />
-                      </button>
+                  <div className="relative flex-1 rounded-[2rem] overflow-hidden">
+                    {/* Background photo */}
+                    <div className="absolute inset-0 bg-slate-200">
+                      {p.photo_url ? (
+                        <img
+                          src={p.photo_url}
+                          className="w-full h-full object-cover"
+                          alt={p.name}
+                        />
+                      ) : (
+                        <User
+                          size={80}
+                          className="absolute inset-0 m-auto text-slate-300"
+                        />
+                      )}
                     </div>
 
-                    {p.bio && (
-                      <p className="text-white/80 text-sm font-medium line-clamp-2 mb-3">
-                        "{sanitize(p.bio)}"
-                      </p>
-                    )}
+                    {/* Gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
 
-                    <div className="flex gap-2 flex-wrap">
-                      {p.location && (
-                        <span className="bg-white/90 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
-                          <MapPin size={11} /> {sanitize(p.location)}
-                        </span>
+                    {/* Report button */}
+                    <button
+                      onClick={() => handleReportAndBlock(p.guest_id, p.name)}
+                      className="absolute top-4 left-4 bg-black/30 hover:bg-black/50 text-white/70 hover:text-white p-2 rounded-full transition-colors z-10"
+                      title="חסום ודווח"
+                    >
+                      <ShieldAlert size={17} />
+                    </button>
+
+                    {/* Info overlay */}
+                    <div className="absolute bottom-0 left-0 right-0 p-5">
+                      <div className="flex items-end justify-between mb-2">
+                        <div>
+                          <h3 className="font-black text-3xl text-white leading-tight">
+                            {sanitize(p.name || "")}, {p.age}
+                          </h3>
+                          <p
+                            className="text-sm font-bold mt-0.5"
+                            style={{ color: primaryColor }}
+                          >
+                            {sanitize(p.connection || "")}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => openChat(p)}
+                          className="w-14 h-14 rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-transform text-white"
+                          style={clayBtn(primaryColor)}
+                        >
+                          <MessageCircle size={22} />
+                        </button>
+                      </div>
+
+                      {p.bio && (
+                        <p className="text-white/80 text-sm font-medium line-clamp-2 mb-3">
+                          "{sanitize(p.bio)}"
+                        </p>
                       )}
-                      <span className="bg-white/90 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-full">
-                        {p.seeking === "הכל"
-                          ? "פתוח/ה לכל"
-                          : `מחפש/ת ${p.seeking}`}
-                      </span>
+
+                      <div className="flex gap-2 flex-wrap">
+                        {p.location && (
+                          <span className="bg-white/90 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
+                            <MapPin size={11} /> {sanitize(p.location)}
+                          </span>
+                        )}
+                        <span className="bg-white/90 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-full">
+                          {p.seeking === "הכל"
+                            ? "פתוח/ה לכל"
+                            : `מחפש/ת ${p.seeking}`}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -890,12 +880,12 @@ const Dating = () => {
 
         {/* Chat List tab */}
         {view === "chatList" && (
-          <div className="flex-1 px-5 -mt-8 relative z-20 space-y-3 max-w-md mx-auto w-full pt-2">
+          <div className="flex-1 px-5 relative z-20 space-y-3 max-w-md mx-auto w-full pt-2">
             {chatHistory.length === 0 ? (
-              <div className="text-center py-16 bg-white rounded-[2rem] border border-slate-100 shadow-sm">
+              <div className={`text-center py-16 rounded-[2rem] ${clayRaised}`}>
                 <MessageSquare
                   size={48}
-                  className="mx-auto mb-4 text-slate-200"
+                  className="mx-auto mb-4 text-slate-300"
                 />
                 <p className="font-bold text-slate-400 text-sm">
                   אין עדיין שיחות פעילות.
@@ -909,9 +899,9 @@ const Dating = () => {
                 <div
                   key={p.id}
                   onClick={() => openChat(p)}
-                  className="chat-item bg-white border border-slate-100 shadow-sm rounded-[1.5rem] p-4 flex items-center gap-4 cursor-pointer hover:shadow-md active:scale-[0.99] transition-all"
+                  className={`chat-item rounded-[1.6rem] p-4 flex items-center gap-4 cursor-pointer active:scale-[0.99] transition-all ${clayRaised}`}
                 >
-                  <div className="w-14 h-14 rounded-full overflow-hidden bg-slate-100 relative shrink-0 border-2 border-slate-100">
+                  <div className="w-14 h-14 rounded-full overflow-hidden bg-[#eeece5] relative shrink-0 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.12),inset_-2px_-2px_5px_rgba(255,255,255,0.7)]">
                     {p.photo_url ? (
                       <img
                         src={p.photo_url}
@@ -925,11 +915,11 @@ const Dating = () => {
                       />
                     )}
                     {unreadCounts[p.guest_id] > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full border-2 border-white" />
+                      <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full border-2 border-[#f0eee7]" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-black text-slate-800 truncate">
+                    <h3 className="font-black text-slate-700 truncate">
                       {sanitize(p.name || "")}, {p.age}
                     </h3>
                     <p className="text-xs text-slate-400 font-medium truncate mt-0.5">
@@ -957,23 +947,20 @@ const Dating = () => {
     return (
       <div
         className="min-h-screen flex flex-col h-[100dvh] font-sans"
-        style={{ backgroundColor: bgColor }}
+        style={{ background: CLAY_PAGE_BG }}
         dir="rtl"
       >
-        <header
-          className="p-4 rounded-b-[2rem] shadow-sm flex items-center gap-3 shrink-0 z-10"
-          style={{ backgroundColor: primaryColor, color: primaryTextColor }}
-        >
+        <header className="p-4 flex items-center gap-3 shrink-0 z-10 mx-3 mt-3 rounded-[1.8rem] bg-[#f0eee7] shadow-[7px_7px_18px_rgba(0,0,0,0.09),-6px_-6px_16px_rgba(255,255,255,0.9)]">
           <button
             onClick={() => {
               setView("chatList");
               if (myProfile) loadGalleryData(myProfile);
             }}
-            className="p-2 bg-black/10 hover:bg-black/20 rounded-full transition-colors shrink-0"
+            className="p-2.5 rounded-full text-slate-500 shrink-0 bg-[#f0eee7] shadow-[4px_4px_9px_rgba(0,0,0,0.09),-4px_-4px_9px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)] transition-all"
           >
             <ChevronLeft size={22} />
           </button>
-          <div className="w-11 h-11 rounded-full overflow-hidden bg-black/15 border border-white/20 shrink-0">
+          <div className="w-11 h-11 rounded-full overflow-hidden bg-[#eeece5] shrink-0 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.12),inset_-2px_-2px_5px_rgba(255,255,255,0.7)]">
             {activeChat.photo_url ? (
               <img
                 src={activeChat.photo_url}
@@ -981,15 +968,15 @@ const Dating = () => {
                 alt={activeChat.name}
               />
             ) : (
-              <User size={20} className="m-auto mt-2.5 opacity-50" />
+              <User size={20} className="m-auto mt-2.5 text-slate-300" />
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <h2 className="font-black text-base leading-tight truncate">
+            <h2 className="font-black text-base leading-tight truncate text-slate-700">
               {sanitize(activeChat.name || "")}
             </h2>
             {activeChat.location && (
-              <span className="text-[11px] font-bold opacity-70">
+              <span className="text-[11px] font-bold text-slate-400">
                 📍 {sanitize(activeChat.location)}
               </span>
             )}
@@ -998,8 +985,7 @@ const Dating = () => {
             onClick={() =>
               handleReportAndBlock(activeChat.guest_id, activeChat.name)
             }
-            className="text-xs font-bold bg-black/15 hover:bg-black/25 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1 shrink-0"
-            style={{ color: primaryTextColor }}
+            className="text-xs font-bold px-3 py-2 rounded-full transition-all flex items-center gap-1 shrink-0 text-slate-500 bg-[#f0eee7] shadow-[4px_4px_9px_rgba(0,0,0,0.09),-4px_-4px_9px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)]"
           >
             <ShieldAlert size={13} /> חסום
           </button>
@@ -1013,7 +999,7 @@ const Dating = () => {
         >
           {messages.length === 0 && (
             <div className="text-center py-10">
-              <Sparkles size={32} className="mx-auto mb-3 text-slate-200" />
+              <Sparkles size={32} className="mx-auto mb-3 text-slate-300" />
               <p className="text-slate-400 text-sm font-medium">
                 התחלה של שיחה חדשה!
                 <br />
@@ -1029,18 +1015,21 @@ const Dating = () => {
                 className={`flex ${isMine ? "justify-start" : "justify-end"} animate-in slide-in-from-bottom-1`}
               >
                 <div
-                  className={`max-w-[78%] px-4 py-3 rounded-[1.5rem] shadow-sm ${
-                    isMine
-                      ? "rounded-tr-md"
-                      : "bg-white border border-slate-100 rounded-tl-md text-slate-800"
-                  }`}
+                  className="max-w-[78%] px-4 py-3 rounded-[1.5rem]"
                   style={
                     isMine
                       ? {
-                          backgroundColor: primaryColor,
-                          color: primaryTextColor,
+                          ...clayBtn(primaryColor),
+                          color: "#fff",
+                          borderTopRightRadius: "0.5rem",
                         }
-                      : {}
+                      : {
+                          backgroundColor: "#f0eee7",
+                          color: "#334155",
+                          borderTopLeftRadius: "0.5rem",
+                          boxShadow:
+                            "5px 5px 12px rgba(0,0,0,0.08), -4px -4px 10px rgba(255,255,255,0.9)",
+                        }
                   }
                 >
                   <p className="text-sm font-medium leading-relaxed">
@@ -1059,22 +1048,19 @@ const Dating = () => {
         </div>
 
         {/* Input */}
-        <form
-          onSubmit={sendMessage}
-          className="p-4 bg-white border-t border-slate-100 flex gap-3 shrink-0 pb-6"
-        >
+        <form onSubmit={sendMessage} className="p-4 flex gap-3 shrink-0 pb-6">
           <input
             type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="כתבו הודעה..."
-            className="flex-1 bg-slate-50 border border-slate-200 p-4 rounded-full outline-none focus:ring-2 focus:ring-slate-300 text-slate-800 font-medium text-sm"
+            className="flex-1 p-4 rounded-full outline-none text-slate-700 font-medium text-sm bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.07),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]"
           />
           <button
             type="submit"
             disabled={!newMessage.trim() || isSending}
-            className="w-[52px] h-[52px] rounded-full shadow-lg flex items-center justify-center disabled:opacity-40 hover:opacity-90 active:scale-95 transition-all"
-            style={{ backgroundColor: primaryColor, color: primaryTextColor }}
+            className="w-[52px] h-[52px] rounded-full flex items-center justify-center disabled:opacity-40 active:scale-95 transition-all text-white shrink-0"
+            style={clayBtn(primaryColor)}
           >
             {isSending ? (
               <Loader2 size={18} className="animate-spin" />

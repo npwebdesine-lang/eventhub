@@ -6,11 +6,11 @@ const Terms = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 md:p-12 font-sans" dir="rtl">
-      <div className="max-w-4xl mx-auto bg-white p-8 md:p-12 rounded-[2.5rem] shadow-sm border border-slate-100">
+    <div className="min-h-screen bg-[#eceadf] p-6 md:p-12 font-sans" dir="rtl">
+      <div className="max-w-4xl mx-auto bg-[#f0eee7] p-8 md:p-12 rounded-[2.25rem] shadow-[8px_8px_20px_rgba(0,0,0,0.09),-8px_-8px_20px_rgba(255,255,255,0.9)]">
         <button
           onClick={() => navigate(-1)}
-          className="mb-8 p-3 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors text-slate-600"
+          className="mb-8 p-3 rounded-full transition-all text-slate-600 bg-[#e9e6dc] shadow-[3px_3px_7px_rgba(0,0,0,0.08),-3px_-3px_7px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)]"
         >
           <ChevronLeft size={24} />
         </button>

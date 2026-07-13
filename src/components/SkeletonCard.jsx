@@ -5,7 +5,7 @@
 
 /** Generic rectangular skeleton block */
 export const SkeletonBlock = ({ className = "" }) => (
-  <div className={`animate-pulse bg-slate-200 rounded-2xl ${className}`} />
+  <div className={`animate-pulse bg-[#e0dccf] rounded-2xl ${className}`} />
 );
 
 /** 2-column grid of photo skeletons for the Photos page */
@@ -14,7 +14,7 @@ export const PhotoGridSkeleton = ({ count = 6 }) => (
     {Array.from({ length: count }).map((_, i) => (
       <div
         key={i}
-        className="animate-pulse bg-slate-200 rounded-2xl mb-3 break-inside-avoid"
+        className="animate-pulse bg-[#e0dccf] rounded-2xl mb-3 break-inside-avoid"
         style={{ height: `${[140, 180, 120, 160, 200, 150][i % 6]}px` }}
       />
     ))}
@@ -27,7 +27,7 @@ export const ProfileCardSkeleton = ({ count = 2 }) => (
     {Array.from({ length: count }).map((_, i) => (
       <div
         key={i}
-        className="animate-pulse bg-slate-200 rounded-[2rem] flex-shrink-0 w-64 h-80"
+        className="animate-pulse bg-[#e0dccf] rounded-[2rem] flex-shrink-0 w-64 h-80"
       />
     ))}
   </div>
@@ -37,7 +37,7 @@ export const ProfileCardSkeleton = ({ count = 2 }) => (
 export const ModuleGridSkeleton = ({ count = 4 }) => (
   <div className="grid grid-cols-2 gap-4">
     {Array.from({ length: count }).map((_, i) => (
-      <div key={i} className="animate-pulse bg-slate-200 rounded-[2rem] h-36" />
+      <div key={i} className="animate-pulse bg-[#e0dccf] rounded-[2rem] h-36" />
     ))}
   </div>
 );

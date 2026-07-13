@@ -27,6 +27,21 @@ import { isValidUUIDv4, getOrCreateDeviceId } from "../utils/deviceId";
 const MAX_PHOTOS_PER_GUEST = 3;
 const PAGE_SIZE = 12;
 
+/* ============================================================
+   SOFT-CLAY / NEUMORPHISM DESIGN TOKENS  (shared with Home.jsx)
+   ------------------------------------------------------------ */
+const CLAY_BG = "#eceadf";
+const CLAY_PAGE_BG =
+  "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)";
+const CLAY =
+  "rounded-[2.5rem] bg-[#f0eee7] shadow-[8px_8px_20px_rgba(0,0,0,0.09),-8px_-8px_20px_rgba(255,255,255,0.9)]";
+const CLAY_INSET =
+  "bg-[#eeece5] shadow-[inset_5px_5px_10px_rgba(0,0,0,0.07),inset_-5px_-5px_10px_rgba(255,255,255,0.85)]";
+const clayPrimaryBtn = (primary) => ({
+  backgroundColor: primary,
+  boxShadow: `5px 5px 14px rgba(0,0,0,0.14), -4px -4px 12px rgba(255,255,255,0.7), inset 2px 2px 4px rgba(255,255,255,0.35), inset -2px -2px 4px rgba(0,0,0,0.12)`,
+});
+
 // Relative time helper
 const timeAgo = (dateStr) => {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -110,7 +125,6 @@ const Photos = () => {
 
         await fetchPage(0);
 
-        // Only query with guestId if it's a valid UUIDv4
         if (guestId && isValidUUIDv4(guestId)) {
           const { count } = await supabase
             .from("photos")
@@ -149,7 +163,6 @@ const Photos = () => {
         },
         (payload) => {
           if (!isMounted || !payload?.new) return;
-          // Don't prepend own uploads (already optimistically added)
           if (payload.new.guest_id !== guestId) {
             setPhotos((prev) => [payload.new, ...prev]);
           }
@@ -238,7 +251,6 @@ const Photos = () => {
     simulateProgress();
 
     try {
-      // Compress before upload
       const compressed = await compressImage(file, {
         maxWidth: 1200,
         quality: 0.82,
@@ -334,7 +346,6 @@ const Photos = () => {
     });
   };
 
-  // Escape closes; arrow keys navigate (RTL: right = previous, left = next).
   useModalBehavior({
     open: lightbox !== null,
     onClose: () => setLightbox(null),
@@ -344,86 +355,75 @@ const Photos = () => {
 
   if (loading || !eventData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-        <div className="relative">
-          <Loader2 className="animate-spin text-slate-400 mb-6" size={56} />
-          <div
-            className="absolute inset-0 rounded-full animate-pulse opacity-20 bg-slate-400"
-            style={{ width: "72px", height: "72px", left: "-8px", top: "-8px" }}
-          />
-        </div>
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: CLAY_PAGE_BG }}
+      >
+        <Loader2 className="animate-spin text-slate-400" size={56} />
       </div>
     );
   }
 
-  const primaryColor = eventData.design_config?.colors?.primary || "#3b82f6";
-  const bgColor = eventData.design_config?.colors?.background || "#f8fafc";
-  const primaryTextColor = getTextColor(primaryColor);
+  const primaryColor = eventData.design_config?.colors?.primary || "#8fa7b8";
   const canUploadMore = myUploadCount < MAX_PHOTOS_PER_GUEST;
 
   return (
     <div
-      className="min-h-screen font-sans pb-20 transition-colors duration-1000"
-      style={{ backgroundColor: bgColor }}
+      className="min-h-screen font-sans pb-20"
+      style={{ background: CLAY_PAGE_BG }}
       dir="rtl"
     >
-      {/* Header עם gradient ואנימציות */}
-      <div
-        className="rounded-b-[3.5rem] pt-16 pb-24 px-6 relative z-10 shadow-deep flex flex-col items-center text-center transition-colors duration-1000 overflow-hidden"
-        style={{
-          background: `linear-gradient(135deg, ${primaryColor} 0%, ${primaryColor}dd 100%)`,
-          boxShadow: `0 20px 50px ${primaryColor}30`,
-        }}
-      >
-        {/* Decorative floating elements */}
-        <div className="absolute top-10 right-12 w-24 h-24 rounded-full opacity-10 bg-white float-effect" />
-        <div className="absolute bottom-8 left-8 w-32 h-32 rounded-full opacity-10 bg-white float-delayed" />
-
-        <div className="relative z-10 flex items-center gap-3 mb-2">
-          <Camera size={28} style={{ color: primaryTextColor, opacity: 0.9 }} />
-          <h1
-            className="text-3xl md:text-4xl font-black"
-            style={{
-              color: primaryTextColor,
-              fontFamily: "'Playfair Display', serif",
-            }}
+      {/* Header — clay surface, title + back */}
+      <div className="pt-14 pb-6 px-5 relative z-10 max-w-md mx-auto">
+        <div className="flex items-center justify-between">
+          <div className="text-right">
+            <div className="flex items-center gap-2.5 mb-1">
+              <div
+                className="w-11 h-11 rounded-full flex items-center justify-center text-white"
+                style={clayPrimaryBtn(primaryColor)}
+              >
+                <Camera size={22} />
+              </div>
+              <h1
+                className="text-3xl font-black text-slate-700"
+                style={{ fontFamily: "'Assistant', sans-serif" }}
+              >
+                כל אחד צלם
+              </h1>
+            </div>
+            <p className="text-slate-400 font-bold text-xs uppercase tracking-widest pr-1">
+              שתפו את הרגעים המיוחדים
+            </p>
+          </div>
+          <button
+            onClick={() => navigate(-1)}
+            className="shrink-0 p-3 rounded-full text-slate-500 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
+            aria-label="חזרה"
           >
-            כל אחד צלם
-          </h1>
+            <ChevronLeft size={24} />
+          </button>
         </div>
-        <p
-          className="text-white/70 font-bold text-xs uppercase tracking-widest"
-          style={{ color: `${primaryTextColor}aa` }}
-        >
-          שתפו את הרגעים המיוחדים
-        </p>
-
-        {/* Back button positioned absolutely */}
-        <button
-          onClick={() => navigate(-1)}
-          className="absolute top-8 right-6 p-3 rounded-full bg-white/20 hover:bg-white/30 transition-all backdrop-blur-md button-pulse"
-          style={{ color: primaryTextColor }}
-        >
-          <ChevronLeft size={24} />
-        </button>
       </div>
 
-      <div className="px-5 -mt-12 relative z-20 max-w-md mx-auto">
-        {/* Upload Card עם glass morphism */}
-        <div className="fade-up-item glass-card p-7 rounded-[2.5rem] shadow-deep mb-8 text-center">
+      <div className="px-5 relative z-20 max-w-md mx-auto">
+        {/* Upload Card — extruded clay */}
+        <div className={`fade-up-item ${CLAY} p-7 mb-8 text-center`}>
           {uploadSuccess ? (
             <div
-              className="py-8 animate-in zoom-in"
+              className="py-8"
               style={{
                 animation: "bounce-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)",
               }}
             >
-              <div className="w-20 h-20 bg-emerald-50 rounded-[1.5rem] flex items-center justify-center mx-auto mb-4 shadow-elevated">
+              <div
+                className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4"
+                style={{ boxShadow: "inset 2px 2px 5px rgba(255,255,255,0.5), inset -2px -2px 5px rgba(0,0,0,0.1)" }}
+              >
                 <CheckCircle2 size={40} className="text-emerald-500" />
               </div>
               <h3
-                className="font-black text-slate-900 text-xl"
-                style={{ fontFamily: "'Playfair Display', serif" }}
+                className="font-black text-slate-700 text-xl"
+                style={{ fontFamily: "'Assistant', sans-serif" }}
               >
                 התמונה הועלתה! ✨
               </h3>
@@ -434,27 +434,23 @@ const Photos = () => {
           ) : (
             <>
               <div
-                className="w-20 h-20 rounded-[1.5rem] flex items-center justify-center mx-auto mb-5 shadow-elevated group-hover:scale-110 transition-transform"
-                style={{
-                  backgroundColor: `${primaryColor}18`,
-                  boxShadow: `0 10px 30px ${primaryColor}25`,
-                }}
+                className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5 bg-[#f0eee7] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.09),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]"
               >
                 <UploadCloud size={32} style={{ color: primaryColor }} />
               </div>
               <h2
-                className="text-2xl font-black text-slate-900 mb-2"
-                style={{ fontFamily: "'Playfair Display', serif" }}
+                className="text-2xl font-black text-slate-700 mb-2"
+                style={{ fontFamily: "'Assistant', sans-serif" }}
               >
                 צלמו או העלו תמונה
               </h2>
               <p className="text-slate-500 font-medium text-sm mb-6">
                 <span
-                  className={`font-black text-lg ${myUploadCount >= MAX_PHOTOS_PER_GUEST ? "text-rose-500" : ""}`}
+                  className="font-black text-lg"
                   style={{
                     color:
                       myUploadCount >= MAX_PHOTOS_PER_GUEST
-                        ? undefined
+                        ? "#f43f5e"
                         : primaryColor,
                   }}
                 >
@@ -463,15 +459,15 @@ const Photos = () => {
                 תמונות הועלו
               </p>
 
-              {/* Progress bar */}
+              {/* Progress bar — debossed track with filled pill */}
               {uploading && (
-                <div className="w-full bg-slate-200 rounded-full h-3 mb-5 overflow-hidden shadow-sm">
+                <div className={`w-full rounded-full h-4 mb-5 overflow-hidden p-0.5 ${CLAY_INSET}`}>
                   <div
-                    className="h-3 rounded-full transition-all duration-500"
+                    className="h-full rounded-full transition-all duration-500"
                     style={{
                       width: `${uploadProgress}%`,
                       backgroundColor: primaryColor,
-                      boxShadow: `0 0 10px ${primaryColor}60`,
+                      boxShadow: `inset 1px 1px 2px rgba(255,255,255,0.4), inset -1px -1px 2px rgba(0,0,0,0.15)`,
                     }}
                   />
                 </div>
@@ -479,11 +475,8 @@ const Photos = () => {
 
               {canUploadMore ? (
                 <label
-                  className="w-full font-black py-4 rounded-[1.3rem] flex justify-center items-center gap-2 cursor-pointer transition-all shadow-elevated active:scale-[0.97] button-pulse text-white"
-                  style={{
-                    backgroundColor: primaryColor,
-                    boxShadow: `0 10px 30px ${primaryColor}40`,
-                  }}
+                  className="w-full font-black py-4 rounded-full flex justify-center items-center gap-2 cursor-pointer transition-all active:scale-[0.97] text-white"
+                  style={clayPrimaryBtn(primaryColor)}
                 >
                   {uploading ? (
                     <>
@@ -504,7 +497,7 @@ const Photos = () => {
                   />
                 </label>
               ) : (
-                <div className="bg-rose-50 text-rose-600 font-bold py-4 rounded-[1.3rem] flex justify-center items-center gap-2 border-2 border-rose-200 shadow-elevated">
+                <div className="text-rose-500 font-bold py-4 rounded-full flex justify-center items-center gap-2 bg-[#f0eee7] shadow-[inset_3px_3px_7px_rgba(0,0,0,0.07),inset_-3px_-3px_7px_rgba(255,255,255,0.8)]">
                   <AlertCircle size={20} /> הגעתם למכסה המקסימלית
                 </div>
               )}
@@ -512,27 +505,20 @@ const Photos = () => {
           )}
         </div>
 
-        {/* Gallery עם עיטורים */}
+        {/* Gallery */}
         <div className="fade-up-item">
           <div className="flex items-center gap-3 mb-6">
             <h3
-              className="font-black text-slate-800 text-xl"
-              style={{ fontFamily: "'Playfair Display', serif" }}
+              className="font-black text-slate-700 text-xl"
+              style={{ fontFamily: "'Assistant', sans-serif" }}
             >
               האלבום המשותף
             </h3>
-            <Sparkles
-              size={18}
-              style={{ color: primaryColor }}
-              className="animate-pulse"
-            />
+            <Sparkles size={18} style={{ color: primaryColor }} className="animate-pulse" />
             {photos.length > 0 && (
               <span
                 className="text-white font-black text-sm px-3 py-1.5 rounded-full"
-                style={{
-                  backgroundColor: primaryColor,
-                  boxShadow: `0 4px 12px ${primaryColor}40`,
-                }}
+                style={clayPrimaryBtn(primaryColor)}
               >
                 {photos.length}
               </span>
@@ -542,7 +528,7 @@ const Photos = () => {
           {loading ? (
             <PhotoGridSkeleton count={6} />
           ) : photos.length === 0 ? (
-            <div className="text-center py-16 glass-card rounded-[2rem] shadow-elevated">
+            <div className={`text-center py-16 ${CLAY}`}>
               <ImageIcon size={52} className="mx-auto mb-4 text-slate-300" />
               <p className="text-slate-600 font-black text-lg mb-2">
                 האלבום עדיין ריק
@@ -552,43 +538,38 @@ const Photos = () => {
               </p>
             </div>
           ) : (
-            /* Masonry grid using CSS columns */
+            /* Masonry grid using CSS columns — each photo sculpted in clay */
             <div style={{ columns: 2, columnGap: "14px" }}>
               {photos.map((photo, idx) => (
                 <div
                   key={photo.id}
-                  className="relative group glass-card rounded-[1.8rem] overflow-hidden shadow-elevated mb-4 break-inside-avoid cursor-pointer card-hover"
+                  className="relative group rounded-[1.8rem] overflow-hidden mb-4 break-inside-avoid cursor-pointer bg-[#f0eee7] shadow-[6px_6px_16px_rgba(0,0,0,0.1),-5px_-5px_14px_rgba(255,255,255,0.9)] transition-transform hover:scale-[1.02]"
                   onClick={() => setLightbox(idx)}
-                  style={{ breakInside: "avoid" }}
+                  style={{ breakInside: "avoid", padding: "8px" }}
                 >
                   <img
                     src={photo.image_url}
                     alt={`תמונה של ${photo.guest_name}`}
-                    className="w-full object-cover transition-all duration-700 group-hover:scale-110"
+                    className="w-full object-cover rounded-[1.4rem] transition-all duration-700 group-hover:scale-105"
                     loading="lazy"
                     style={{
                       aspectRatio:
                         idx % 3 === 0 ? "4/5" : idx % 3 === 1 ? "1/1" : "4/3",
+                      boxShadow: "inset 2px 2px 6px rgba(0,0,0,0.15)",
                     }}
                     onError={(e) => {
                       e.target.style.minHeight = "120px";
                     }}
                   />
                   {/* Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/95 via-slate-900/30 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
+                  <div className="absolute inset-2 rounded-[1.4rem] bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
                     <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center justify-between mb-1">
                         <p className="text-white text-sm font-black truncate flex items-center gap-1.5">
-                          <Heart
-                            size={12}
-                            className="fill-rose-500"
-                            style={{ color: primaryColor }}
-                          />
+                          <Heart size={12} className="fill-current" style={{ color: primaryColor }} />
                           {photo.guest_name}
                         </p>
-                        <div className="flex items-center gap-1">
-                          <ZoomIn size={14} className="text-white/80" />
-                        </div>
+                        <ZoomIn size={14} className="text-white/80" />
                       </div>
                       <p className="text-white/60 text-[11px] font-medium">
                         {timeAgo(photo.created_at)}
@@ -611,10 +592,10 @@ const Photos = () => {
         </div>
       </div>
 
-      {/* Lightbox עם אנימציות וControls */}
+      {/* Lightbox */}
       {lightbox !== null && photos[lightbox] && (
         <div
-          className="fixed inset-0 z-[200] bg-slate-950/98 backdrop-blur-md flex items-center justify-center animate-in fade-in duration-300"
+          className="fixed inset-0 z-[200] bg-slate-950/98 flex items-center justify-center animate-in fade-in duration-300"
           onClick={() => setLightbox(null)}
           role="dialog"
           aria-modal="true"
@@ -628,13 +609,13 @@ const Photos = () => {
               </p>
               <p
                 className="text-white text-xl font-black"
-                style={{ fontFamily: "'Playfair Display', serif" }}
+                style={{ fontFamily: "'Assistant', sans-serif" }}
               >
                 {photos[lightbox].guest_name}
               </p>
             </div>
             <button
-              className="pointer-events-auto text-white/50 hover:text-white bg-white/15 hover:bg-white/25 p-3 rounded-full transition-all backdrop-blur-md button-pulse"
+              className="pointer-events-auto text-white/50 hover:text-white bg-white/15 hover:bg-white/25 p-3 rounded-full transition-all"
               onClick={() => setLightbox(null)}
               aria-label="סגור תצוגה"
             >
@@ -643,7 +624,7 @@ const Photos = () => {
           </div>
 
           {/* Counter & Download */}
-          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-4 text-white/70 text-sm font-bold bg-black/40 backdrop-blur-md px-6 py-3 rounded-full">
+          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-4 text-white/70 text-sm font-bold bg-black/40 px-6 py-3 rounded-full">
             <span>
               {lightbox + 1} / {photos.length}
             </span>
@@ -664,24 +645,19 @@ const Photos = () => {
             className="relative w-full h-full flex items-center justify-center p-6 md:p-12"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Prev */}
             {lightbox > 0 && (
               <button
-                className="absolute right-6 md:right-12 z-50 text-white/40 hover:text-white bg-white/10 hover:bg-white/20 p-5 rounded-full transition-all backdrop-blur-md group button-pulse"
+                className="absolute right-6 md:right-12 z-50 text-white/40 hover:text-white bg-white/10 hover:bg-white/20 p-5 rounded-full transition-all group"
                 onClick={(e) => {
                   e.stopPropagation();
                   lightboxGo(-1);
                 }}
                 aria-label="התמונה הקודמת"
               >
-                <ChevRight
-                  size={32}
-                  className="group-hover:scale-125 transition-transform"
-                />
+                <ChevRight size={32} className="group-hover:scale-125 transition-transform" />
               </button>
             )}
 
-            {/* Image */}
             <img
               src={photos[lightbox].image_url}
               alt="תמונה מוגדלת"
@@ -689,20 +665,16 @@ const Photos = () => {
               onClick={(e) => e.stopPropagation()}
             />
 
-            {/* Next */}
             {lightbox < photos.length - 1 && (
               <button
-                className="absolute left-6 md:left-12 z-50 text-white/40 hover:text-white bg-white/10 hover:bg-white/20 p-5 rounded-full transition-all backdrop-blur-md group button-pulse"
+                className="absolute left-6 md:left-12 z-50 text-white/40 hover:text-white bg-white/10 hover:bg-white/20 p-5 rounded-full transition-all group"
                 onClick={(e) => {
                   e.stopPropagation();
                   lightboxGo(1);
                 }}
                 aria-label="התמונה הבאה"
               >
-                <ChevronLeft
-                  size={32}
-                  className="group-hover:scale-125 transition-transform"
-                />
+                <ChevronLeft size={32} className="group-hover:scale-125 transition-transform" />
               </button>
             )}
           </div>

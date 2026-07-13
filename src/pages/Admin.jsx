@@ -926,19 +926,19 @@ const Admin = () => {
 
   if (authLoading)
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-screen flex items-center justify-center bg-[#eceadf]">
         <Loader2 className="animate-spin text-indigo-600" size={48} />
       </div>
     );
   if (!session) {
     return (
       <div
-        className="min-h-screen bg-slate-100 flex items-center justify-center p-4"
+        className="min-h-screen bg-[#e2ddd0] flex items-center justify-center p-4"
         dir="rtl"
       >
         <form
           onSubmit={handleLogin}
-          className="bg-white p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-slate-200"
+          className="bg-[#f0eee7] p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-[#dcd7ca]"
         >
           <div className="text-center mb-8">
             <h1 className="text-3xl font-black text-slate-800">
@@ -952,7 +952,7 @@ const Admin = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="אימייל"
-              className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+              className="w-full p-4 bg-[#eeece5] border border-[#dcd7ca] rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
               dir="ltr"
               required
             />
@@ -961,7 +961,7 @@ const Admin = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="סיסמה"
-              className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+              className="w-full p-4 bg-[#eeece5] border border-[#dcd7ca] rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
               dir="ltr"
               required
             />
@@ -983,10 +983,10 @@ const Admin = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] p-4 md:p-8" dir="rtl">
+    <div className="min-h-screen bg-[#eceadf] p-4 md:p-8" dir="rtl">
       {!selectedEvent && (
         <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in">
-          <div className="flex flex-col md:flex-row justify-between items-center bg-white p-8 rounded-[2rem] shadow-sm border border-slate-200 gap-6">
+          <div className="flex flex-col md:flex-row justify-between items-center bg-[#f0eee7] p-8 rounded-[2rem] shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] border border-[#dcd7ca] gap-6">
             <div>
               <h1 className="text-4xl font-black text-slate-900">לוח בקרה</h1>
               <p className="text-slate-500 font-medium text-lg mt-1">
@@ -1002,7 +1002,7 @@ const Admin = () => {
               </button>
               <button
                 onClick={() => supabase.auth.signOut()}
-                className="bg-slate-100 p-4 rounded-2xl text-slate-600 hover:bg-slate-200 transition-colors"
+                className="bg-[#e9e6dc] p-4 rounded-2xl text-slate-600 hover:bg-slate-200 transition-colors"
                 title="התנתק"
               >
                 <LogOut size={22} />
@@ -1020,7 +1020,7 @@ const Admin = () => {
               events.map((event) => (
                 <div
                   key={event.id}
-                  className="bg-white p-8 rounded-[2rem] shadow-sm border border-slate-200 flex flex-col group hover:border-indigo-300 hover:shadow-xl transition-all relative overflow-hidden"
+                  className="bg-[#f0eee7] p-8 rounded-[2rem] shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] border border-[#dcd7ca] flex flex-col group hover:border-indigo-300 hover:shadow-xl transition-all relative overflow-hidden"
                 >
                   <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
                   <div className="flex items-center gap-4 mb-6">
@@ -1037,7 +1037,7 @@ const Admin = () => {
                     </div>
                   </div>
                   {event.short_code && (
-                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 mb-4 text-center">
+                    <div className="bg-[#eeece5] border border-[#e4e0d5] rounded-xl p-3 mb-4 text-center">
                       <span className="text-xs text-slate-400 font-bold block mb-1">
                         קוד לאורחים:
                       </span>
@@ -1050,13 +1050,13 @@ const Admin = () => {
                   <div className="grid grid-cols-2 gap-2 mt-auto">
                     <button
                       onClick={() => handleManageEvent(event)}
-                      className="col-span-2 bg-slate-900 hover:bg-slate-800 text-white py-3 rounded-xl font-bold transition-all flex justify-center items-center gap-2"
+                      className="col-span-2 text-white py-3 rounded-full font-bold bg-[#5b6169] hover:bg-[#4a5259] shadow-[5px_5px_14px_rgba(0,0,0,0.14),-4px_-4px_12px_rgba(255,255,255,0.7),inset_2px_2px_4px_rgba(255,255,255,0.2),inset_-2px_-2px_4px_rgba(0,0,0,0.15)] transition-all flex justify-center items-center gap-2"
                     >
                       <Settings size={18} /> ניהול אירוע
                     </button>
                     <button
                       onClick={() => copyEventLink(event.id)}
-                      className={`py-2 rounded-xl transition-all border flex justify-center items-center gap-2 text-sm font-bold ${copiedEventId === event.id ? "bg-emerald-50 border-emerald-200 text-emerald-600" : "bg-white border-slate-200 text-slate-600 hover:border-indigo-600 hover:text-indigo-600"}`}
+                      className={`py-2 rounded-xl transition-all border flex justify-center items-center gap-2 text-sm font-bold ${copiedEventId === event.id ? "bg-emerald-50 border-emerald-200 text-emerald-600" : "bg-[#f0eee7] border-[#dcd7ca] text-slate-600 hover:border-indigo-600 hover:text-indigo-600"}`}
                       title="העתק קישור לאפליקציה"
                     >
                       {copiedEventId === event.id ? (
@@ -1095,8 +1095,8 @@ const Admin = () => {
             <ChevronRight size={20} /> חזרה לכל האירועים
           </button>
 
-          <div className="bg-white rounded-[2.5rem] shadow-xl border border-slate-200 overflow-hidden mb-8">
-            <div className="p-8 md:p-10 border-b border-slate-100 bg-slate-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="bg-[#f0eee7] rounded-[2.5rem] shadow-xl border border-[#dcd7ca] overflow-hidden mb-8">
+            <div className="p-8 md:p-10 border-b border-[#e4e0d5] bg-[#eeece5] flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
               <div>
                 <h2 className="text-3xl font-black text-slate-900">
                   {selectedEvent.isNew
@@ -1188,7 +1188,7 @@ const Admin = () => {
                     </p>
                   </div>
                 </div>
-                <div className="bg-slate-50/50 border border-slate-200 p-4 rounded-2xl flex items-center gap-4 hover:shadow-md transition-shadow">
+                <div className="bg-[#eeece5]/60 p-4 rounded-2xl flex items-center gap-4 hover:shadow-md transition-shadow">
                   <div className="bg-slate-700 text-white p-3 rounded-xl">
                     <ShieldAlert size={20} />
                   </div>
@@ -1220,7 +1220,7 @@ const Admin = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full p-4 bg-[#eeece5] border border-[#dcd7ca] rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1233,7 +1233,7 @@ const Admin = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, event_date: e.target.value })
                     }
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full p-4 bg-[#eeece5] border border-[#dcd7ca] rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none"
                   />
                 </div>
 
@@ -1248,7 +1248,7 @@ const Admin = () => {
                       setFormData({ ...formData, location: e.target.value })
                     }
                     placeholder="לדוגמה: אולמי שושנים, תל אביב"
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                    className="w-full p-4 bg-[#eeece5] border border-[#dcd7ca] rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
                   />
                 </div>
 
@@ -1268,7 +1268,7 @@ const Admin = () => {
                         setFormData({ ...formData, short_code: e.target.value })
                       }
                       placeholder="למשל: DANI26 או 123456"
-                      className="w-full p-4 bg-white border border-indigo-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm font-black tracking-widest text-center uppercase"
+                      className="w-full p-4 bg-[#f0eee7] border border-indigo-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm font-black tracking-widest text-center uppercase"
                       dir="ltr"
                       maxLength={10}
                     />
@@ -1282,7 +1282,7 @@ const Admin = () => {
                           ).toString(),
                         })
                       }
-                      className="bg-indigo-600 text-white px-4 rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-sm"
+                      className="bg-indigo-600 text-white px-4 rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)]"
                     >
                       הגרל
                     </button>
@@ -1296,7 +1296,7 @@ const Admin = () => {
                     </label>
                     <div className="flex items-center gap-3">
                       <div
-                        className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-slate-200 shrink-0 shadow-sm transition-colors"
+                        className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-[#dcd7ca] shrink-0 shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] transition-colors"
                         style={{
                           backgroundColor:
                             formData.design_config.colors.primary,
@@ -1343,7 +1343,7 @@ const Admin = () => {
                           })
                         }
                         placeholder="למשל: #3b82f6 / rgb()"
-                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-left text-sm"
+                        className="w-full p-3 bg-[#eeece5] border border-[#dcd7ca] rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-left text-sm"
                         dir="ltr"
                       />
                     </div>
@@ -1355,7 +1355,7 @@ const Admin = () => {
                     </label>
                     <div className="flex items-center gap-3">
                       <div
-                        className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-slate-200 shrink-0 shadow-sm transition-colors"
+                        className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-[#dcd7ca] shrink-0 shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] transition-colors"
                         style={{
                           backgroundColor:
                             formData.design_config.colors.background,
@@ -1402,13 +1402,13 @@ const Admin = () => {
                           })
                         }
                         placeholder="למשל: #020617 / rgb()"
-                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-left text-sm"
+                        className="w-full p-3 bg-[#eeece5] border border-[#dcd7ca] rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-left text-sm"
                         dir="ltr"
                       />
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t border-slate-100">
+                  <div className="pt-4 border-t border-[#e4e0d5]">
                     <label className="text-sm font-bold text-slate-700 flex items-center gap-2 mb-3">
                       <Palette size={16} className="text-indigo-500" /> ערכות
                       צבעים מוכנות
@@ -1419,9 +1419,9 @@ const Admin = () => {
                           key={preset.name}
                           type="button"
                           onClick={() => applyColorPreset(preset)}
-                          className="flex items-center gap-2 p-2.5 rounded-xl border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/50 transition-all bg-white text-right group"
+                          className="flex items-center gap-2 p-2.5 rounded-xl border border-[#dcd7ca] hover:border-indigo-400 hover:bg-indigo-50/50 transition-all bg-[#f0eee7] text-right group"
                         >
-                          <div className="w-8 h-8 rounded-full flex overflow-hidden border border-slate-200 shrink-0 group-hover:scale-105 transition-transform shadow-sm">
+                          <div className="w-8 h-8 rounded-full flex overflow-hidden border border-[#dcd7ca] shrink-0 group-hover:scale-105 transition-transform shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)]">
                             <div
                               className="w-1/2 h-full"
                               style={{ backgroundColor: preset.primary }}
@@ -1440,7 +1440,7 @@ const Admin = () => {
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100 space-y-4">
+                <div className="pt-4 border-t border-[#e4e0d5] space-y-4">
                   <label className="text-sm font-bold text-slate-700 block">
                     עיצוב ההזמנה הדיגיטלית
                   </label>
@@ -1455,7 +1455,7 @@ const Admin = () => {
                         },
                       })
                     }
-                    className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-slate-700"
+                    className="w-full p-4 bg-[#eeece5] border border-[#dcd7ca] rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-slate-700"
                   >
                     <option value="modern">
                       מודרני / מסיבה (טקסט מוגדל ורקע צבעוני)
@@ -1475,7 +1475,7 @@ const Admin = () => {
                         תמונה / לוגו להזמנה
                       </label>
                       <div className="flex items-center gap-3">
-                        <label className="flex-1 cursor-pointer bg-white border border-indigo-200 hover:bg-indigo-50 text-indigo-600 font-bold py-3 px-4 rounded-xl transition-colors flex justify-center items-center gap-2">
+                        <label className="flex-1 cursor-pointer bg-[#f0eee7] border border-indigo-200 hover:bg-indigo-50 text-indigo-600 font-bold py-3 px-4 rounded-xl transition-colors flex justify-center items-center gap-2">
                           {uploadingAsset ? (
                             <Loader2 className="animate-spin" size={18} />
                           ) : (
@@ -1493,7 +1493,7 @@ const Admin = () => {
                         </label>
                       </div>
                       {formData.design_config.invite_image && (
-                        <div className="mt-3 relative w-full h-32 bg-slate-100 rounded-xl overflow-hidden border border-slate-200">
+                        <div className="mt-3 relative w-full h-32 bg-[#e9e6dc] rounded-xl overflow-hidden border border-[#dcd7ca]">
                           <img
                             src={formData.design_config.invite_image}
                             alt="Cover"
@@ -1520,10 +1520,10 @@ const Admin = () => {
                 </div>
 
                 {!selectedEvent.isNew && (
-                  <div className="pt-4 border-t border-slate-100 space-y-3">
+                  <div className="pt-4 border-t border-[#e4e0d5] space-y-3">
                     <button
                       onClick={() => setIsQrModalOpen(true)}
-                      className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-all"
+                      className="w-full text-white py-4 rounded-full font-bold flex items-center justify-center gap-2 bg-[#5b6169] hover:bg-[#4a5259] shadow-[5px_5px_14px_rgba(0,0,0,0.14),-4px_-4px_12px_rgba(255,255,255,0.7),inset_2px_2px_4px_rgba(255,255,255,0.2),inset_-2px_-2px_4px_rgba(0,0,0,0.15)] transition-all"
                     >
                       <QrCode size={20} /> הפק שילוט QR לאירוע
                     </button>
@@ -1535,7 +1535,7 @@ const Admin = () => {
                     >
                       <ShieldAlert size={20} /> מרכז דיווחים (UGC)
                       {eventStats.reports > 0 && (
-                        <span className="absolute top-0 right-0 -mt-2 -mr-2 bg-rose-500 text-white text-xs px-2 py-1 rounded-full shadow-sm animate-pulse">
+                        <span className="absolute top-0 right-0 -mt-2 -mr-2 bg-rose-500 text-white text-xs px-2 py-1 rounded-full shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] animate-pulse">
                           {eventStats.reports} חדשים
                         </span>
                       )}
@@ -1552,7 +1552,7 @@ const Admin = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* מודול אישורי הגעה */}
                   <div
-                    className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.rsvp ? "border-blue-500 bg-blue-50/30" : "border-slate-100 opacity-60 grayscale"}`}
+                    className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.rsvp ? "border-blue-500 bg-blue-50/30" : "border-[#e4e0d5] opacity-60 grayscale"}`}
                   >
                     <div className="flex justify-between items-start mb-6">
                       <div className="flex items-center gap-3">
@@ -1585,17 +1585,17 @@ const Admin = () => {
                             })
                           }
                         />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-[#f0eee7] after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
                       </label>
                     </div>
                     {formData.active_modules.rsvp && !selectedEvent.isNew && (
-                      <div className="p-4 bg-white rounded-xl border border-blue-100 text-center animate-in fade-in space-y-3">
+                      <div className="p-4 bg-[#f0eee7] rounded-xl border border-blue-100 text-center animate-in fade-in space-y-3">
                         <p className="text-sm text-slate-600 font-medium mb-3">
                           כפתור לאישור הגעה יופיע כעת בדף ההזמנה הדיגיטלית.
                         </p>
                         <button
                           onClick={openRsvpManager}
-                          className="w-full py-3 bg-white border border-blue-200 text-blue-600 font-bold rounded-xl hover:bg-blue-50 transition-colors flex justify-center items-center gap-2 shadow-sm"
+                          className="w-full py-3 bg-[#f0eee7] border border-blue-200 text-blue-600 font-bold rounded-xl hover:bg-blue-50 transition-colors flex justify-center items-center gap-2 shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)]"
                         >
                           <Users size={18} /> ניהול אישורי הגעה
                         </button>
@@ -1605,7 +1605,7 @@ const Admin = () => {
 
                   {/* מודול ברכות - חדש */}
                   <div
-                    className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.blessings ? "border-purple-500 bg-purple-50/30" : "border-slate-100 opacity-60 grayscale"}`}
+                    className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.blessings ? "border-purple-500 bg-purple-50/30" : "border-[#e4e0d5] opacity-60 grayscale"}`}
                   >
                     <div className="flex justify-between items-start mb-6">
                       <div className="flex items-center gap-3">
@@ -1638,7 +1638,7 @@ const Admin = () => {
                             })
                           }
                         />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-[#f0eee7] after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
                       </label>
                     </div>
                     {formData.active_modules.blessings &&
@@ -1646,7 +1646,7 @@ const Admin = () => {
                         <div className="animate-in fade-in">
                           <button
                             onClick={openBlessingsManager}
-                            className="w-full py-3 bg-white border border-purple-200 text-purple-600 font-bold rounded-xl hover:bg-purple-50 transition-colors flex justify-center items-center gap-2 shadow-sm"
+                            className="w-full py-3 bg-[#f0eee7] border border-purple-200 text-purple-600 font-bold rounded-xl hover:bg-purple-50 transition-colors flex justify-center items-center gap-2 shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)]"
                           >
                             <Settings size={18} /> ניהול הברכות
                           </button>
@@ -1656,7 +1656,7 @@ const Admin = () => {
 
                   {/* מודול כל אחד צלם */}
                   <div
-                    className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.photo ? "border-orange-500 bg-orange-50/30" : "border-slate-100 opacity-60 grayscale"}`}
+                    className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.photo ? "border-orange-500 bg-orange-50/30" : "border-[#e4e0d5] opacity-60 grayscale"}`}
                   >
                     <div className="flex justify-between items-start mb-6">
                       <div className="flex items-center gap-3">
@@ -1684,14 +1684,14 @@ const Admin = () => {
                             })
                           }
                         />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-[#f0eee7] after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
                       </label>
                     </div>
                     {formData.active_modules.photo && !selectedEvent.isNew && (
                       <div className="space-y-3 animate-in fade-in">
                         <button
                           onClick={openGallery}
-                          className="w-full py-3 bg-white border border-orange-200 text-orange-600 font-bold rounded-xl hover:bg-orange-50 transition-colors flex justify-center items-center gap-2"
+                          className="w-full py-3 bg-[#f0eee7] border border-orange-200 text-orange-600 font-bold rounded-xl hover:bg-orange-50 transition-colors flex justify-center items-center gap-2"
                         >
                           <ImageIcon size={18} /> ניהול תמונות (הורדת ZIP)
                         </button>
@@ -1709,7 +1709,7 @@ const Admin = () => {
 
                   {/* מודול סידור הושבה */}
                   <div
-                    className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.seating ? "border-emerald-500 bg-emerald-50/30" : "border-slate-100 opacity-60 grayscale"}`}
+                    className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.seating ? "border-emerald-500 bg-emerald-50/30" : "border-[#e4e0d5] opacity-60 grayscale"}`}
                   >
                     <div className="flex justify-between items-start mb-6">
                       <div className="flex items-center gap-3">
@@ -1737,7 +1737,7 @@ const Admin = () => {
                             })
                           }
                         />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-[#f0eee7] after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                       </label>
                     </div>
                     {formData.active_modules.seating &&
@@ -1745,7 +1745,7 @@ const Admin = () => {
                         <div className="space-y-3 animate-in fade-in">
                           <button
                             onClick={openSeatingManager}
-                            className="w-full py-3 bg-white border border-emerald-200 text-emerald-600 font-bold rounded-xl hover:bg-emerald-50 transition-colors flex justify-center items-center gap-2"
+                            className="w-full py-3 bg-[#f0eee7] border border-emerald-200 text-emerald-600 font-bold rounded-xl hover:bg-emerald-50 transition-colors flex justify-center items-center gap-2"
                           >
                             <Settings size={18} /> ניהול רשימת הושבה
                           </button>
@@ -1755,7 +1755,7 @@ const Admin = () => {
 
                   {/* מודול דייטליין */}
                   <div
-                    className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.dating ? "border-rose-500 bg-rose-50/30" : "border-slate-100 opacity-60 grayscale"}`}
+                    className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.dating ? "border-rose-500 bg-rose-50/30" : "border-[#e4e0d5] opacity-60 grayscale"}`}
                   >
                     <div className="flex justify-between items-start mb-6">
                       <div className="flex items-center gap-3">
@@ -1785,14 +1785,14 @@ const Admin = () => {
                             })
                           }
                         />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-[#f0eee7] after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
                       </label>
                     </div>
                     {formData.active_modules.dating && !selectedEvent.isNew && (
                       <div className="animate-in fade-in">
                         <button
                           onClick={openDatingManager}
-                          className="w-full py-3 bg-white border border-rose-200 text-rose-600 font-bold rounded-xl hover:bg-rose-50 transition-colors flex justify-center items-center gap-2 shadow-sm"
+                          className="w-full py-3 bg-[#f0eee7] border border-rose-200 text-rose-600 font-bold rounded-xl hover:bg-rose-50 transition-colors flex justify-center items-center gap-2 shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)]"
                         >
                           <Users size={18} /> ניהול משתמשי דייטליין
                         </button>
@@ -1802,7 +1802,7 @@ const Admin = () => {
 
                   {/* מודול אייסברייקר */}
                   <div
-                    className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.icebreaker ? "border-cyan-500 bg-cyan-50/30" : "border-slate-100 opacity-60 grayscale"}`}
+                    className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.icebreaker ? "border-cyan-500 bg-cyan-50/30" : "border-[#e4e0d5] opacity-60 grayscale"}`}
                   >
                     <div className="flex justify-between items-start mb-6">
                       <div className="flex items-center gap-3">
@@ -1832,7 +1832,7 @@ const Admin = () => {
                             })
                           }
                         />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div>
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-[#f0eee7] after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div>
                       </label>
                     </div>
                     {formData.active_modules.icebreaker &&
@@ -1840,13 +1840,13 @@ const Admin = () => {
                         <div className="flex flex-col md:flex-row gap-3 animate-in fade-in">
                           <button
                             onClick={openIcebreakerManager}
-                            className="flex-1 py-3 bg-white border border-cyan-200 text-cyan-600 font-bold rounded-xl hover:bg-cyan-50 transition-colors flex justify-center items-center gap-2 shadow-sm"
+                            className="flex-1 py-3 bg-[#f0eee7] border border-cyan-200 text-cyan-600 font-bold rounded-xl hover:bg-cyan-50 transition-colors flex justify-center items-center gap-2 shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)]"
                           >
                             <Target size={18} /> בנק המשימות
                           </button>
                           <button
                             onClick={openIcebreakerUserManager}
-                            className="flex-1 py-3 bg-white border border-cyan-200 text-cyan-600 font-bold rounded-xl hover:bg-cyan-50 transition-colors flex justify-center items-center gap-2 shadow-sm"
+                            className="flex-1 py-3 bg-[#f0eee7] border border-cyan-200 text-cyan-600 font-bold rounded-xl hover:bg-cyan-50 transition-colors flex justify-center items-center gap-2 shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)]"
                           >
                             <Users size={18} /> משתמשים
                           </button>
@@ -1856,7 +1856,7 @@ const Admin = () => {
 
                   {/* מודול טרמפים */}
                   <div
-                    className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.rideshare ? "border-amber-500 bg-amber-50/30" : "border-slate-100 opacity-60 grayscale"}`}
+                    className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.rideshare ? "border-amber-500 bg-amber-50/30" : "border-[#e4e0d5] opacity-60 grayscale"}`}
                   >
                     <div className="flex justify-between items-start mb-6">
                       <div className="flex items-center gap-3">
@@ -1886,7 +1886,7 @@ const Admin = () => {
                             })
                           }
                         />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-[#f0eee7] after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
                       </label>
                     </div>
                     {formData.active_modules.rideshare &&
@@ -1894,7 +1894,7 @@ const Admin = () => {
                         <div className="animate-in fade-in">
                           <button
                             onClick={openRideshareManager}
-                            className="w-full py-3 bg-white border border-amber-200 text-amber-600 font-bold rounded-xl hover:bg-amber-50 transition-colors flex justify-center items-center gap-2 shadow-sm"
+                            className="w-full py-3 bg-[#f0eee7] border border-amber-200 text-amber-600 font-bold rounded-xl hover:bg-amber-50 transition-colors flex justify-center items-center gap-2 shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)]"
                           >
                             <Car size={18} /> ניהול לוח טרמפים
                           </button>
@@ -1910,9 +1910,9 @@ const Admin = () => {
 
       {/* --- פופ-אפ מרכז הדיווחים --- */}
       {isReportsModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[200]">
-          <div className="bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]">
-            <div className="p-6 md:p-8 border-b border-slate-100 flex justify-between items-center bg-rose-50/50 shrink-0">
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-[200]">
+          <div className="bg-[#f0eee7] w-full max-w-2xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]">
+            <div className="p-6 md:p-8 border-b border-[#e4e0d5] flex justify-between items-center bg-rose-50/50 shrink-0">
               <div>
                 <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
                   <ShieldAlert className="text-rose-500" /> מרכז דיווחים
@@ -1928,7 +1928,7 @@ const Admin = () => {
                 <X size={24} />
               </button>
             </div>
-            <div className="flex-1 bg-slate-50 p-6 md:p-8 overflow-y-auto">
+            <div className="flex-1 bg-[#eeece5] p-6 md:p-8 overflow-y-auto">
               {reportsLoading ? (
                 <div className="flex justify-center py-20">
                   <Loader2 className="animate-spin text-rose-500" size={48} />
@@ -1945,11 +1945,11 @@ const Admin = () => {
                   {reportsList.map((report) => (
                     <div
                       key={report.id}
-                      className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-3"
+                      className="bg-[#f0eee7] p-5 rounded-2xl border border-[#dcd7ca] shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] flex flex-col gap-3"
                     >
                       <div className="flex justify-between items-start">
                         <div>
-                          <span className="text-xs font-bold px-2 py-1 rounded bg-slate-100 text-slate-600 uppercase tracking-widest mb-2 inline-block">
+                          <span className="text-xs font-bold px-2 py-1 rounded bg-[#e9e6dc] text-slate-600 uppercase tracking-widest mb-2 inline-block">
                             סוג: {report.item_type}
                           </span>
                           <p className="text-sm font-medium text-slate-600">
@@ -1969,7 +1969,7 @@ const Admin = () => {
                           </p>
                         </div>
                       </div>
-                      <div className="flex gap-2 mt-2 pt-3 border-t border-slate-50">
+                      <div className="flex gap-2 mt-2 pt-3 border-t border-[#eeece5]">
                         <button
                           onClick={() =>
                             handleResolveReport(
@@ -1987,7 +1987,7 @@ const Admin = () => {
                           onClick={() =>
                             handleResolveReport(report.id, "dismiss")
                           }
-                          className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-sm transition-colors"
+                          className="flex-1 bg-[#e9e6dc] hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-sm transition-colors"
                         >
                           סגור כדיווח שווא
                         </button>
@@ -2003,9 +2003,9 @@ const Admin = () => {
 
       {/* --- פופ-אפ ניהול ברכות (חדש) --- */}
       {isBlessingsManagerOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[200]">
-          <div className="bg-white w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]">
-            <div className="p-6 md:p-8 border-b border-slate-100 flex justify-between items-center bg-purple-50/50 shrink-0">
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-[200]">
+          <div className="bg-[#f0eee7] w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]">
+            <div className="p-6 md:p-8 border-b border-[#e4e0d5] flex justify-between items-center bg-purple-50/50 shrink-0">
               <div>
                 <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
                   <MessageCircle className="text-purple-600" /> ספר ברכות
@@ -2022,7 +2022,7 @@ const Admin = () => {
               </button>
             </div>
 
-            <div className="flex-1 bg-slate-50 p-6 md:p-8 overflow-y-auto">
+            <div className="flex-1 bg-[#eeece5] p-6 md:p-8 overflow-y-auto">
               {blessingsLoading ? (
                 <div className="flex justify-center py-20">
                   <Loader2 className="animate-spin text-purple-500" size={48} />
@@ -2037,7 +2037,7 @@ const Admin = () => {
                   {blessingsList.map((blessing) => (
                     <div
                       key={blessing.id}
-                      className={`bg-white p-5 rounded-2xl border flex flex-col shadow-sm transition-all ${editingBlessingId === blessing.id ? "border-purple-300 ring-2 ring-purple-100" : "border-slate-200 hover:border-purple-200"}`}
+                      className={`bg-[#f0eee7] p-5 rounded-2xl border flex flex-col shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] transition-all ${editingBlessingId === blessing.id ? "border-purple-300 ring-2 ring-purple-100" : "border-[#dcd7ca] hover:border-purple-200"}`}
                     >
                       {editingBlessingId === blessing.id ? (
                         <div className="space-y-3 w-full">
@@ -2047,7 +2047,7 @@ const Admin = () => {
                             onChange={(e) =>
                               setEditBlessingName(e.target.value)
                             }
-                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-purple-500"
+                            className="w-full p-3 bg-[#eeece5] border border-[#dcd7ca] rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-purple-500"
                             placeholder="שם השולח"
                           />
                           <textarea
@@ -2055,13 +2055,13 @@ const Admin = () => {
                             onChange={(e) =>
                               setEditBlessingMessage(e.target.value)
                             }
-                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500 h-24 resize-none"
+                            className="w-full p-3 bg-[#eeece5] border border-[#dcd7ca] rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500 h-24 resize-none"
                             placeholder="תוכן הברכה"
                           />
                           <div className="flex justify-end gap-2 pt-2">
                             <button
                               onClick={() => setEditingBlessingId(null)}
-                              className="px-4 py-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors font-bold text-sm"
+                              className="px-4 py-2 text-slate-500 hover:bg-[#e9e6dc] rounded-xl transition-colors font-bold text-sm"
                             >
                               ביטול
                             </button>
@@ -2079,7 +2079,7 @@ const Admin = () => {
                             <h4 className="font-bold text-slate-800 text-lg flex items-center gap-2">
                               {blessing.guest_name}
                             </h4>
-                            <div className="flex items-center gap-1 bg-slate-50 rounded-lg p-1">
+                            <div className="flex items-center gap-1 bg-[#eeece5] rounded-lg p-1">
                               <button
                                 onClick={() => startEditingBlessing(blessing)}
                                 className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
@@ -2105,14 +2105,14 @@ const Admin = () => {
                             {blessing.message}
                           </p>
                           {blessing.image_url && (
-                            <div className="mt-auto pt-4 border-t border-slate-100">
+                            <div className="mt-auto pt-4 border-t border-[#e4e0d5]">
                               <div className="flex items-center gap-2 text-xs font-bold text-slate-400 mb-2">
                                 <ImageIcon size={14} /> תמונה מצורפת:
                               </div>
                               <img
                                 src={blessing.image_url}
                                 alt="Selfie"
-                                className="w-full h-32 object-cover rounded-xl border border-slate-100"
+                                className="w-full h-32 object-cover rounded-xl border border-[#e4e0d5]"
                               />
                             </div>
                           )}
@@ -2135,9 +2135,9 @@ const Admin = () => {
 
       {/* --- ניהול טרמפים --- */}
       {isRideshareManagerOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[200]">
-          <div className="bg-white w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]">
-            <div className="p-6 md:p-8 border-b border-slate-100 flex justify-between items-center bg-amber-50/50 shrink-0">
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-[200]">
+          <div className="bg-[#f0eee7] w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]">
+            <div className="p-6 md:p-8 border-b border-[#e4e0d5] flex justify-between items-center bg-amber-50/50 shrink-0">
               <div>
                 <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
                   <Car className="text-amber-500" /> ניהול טרמפים
@@ -2154,7 +2154,7 @@ const Admin = () => {
               </button>
             </div>
 
-            <div className="flex-1 bg-slate-50 p-6 md:p-8 overflow-y-auto">
+            <div className="flex-1 bg-[#eeece5] p-6 md:p-8 overflow-y-auto">
               {rideshareLoading ? (
                 <div className="flex justify-center py-20">
                   <Loader2 className="animate-spin text-amber-500" size={48} />
@@ -2169,7 +2169,7 @@ const Admin = () => {
                   {rideshareList.map((ride) => (
                     <div
                       key={ride.id}
-                      className="bg-white p-4 rounded-2xl border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between shadow-sm hover:border-amber-200 transition-colors gap-4"
+                      className="bg-[#f0eee7] p-4 rounded-2xl border border-[#dcd7ca] flex flex-col md:flex-row items-start md:items-center justify-between shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] hover:border-amber-200 transition-colors gap-4"
                     >
                       <div className="flex-1 w-full">
                         <div className="flex items-center gap-3 mb-2">
@@ -2240,9 +2240,9 @@ const Admin = () => {
 
       {/* --- שאר הפופאפים... --- */}
       {isRsvpManagerOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[200]">
-          <div className="bg-white w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]">
-            <div className="p-6 md:p-8 border-b border-slate-100 flex justify-between items-center bg-blue-50/50 shrink-0">
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-[200]">
+          <div className="bg-[#f0eee7] w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]">
+            <div className="p-6 md:p-8 border-b border-[#e4e0d5] flex justify-between items-center bg-blue-50/50 shrink-0">
               <div>
                 <h2 className="text-2xl font-black text-slate-800">
                   אישורי הגעה (RSVP)
@@ -2255,7 +2255,7 @@ const Admin = () => {
                 <button
                   onClick={exportRsvpToCSV}
                   disabled={rsvpList.length === 0}
-                  className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-xl font-bold transition-colors flex items-center gap-2 shadow-sm disabled:opacity-50"
+                  className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-xl font-bold transition-colors flex items-center gap-2 shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] disabled:opacity-50"
                 >
                   <Download size={18} /> ייצוא לאקסל
                 </button>
@@ -2267,7 +2267,7 @@ const Admin = () => {
                 </button>
               </div>
             </div>
-            <div className="flex-1 bg-slate-50 p-6 md:p-8 overflow-y-auto">
+            <div className="flex-1 bg-[#eeece5] p-6 md:p-8 overflow-y-auto">
               {rsvpLoading ? (
                 <div className="flex justify-center py-20">
                   <Loader2 className="animate-spin text-blue-500" size={48} />
@@ -2284,7 +2284,7 @@ const Admin = () => {
                   {rsvpList.map((guest) => (
                     <div
                       key={guest.id}
-                      className="bg-white p-4 rounded-2xl border border-slate-200 flex flex-col md:flex-row items-start md:items-center justify-between shadow-sm hover:border-blue-200 transition-colors gap-4"
+                      className="bg-[#f0eee7] p-4 rounded-2xl border border-[#dcd7ca] flex flex-col md:flex-row items-start md:items-center justify-between shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] hover:border-blue-200 transition-colors gap-4"
                     >
                       <div className="flex-1 w-full">
                         {editingRsvpId === guest.id ? (
@@ -2293,7 +2293,7 @@ const Admin = () => {
                               type="text"
                               value={editRsvpName}
                               onChange={(e) => setEditRsvpName(e.target.value)}
-                              className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full p-2 bg-[#eeece5] border border-[#dcd7ca] rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500"
                             />
                           </div>
                         ) : (
@@ -2308,7 +2308,7 @@ const Admin = () => {
                           </div>
                         )}
                       </div>
-                      <div className="flex items-center justify-end gap-2 shrink-0 bg-slate-50 p-1.5 rounded-xl w-full md:w-auto">
+                      <div className="flex items-center justify-end gap-2 shrink-0 bg-[#eeece5] p-1.5 rounded-xl w-full md:w-auto">
                         {editingRsvpId === guest.id ? (
                           <>
                             <button
@@ -2358,8 +2358,8 @@ const Admin = () => {
       )}
 
       {isGalleryOpen && (
-        <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-md flex flex-col animate-in fade-in duration-300">
-          <div className="p-6 md:p-8 flex justify-between items-center bg-white">
+        <div className="fixed inset-0 z-[200] bg-slate-900/90 flex flex-col animate-in fade-in duration-300">
+          <div className="p-6 md:p-8 flex justify-between items-center bg-[#f0eee7]">
             <div>
               <h2 className="text-3xl font-black text-slate-800">
                 גלריית האירוע
@@ -2367,7 +2367,7 @@ const Admin = () => {
             </div>
             <button
               onClick={() => setIsGalleryOpen(false)}
-              className="bg-slate-100 text-slate-600 p-3 rounded-xl"
+              className="bg-[#e9e6dc] text-slate-600 p-3 rounded-xl"
             >
               <X size={24} />
             </button>
@@ -2396,9 +2396,9 @@ const Admin = () => {
         </div>
       )}
       {isSeatingModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[200]">
-          <div className="bg-white w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]">
-            <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-emerald-50/50 shrink-0">
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-[200]">
+          <div className="bg-[#f0eee7] w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]">
+            <div className="p-8 border-b border-[#e4e0d5] flex justify-between items-center bg-emerald-50/50 shrink-0">
               <div>
                 <h2 className="text-2xl font-black text-slate-800">
                   ניהול הושבה
@@ -2415,12 +2415,12 @@ const Admin = () => {
               </button>
             </div>
             <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
-              <div className="w-full md:w-1/2 p-8 border-l border-slate-100 flex flex-col bg-white shrink-0">
+              <div className="w-full md:w-1/2 p-8 border-l border-[#e4e0d5] flex flex-col bg-[#f0eee7] shrink-0">
                 <textarea
                   value={seatingText}
                   onChange={(e) => setSeatingText(e.target.value)}
                   placeholder="ישראל ישראלי 12&#10;שרה כהן - 5"
-                  className="w-full flex-1 p-4 bg-slate-50 border border-slate-200 rounded-2xl min-h-[200px]"
+                  className="w-full flex-1 p-4 bg-[#eeece5] border border-[#dcd7ca] rounded-2xl min-h-[200px]"
                 />
                 <button
                   onClick={handleSaveSeating}
@@ -2429,12 +2429,12 @@ const Admin = () => {
                   פענח והוסף לרשימה
                 </button>
               </div>
-              <div className="w-full md:w-1/2 bg-slate-50 p-8 overflow-y-auto">
+              <div className="w-full md:w-1/2 bg-[#eeece5] p-8 overflow-y-auto">
                 <div className="space-y-3">
                   {seatingGuests.map((guest) => (
                     <div
                       key={guest.id}
-                      className="bg-white p-3 rounded-2xl flex justify-between"
+                      className="bg-[#f0eee7] p-3 rounded-2xl flex justify-between"
                     >
                       <div className="flex items-center gap-3">
                         <div className="bg-emerald-100 text-emerald-700 w-10 h-10 flex items-center justify-center rounded-xl">
@@ -2461,9 +2461,9 @@ const Admin = () => {
         </div>
       )}
       {isQrModalOpen && selectedEvent && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[200]">
-          <div className="bg-white w-full max-w-md rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh]">
-            <div className="p-6 flex justify-between items-center bg-slate-50 shrink-0">
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-[200]">
+          <div className="bg-[#f0eee7] w-full max-w-md rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh]">
+            <div className="p-6 flex justify-between items-center bg-[#eeece5] shrink-0">
               <h2 className="text-2xl font-black text-slate-800">QR מעוצב</h2>
               <button onClick={() => setIsQrModalOpen(false)}>
                 <X size={24} />
@@ -2482,9 +2482,9 @@ const Admin = () => {
         </div>
       )}
       {isDatingManagerOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4 z-[200]">
-          <div className="bg-white w-full max-w-5xl rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]">
-            <div className="p-6 md:p-8 border-b border-slate-100 flex justify-between items-center bg-rose-50/50 shrink-0">
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-[200]">
+          <div className="bg-[#f0eee7] w-full max-w-5xl rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]">
+            <div className="p-6 md:p-8 border-b border-[#e4e0d5] flex justify-between items-center bg-rose-50/50 shrink-0">
               <div>
                 <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
                   <Heart className="text-rose-500" /> ניהול דייטליין (פרופילים)
@@ -2501,7 +2501,7 @@ const Admin = () => {
               </button>
             </div>
 
-            <div className="flex-1 bg-slate-50 p-6 md:p-8 overflow-y-auto">
+            <div className="flex-1 bg-[#eeece5] p-6 md:p-8 overflow-y-auto">
               {datingLoading ? (
                 <div className="flex justify-center py-20">
                   <Loader2 className="animate-spin text-rose-500" size={48} />
@@ -2516,7 +2516,7 @@ const Admin = () => {
                   {datingProfiles.map((profile) => (
                     <div
                       key={profile.id}
-                      className="bg-white rounded-[1.5rem] overflow-hidden shadow-sm border border-slate-100 hover:border-rose-200 hover:shadow-md transition-all flex flex-col"
+                      className="bg-[#f0eee7] rounded-[1.5rem] overflow-hidden shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] border border-[#e4e0d5] hover:border-rose-200 hover:shadow-md transition-all flex flex-col"
                     >
                       {/* Profile Image */}
                       <div className="w-full h-40 bg-gradient-to-br from-rose-100 to-pink-100 flex items-center justify-center overflow-hidden">
@@ -2602,8 +2602,8 @@ const Admin = () => {
         </div>
       )}
       {isIcebreakerUserManagerOpen && (
-        <div className="fixed inset-0 z-[200] bg-slate-900/80 backdrop-blur-md flex flex-col animate-in fade-in duration-300">
-          <div className="p-6 md:p-8 flex justify-between items-center bg-white shadow-sm z-10">
+        <div className="fixed inset-0 z-[200] bg-slate-900/80 flex flex-col animate-in fade-in duration-300">
+          <div className="p-6 md:p-8 flex justify-between items-center bg-[#f0eee7] shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] z-10">
             <div>
               <h2 className="text-3xl font-black text-slate-800">
                 משתמשי IceBreaker
@@ -2611,7 +2611,7 @@ const Admin = () => {
             </div>
             <button
               onClick={() => setIsIcebreakerUserManagerOpen(false)}
-              className="bg-slate-100 p-3 rounded-xl"
+              className="bg-[#e9e6dc] p-3 rounded-xl"
             >
               <X size={24} />
             </button>
@@ -2621,7 +2621,7 @@ const Admin = () => {
               {icebreakerProfiles.map((profile) => (
                 <div
                   key={profile.id}
-                  className="bg-white rounded-[2rem] p-5 shadow-xl flex items-center gap-4"
+                  className="bg-[#f0eee7] rounded-[2rem] p-5 shadow-xl flex items-center gap-4"
                 >
                   <h3 className="font-black">{profile.name}</h3>
                   <button
@@ -2639,8 +2639,8 @@ const Admin = () => {
         </div>
       )}
       {isIcebreakerModalOpen && (
-        <div className="fixed inset-0 z-[200] bg-slate-900/80 backdrop-blur-md flex flex-col animate-in fade-in duration-300">
-          <div className="p-6 md:p-8 flex justify-between items-center bg-white shadow-sm z-10">
+        <div className="fixed inset-0 z-[200] bg-slate-900/80 flex flex-col animate-in fade-in duration-300">
+          <div className="p-6 md:p-8 flex justify-between items-center bg-[#f0eee7] shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] z-10">
             <div>
               <h2 className="text-3xl font-black text-slate-800">
                 בנק המשימות
@@ -2648,19 +2648,19 @@ const Admin = () => {
             </div>
             <button
               onClick={() => setIsIcebreakerModalOpen(false)}
-              className="bg-slate-100 p-3 rounded-xl"
+              className="bg-[#e9e6dc] p-3 rounded-xl"
             >
               <X size={24} />
             </button>
           </div>
           <div className="flex-1 overflow-y-auto p-6 md:p-10 max-w-4xl mx-auto w-full">
-            <div className="bg-white p-6 rounded-3xl mb-6 flex">
+            <div className="bg-[#f0eee7] p-6 rounded-3xl mb-6 flex">
               <input
                 type="text"
                 value={newMissionText}
                 onChange={(e) => setNewMissionText(e.target.value)}
                 placeholder="הוסף משימה..."
-                className="w-full flex-1 p-4 bg-slate-50 rounded-xl"
+                className="w-full flex-1 p-4 bg-[#eeece5] rounded-xl"
               />
               <button
                 onClick={handleAddMission}
@@ -2673,7 +2673,7 @@ const Admin = () => {
               {icebreakerMissions.map((mission) => (
                 <div
                   key={mission.id}
-                  className="bg-white p-5 rounded-2xl flex justify-between"
+                  className="bg-[#f0eee7] p-5 rounded-2xl flex justify-between"
                 >
                   <p className="font-medium">{mission.content}</p>
                   <button

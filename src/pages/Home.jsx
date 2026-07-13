@@ -75,9 +75,30 @@ const getGreeting = () => {
   return "לילה טוב";
 };
 
-// Shared glassmorphism card style with celebration-forward design
-const GLASS =
-  "module-card-anim relative rounded-[2.5rem] overflow-hidden shadow-elevated card-hover glass-card transition-smooth";
+/* ============================================================
+   SOFT-CLAY / NEUMORPHISM DESIGN TOKENS  (Eventick RSVP Clay)
+   Page rests on a warm neutral gradient (#eceadf → #e2ddd0).
+   Raised surfaces (#f0eee7) pop out with a dual shadow: soft
+   dark drop bottom-right + bright highlight top-left.
+   Wells (#eeece5) are carved into the surface with inset shadows.
+   ------------------------------------------------------------ */
+const CLAY_BG = "#eceadf"; // page base — matches design's inner-screen gradient start
+const CLAY_PAGE_BG =
+  "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)"; // full-viewport backdrop
+const CLAY_CHIP_BG = "#e9e6dc"; // small identifier pills (badges, "1A" chip, etc.)
+// Extruded (cards, buttons) — pops OUT of the surface
+const CLAY =
+  "module-card-anim relative rounded-[2.25rem] bg-[#f0eee7] shadow-[8px_8px_20px_rgba(0,0,0,0.09),-8px_-8px_20px_rgba(255,255,255,0.9)] transition-all duration-300";
+// Debossed (wells, inputs, tracks) — carved INTO the surface
+const CLAY_INSET =
+  "bg-[#eeece5] shadow-[inset_5px_5px_10px_rgba(0,0,0,0.07),inset_-5px_-5px_10px_rgba(255,255,255,0.85)]";
+// Soft primary pill button (uses the event's dynamic primary color)
+const clayPrimaryBtn = (primary) => ({
+  backgroundColor: primary,
+  boxShadow: `5px 5px 14px rgba(0,0,0,0.14), -4px -4px 12px rgba(255,255,255,0.7), inset 2px 2px 4px rgba(255,255,255,0.35), inset -2px -2px 4px rgba(0,0,0,0.12)`,
+});
+const clayIconDiscShadow =
+  "inset 2px 2px 5px rgba(255,255,255,0.4), inset -2px -2px 5px rgba(0,0,0,0.12)";
 
 const PhotoMarqueeCard = ({
   photos,
@@ -105,20 +126,19 @@ const PhotoMarqueeCard = ({
   const duration = Math.max(18, photos.length * 3);
 
   return (
-    <div className={`${GLASS} flex flex-col overflow-hidden group`}>
+    <div className={`${CLAY} flex flex-col overflow-hidden group`}>
       <button
         onClick={(e) => openInfo(e, "photo")}
-        className="absolute top-4 left-4 text-slate-400 hover:text-slate-600 z-20 p-2 bg-white/50 hover:bg-white/80 rounded-full transition-smooth"
+        className="absolute top-4 left-4 text-slate-400 hover:text-slate-600 z-20 p-2.5 rounded-full bg-[#f0eee7] shadow-[3px_3px_7px_rgba(0,0,0,0.09),-3px_-3px_7px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)] transition-all"
         aria-label="מידע"
       >
         <Info size={18} />
       </button>
 
-      {/* Marquee strip with enhanced visual */}
+      {/* Marquee strip — DEBOSSED well carved into the clay */}
       <div
-        className="relative h-40 md:h-48 overflow-hidden rounded-t-[2.2rem]"
+        className={`relative h-40 md:h-48 overflow-hidden rounded-t-[2.5rem] m-2 mb-0 rounded-[2rem] ${CLAY_INSET}`}
         style={{
-          background: `linear-gradient(135deg, ${primaryColor}15 0%, ${primaryColor}08 100%)`,
           WebkitMaskImage:
             "linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%)",
           maskImage:
@@ -127,7 +147,7 @@ const PhotoMarqueeCard = ({
       >
         {photos.length > 0 ? (
           <div
-            className="marquee-track flex gap-3 h-full will-change-transform px-4 py-2.5"
+            className="marquee-track flex gap-3 h-full will-change-transform px-4 py-3"
             style={{
               animation: `photo-marquee ${duration}s linear infinite`,
               width: "max-content",
@@ -139,9 +159,9 @@ const PhotoMarqueeCard = ({
                 key={i}
                 src={photo?.image_url || ""}
                 alt=""
-                className="h-full w-28 md:w-32 object-cover rounded-2xl shrink-0 shadow-md"
+                className="h-full w-28 md:w-32 object-cover rounded-[1.4rem] shrink-0 shadow-[4px_4px_10px_rgba(0,0,0,0.15)]"
                 loading="lazy"
-                style={{ filter: "brightness(0.97) contrast(1.03)" }}
+                style={{ filter: "brightness(0.98) contrast(1.02)" }}
               />
             ))}
           </div>
@@ -155,10 +175,10 @@ const PhotoMarqueeCard = ({
         )}
       </div>
 
-      {/* Bottom with enhanced styling */}
-      <div className="p-6 text-center bg-gradient-to-br from-white to-slate-50/50">
+      {/* Bottom */}
+      <div className="p-6 text-center">
         <h3
-          className="font-black text-slate-900 text-lg mb-1"
+          className="font-black text-lg mb-1"
           style={{ color: primaryColor }}
         >
           כל אחד צלם
@@ -168,11 +188,8 @@ const PhotoMarqueeCard = ({
         </p>
         <button
           onClick={() => navigate(`/photos?event=${eventId}`)}
-          className="w-full font-bold py-3 rounded-[1.2rem] text-sm flex items-center justify-center gap-2 hover:opacity-85 active:scale-[0.97] transition-all text-white shadow-elevated button-pulse"
-          style={{
-            backgroundColor: primaryColor,
-            boxShadow: `0 10px 30px ${primaryColor}40`,
-          }}
+          className="w-full font-bold py-3.5 rounded-full text-sm flex items-center justify-center gap-2 active:scale-[0.97] transition-all text-white"
+          style={clayPrimaryBtn(primaryColor)}
         >
           <Camera size={18} /> פתח מצלמה / גלריה
         </button>
@@ -193,12 +210,10 @@ const ActionModuleCard = ({
   if (!info) return null;
 
   return (
-    <div
-      className={`${GLASS} p-5 flex flex-col items-center text-center h-full group`}
-    >
+    <div className={`${CLAY} p-5 flex flex-col items-center text-center h-full group`}>
       <button
         onClick={(e) => openInfo(e, mKey)}
-        className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 z-10 p-2 bg-white/50 hover:bg-white/80 rounded-full transition-smooth"
+        className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 z-10 p-2 rounded-full bg-[#f0eee7] shadow-[2px_2px_6px_rgba(0,0,0,0.08),-2px_-2px_6px_rgba(255,255,255,0.9)] transition-all"
         aria-label="מידע"
       >
         <Info size={16} />
@@ -207,20 +222,18 @@ const ActionModuleCard = ({
       {hasBadge && (
         <span className="absolute top-3 left-3 flex h-4 w-4">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-4 w-4 bg-rose-500 border-2 border-white shadow-lg" />
+          <span className="relative inline-flex rounded-full h-4 w-4 bg-rose-500 border-2 border-[#f0eee7] shadow-lg" />
         </span>
       )}
 
       <div
-        className={`w-14 h-14 ${info.bg} rounded-[1.2rem] flex items-center justify-center mb-3 mt-2 group-hover:scale-110 transition-smooth shadow-elevated`}
+        className={`w-16 h-16 ${info.bg} rounded-[1.4rem] flex items-center justify-center mb-3 mt-2 group-hover:scale-110 transition-transform`}
+        style={{ boxShadow: clayIconDiscShadow }}
       >
-        <info.icon size={24} className={info.color} />
+        <info.icon size={26} className={info.color} />
       </div>
 
-      <h3
-        className="font-black text-slate-900 text-sm leading-tight mb-1.5"
-        style={{ fontSize: "1.1rem" }}
-      >
+      <h3 className="font-black text-slate-700 leading-tight mb-1.5" style={{ fontSize: "1.1rem" }}>
         {info.title}
       </h3>
       <p className="text-slate-500 text-xs leading-relaxed line-clamp-3 mb-4 flex-1 font-medium">
@@ -229,12 +242,8 @@ const ActionModuleCard = ({
 
       <button
         onClick={onClick}
-        className="w-full font-bold py-2.5 rounded-[1rem] text-xs flex items-center justify-center gap-1.5 hover:opacity-90 active:scale-[0.97] transition-smooth mt-auto button-pulse"
-        style={{
-          backgroundColor: `${primaryColor}15`,
-          color: primaryColor,
-          border: `1.5px solid ${primaryColor}30`,
-        }}
+        className="w-full font-bold py-3 rounded-full text-xs flex items-center justify-center gap-1.5 active:scale-[0.97] transition-all mt-auto text-slate-600 bg-[#f0eee7] shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)]"
+        style={{ color: primaryColor }}
       >
         כניסה <ChevronLeft size={14} />
       </button>
@@ -244,50 +253,41 @@ const ActionModuleCard = ({
 
 // ---- Rideshare Card (2 role buttons) ----
 const RideshareHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
-  <div
-    className={`${GLASS} p-5 flex flex-col items-center text-center h-full group`}
-  >
+  <div className={`${CLAY} p-5 flex flex-col items-center text-center h-full group`}>
     <button
       onClick={(e) => openInfo(e, "rideshare")}
-      className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 z-10 p-2 bg-white/50 hover:bg-white/80 rounded-full transition-smooth"
+      className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 z-10 p-2 rounded-full bg-[#f0eee7] shadow-[2px_2px_6px_rgba(0,0,0,0.08),-2px_-2px_6px_rgba(255,255,255,0.9)] transition-all"
       aria-label="מידע"
     >
       <Info size={16} />
     </button>
 
-    <div className="w-14 h-14 bg-amber-50 rounded-[1.2rem] flex items-center justify-center mb-3 mt-2 group-hover:scale-110 transition-smooth shadow-elevated">
-      <Car size={24} className="text-amber-500" />
+    <div
+      className="w-16 h-16 bg-amber-50 rounded-[1.4rem] flex items-center justify-center mb-3 mt-2 group-hover:scale-110 transition-transform"
+      style={{ boxShadow: clayIconDiscShadow }}
+    >
+      <Car size={26} className="text-amber-500" />
     </div>
 
-    <h3
-      className="font-black text-slate-900 text-sm mb-1.5"
-      style={{ fontSize: "1.1rem" }}
-    >
+    <h3 className="font-black text-slate-700 mb-1.5" style={{ fontSize: "1.1rem" }}>
       לוח טרמפים
     </h3>
     <p className="text-slate-500 text-xs mb-4 leading-relaxed flex-1 line-clamp-3 font-medium">
       שתפו נסיעות לאחר האירוע
     </p>
 
-    <div className="w-full space-y-2 mt-auto">
+    <div className="w-full space-y-2.5 mt-auto">
       <button
         onClick={() => navigate(`/rideshare?event=${eventId}&role=driver`)}
-        className="w-full font-bold py-2.5 rounded-[1rem] text-xs hover:opacity-85 active:scale-[0.97] transition-smooth text-white flex items-center justify-center gap-1.5 button-pulse shadow-elevated"
-        style={{
-          backgroundColor: primaryColor,
-          boxShadow: `0 8px 20px ${primaryColor}40`,
-        }}
+        className="w-full font-bold py-3 rounded-full text-xs active:scale-[0.97] transition-all text-white flex items-center justify-center gap-1.5"
+        style={clayPrimaryBtn(primaryColor)}
       >
         <Car size={14} /> אני מציע 🚗
       </button>
       <button
         onClick={() => navigate(`/rideshare?event=${eventId}&role=seeker`)}
-        className="w-full font-bold py-2.5 rounded-[1rem] text-xs hover:opacity-90 active:scale-[0.97] transition-smooth flex items-center justify-center gap-1.5 border-2"
-        style={{
-          backgroundColor: `${primaryColor}10`,
-          color: primaryColor,
-          borderColor: `${primaryColor}30`,
-        }}
+        className="w-full font-bold py-3 rounded-full text-xs active:scale-[0.97] transition-all flex items-center justify-center gap-1.5 bg-[#f0eee7] shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)]"
+        style={{ color: primaryColor }}
       >
         <Users size={14} /> אני מחפש 🙋
       </button>
@@ -297,25 +297,23 @@ const RideshareHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
 
 // ---- Blessings Card ----
 const BlessingsHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
-  <div
-    className={`${GLASS} p-5 flex flex-col items-center text-center h-full group`}
-  >
+  <div className={`${CLAY} p-5 flex flex-col items-center text-center h-full group`}>
     <button
       onClick={(e) => openInfo(e, "blessings")}
-      className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 z-10 p-2 bg-white/50 hover:bg-white/80 rounded-full transition-smooth"
+      className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 z-10 p-2 rounded-full bg-[#f0eee7] shadow-[2px_2px_6px_rgba(0,0,0,0.08),-2px_-2px_6px_rgba(255,255,255,0.9)] transition-all"
       aria-label="מידע"
     >
       <Info size={16} />
     </button>
 
-    <div className="w-14 h-14 bg-purple-50 rounded-[1.2rem] flex items-center justify-center mb-3 mt-2 group-hover:scale-110 transition-smooth shadow-elevated">
-      <MessageCircle size={26} className="text-purple-500" />
+    <div
+      className="w-16 h-16 bg-purple-50 rounded-[1.4rem] flex items-center justify-center mb-3 mt-2 group-hover:scale-110 transition-transform"
+      style={{ boxShadow: clayIconDiscShadow }}
+    >
+      <MessageCircle size={28} className="text-purple-500" />
     </div>
 
-    <h3
-      className="font-black text-slate-900 text-sm mb-1.5"
-      style={{ fontSize: "1.1rem" }}
-    >
+    <h3 className="font-black text-slate-700 mb-1.5" style={{ fontSize: "1.1rem" }}>
       ספר ברכות
     </h3>
     <p className="text-slate-500 text-xs mb-5 leading-relaxed font-medium flex-1">
@@ -324,11 +322,8 @@ const BlessingsHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
 
     <button
       onClick={() => navigate(`/blessing?event=${eventId}`)}
-      className="w-full font-bold py-2.5 rounded-[1rem] text-xs hover:opacity-85 active:scale-[0.97] transition-smooth text-white flex items-center justify-center gap-1.5 button-pulse shadow-elevated"
-      style={{
-        backgroundColor: primaryColor,
-        boxShadow: `0 10px 25px ${primaryColor}40`,
-      }}
+      className="w-full font-bold py-3 rounded-full text-xs active:scale-[0.97] transition-all text-white flex items-center justify-center gap-1.5"
+      style={clayPrimaryBtn(primaryColor)}
     >
       <MessageCircle size={15} /> הוסף ברכה ✍️
     </button>
@@ -374,7 +369,6 @@ const BlessingsStrip = ({ eventId, primaryColor }) => {
         },
         (payload) => {
           if (!isMounted || !payload?.new) return;
-          // Update if blessing is approved
           if (payload.new.is_approved === true) {
             if (isMounted) {
               setBlessing({
@@ -395,7 +389,6 @@ const BlessingsStrip = ({ eventId, primaryColor }) => {
         },
         (payload) => {
           if (!isMounted || !payload?.new) return;
-          // If a blessing was approved or edited
           if (payload.new.is_approved === true) {
             if (isMounted) {
               setBlessing({
@@ -416,7 +409,6 @@ const BlessingsStrip = ({ eventId, primaryColor }) => {
         },
         () => {
           if (!isMounted) return;
-          // If a blessing is deleted, fetch the latest
           fetchLatest();
         },
       )
@@ -452,31 +444,19 @@ const BlessingsStrip = ({ eventId, primaryColor }) => {
 
   if (!blessing) return null;
 
-  const text = `✨  "${blessing.message}"  —  ${blessing.guest_name}  `;
+  const text = `✨  "${blessing.message}"  —  ${blessing.guest_name}  `;
 
   return (
     <div
       ref={stripRef}
-      className="overflow-hidden rounded-[1.5rem] py-3.5 mb-4 flex items-center shadow-elevated glass-card transition-smooth"
-      style={{
-        borderLeft: `4px solid ${primaryColor}`,
-      }}
+      className={`overflow-hidden rounded-full py-3.5 mb-4 flex items-center ${CLAY_INSET}`}
     >
       <div className="overflow-hidden flex-1">
-        <div
-          ref={trackRef}
-          className="flex whitespace-nowrap will-change-transform"
-        >
-          <span
-            className="text-sm font-bold px-4"
-            style={{ color: primaryColor }}
-          >
+        <div ref={trackRef} className="flex whitespace-nowrap will-change-transform">
+          <span className="text-sm font-bold px-4" style={{ color: primaryColor }}>
             {text}
           </span>
-          <span
-            className="text-sm font-bold px-4"
-            style={{ color: primaryColor }}
-          >
+          <span className="text-sm font-bold px-4" style={{ color: primaryColor }}>
             {text}
           </span>
         </div>
@@ -684,12 +664,8 @@ const Home = () => {
     setRegistrationError(null);
 
     try {
-      // שמירה מקומית בלבד, ללא קריאות מורכבות ל-DB שעשויות להיכשל
       localStorage.setItem("guest_name", nameInput.trim());
-
-      // Ensure a stable device identity exists before entering the app.
       getOrCreateDeviceId();
-
       setIsRegistered(true);
     } catch (err) {
       console.error(err);
@@ -700,9 +676,6 @@ const Home = () => {
   };
 
   const handleChangeName = () => {
-    // Only the display name is cleared; the device identity stays stable so the
-    // guest keeps ownership of any rows they already created (dating profile,
-    // photos, etc.) and the x-device-id request header remains consistent.
     localStorage.removeItem("guest_name");
     setNameInput("");
     setTermsAccepted(false);
@@ -739,7 +712,6 @@ const Home = () => {
     setInfoModal(MODULES_INFO[moduleKey]);
   };
 
-  // Escape-to-close + body scroll-lock for the two dialogs on this page.
   useModalBehavior({ open: !!infoModal, onClose: () => setInfoModal(null) });
   useModalBehavior({
     open: showMatesModal,
@@ -749,11 +721,12 @@ const Home = () => {
   if (loading) {
     return (
       <div
-        className="min-h-screen bg-slate-900 flex flex-col items-center justify-center"
+        className="min-h-screen flex flex-col items-center justify-center"
+        style={{ background: CLAY_PAGE_BG }}
         dir="rtl"
       >
-        <Loader2 className="animate-spin text-white mb-4" size={48} />
-        <p className="text-white/50 text-sm font-medium">טוען את האירוע...</p>
+        <Loader2 className="animate-spin text-slate-400 mb-4" size={48} />
+        <p className="text-slate-400 text-sm font-medium">טוען את האירוע...</p>
       </div>
     );
   }
@@ -762,6 +735,7 @@ const Home = () => {
     return (
       <div
         className="min-h-screen flex items-center justify-center text-slate-500"
+        style={{ background: CLAY_PAGE_BG }}
         dir="rtl"
       >
         לא נמצא אירוע.
@@ -769,9 +743,9 @@ const Home = () => {
     );
 
   const { name, active_modules, design_config } = eventData;
-  const { background = "#f8fafc", primary = "#3b82f6" } =
-    design_config?.colors || {};
+  const { primary = "#8fa7b8" } = design_config?.colors || {};
   const guestNameStr = localStorage.getItem("guest_name");
+  const guestInitial = (guestNameStr || "").trim().charAt(0) || "?";
 
   const secondaryModules = [
     active_modules?.dating && "dating",
@@ -784,27 +758,26 @@ const Home = () => {
   if (!isRegistered) {
     return (
       <div
-        className="min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-1000"
-        style={{ backgroundColor: background }}
+        className="min-h-screen flex flex-col items-center justify-center p-6"
+        style={{ background: CLAY_PAGE_BG }}
         dir="rtl"
       >
         <div
-          className="glass-card shadow-deep p-8 rounded-[2.5rem] w-full max-w-sm text-center animate-in zoom-in duration-500"
+          className="p-8 rounded-[2.25rem] w-full max-w-sm text-center bg-[#f0eee7] shadow-[12px_12px_30px_rgba(0,0,0,0.1),-12px_-12px_30px_rgba(255,255,255,0.9)]"
           style={{
             animation: "bounce-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)",
           }}
         >
           <div
-            className="w-16 h-16 rounded-[1.2rem] flex items-center justify-center mx-auto mb-5"
-            style={{ backgroundColor: `${primary}18` }}
+            className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5 bg-[#f0eee7] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.1),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]"
           >
             <PartyPopper style={{ color: primary }} size={32} />
           </div>
-          <h1 className="text-3xl font-black text-slate-800 mb-1">
+          <h1 className="text-3xl font-black text-slate-700 mb-1">
             ברוכים הבאים!
           </h1>
           <p className="text-slate-500 mb-8 font-medium text-sm">
-            ל-<span className="font-bold text-slate-700">{name}</span>
+            ל-<span className="font-bold text-slate-600">{name}</span>
             <br />
             מלאו את שמכם כדי להתחיל בחגיגה
           </p>
@@ -817,18 +790,13 @@ const Home = () => {
                 if (registrationError) setRegistrationError(null);
               }}
               placeholder="שם מלא (לדוגמה: תקווה משולם)"
-              className="w-full p-4 bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-slate-200 rounded-[1.2rem] focus:ring-2 outline-none text-center text-lg font-bold transition-smooth"
-              style={{
-                "--tw-ring-color": primary,
-                borderColor: `${primary}40`,
-              }}
+              className={`w-full p-4 rounded-full outline-none text-center text-lg font-bold text-slate-700 placeholder:text-slate-400 ${CLAY_INSET}`}
               required
               disabled={isRegistering}
             />
 
-            {/* Error banner */}
             {registrationError && (
-              <div className="flex items-center gap-2 bg-rose-50 border border-rose-100 text-rose-600 text-sm font-medium px-4 py-3 rounded-[1rem]">
+              <div className="flex items-center gap-2 text-rose-600 text-sm font-medium px-4 py-3 rounded-[1rem] bg-[#f0eee7] shadow-[inset_3px_3px_7px_rgba(0,0,0,0.06),inset_-3px_-3px_7px_rgba(255,255,255,0.8)]">
                 <X size={15} className="shrink-0" />
                 {registrationError}
               </div>
@@ -841,7 +809,7 @@ const Home = () => {
                 id="terms"
                 checked={termsAccepted}
                 onChange={(e) => setTermsAccepted(e.target.checked)}
-                className="mt-1 w-4 h-4 cursor-pointer shrink-0 accent-current"
+                className="mt-1 w-4 h-4 cursor-pointer shrink-0"
                 style={{ accentColor: primary }}
               />
               <label
@@ -849,19 +817,11 @@ const Home = () => {
                 className="text-xs font-medium text-slate-500 leading-tight"
               >
                 אני מסכים/ה ל
-                <a
-                  href="/terms"
-                  target="_blank"
-                  className="underline font-bold"
-                >
+                <a href="/terms" target="_blank" className="underline font-bold">
                   תנאי השימוש
                 </a>{" "}
                 ול
-                <a
-                  href="/privacy"
-                  target="_blank"
-                  className="underline font-bold"
-                >
+                <a href="/privacy" target="_blank" className="underline font-bold">
                   מדיניות הפרטיות
                 </a>{" "}
                 של Eventick, ומאשר/ת את הצגת שמי ותמונותיי לשאר אורחי האירוע.
@@ -871,11 +831,8 @@ const Home = () => {
             <button
               type="submit"
               disabled={isRegistering}
-              className="w-full text-white font-black py-4 rounded-[1.2rem] text-lg shadow-deep hover:opacity-85 active:scale-[0.97] transition-smooth mt-4 flex items-center justify-center gap-2 disabled:opacity-60 disabled:scale-100 button-pulse"
-              style={{
-                backgroundColor: primary,
-                boxShadow: `0 12px 35px ${primary}50`,
-              }}
+              className="w-full text-white font-black py-4 rounded-full text-lg active:scale-[0.97] transition-all mt-4 flex items-center justify-center gap-2 disabled:opacity-60 disabled:scale-100"
+              style={clayPrimaryBtn(primary)}
             >
               {isRegistering ? (
                 <>
@@ -902,86 +859,99 @@ const Home = () => {
   // --- Main Event Screen ---
   return (
     <div
-      className="min-h-screen flex flex-col font-sans pb-12 transition-colors duration-1000"
-      style={{ backgroundColor: background }}
+      className="min-h-screen flex flex-col font-sans pb-12"
+      style={{ background: CLAY_PAGE_BG }}
       dir="rtl"
     >
-      {/* Header with gradient background */}
-      <div
-        className="rounded-b-[3.5rem] pt-16 pb-28 px-6 relative z-10 shadow-deep text-center flex flex-col items-center transition-colors duration-1000 overflow-hidden"
-        style={{
-          background: `linear-gradient(135deg, ${primary} 0%, ${primary}dd 100%)`,
-          boxShadow: `0 20px 50px ${primary}30`,
-        }}
-      >
-        {/* Decorative floating elements */}
-        <div className="absolute top-6 right-10 w-20 h-20 rounded-full opacity-10 bg-white float-effect" />
-        <div className="absolute bottom-8 left-8 w-32 h-32 rounded-full opacity-10 bg-white float-delayed" />
-
-        <div className="max-w-md w-full header-anim relative z-10">
-          <p className="text-white/70 font-bold text-xs uppercase tracking-widest mb-2">
-            {getGreeting()}
-          </p>
-          <h1
-            className="text-4xl md:text-5xl font-black text-white mb-2 leading-tight drop-shadow-lg"
-            style={{ fontFamily: "'Playfair Display', serif" }}
-          >
-            {name}
-          </h1>
-          {eventData.event_date && (
-            <p className="text-white/60 text-xs font-bold mb-5">
-              {new Date(eventData.event_date).toLocaleDateString("he-IL", {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-              })}
-              {eventData.location ? ` · ${eventData.location}` : ""}
-            </p>
-          )}
-
-          {/* User bar with enhanced styling */}
-          <div className="bg-white/15 rounded-[1.5rem] p-4 flex items-center justify-between border border-white/30 backdrop-blur-md gap-3 shadow-elevated hover:bg-white/20 transition-smooth">
-            <div className="flex flex-col text-right min-w-0">
-              <span className="text-white/60 text-[11px] font-bold uppercase tracking-wider">
-                מחובר כ:
-              </span>
-              <span className="text-white font-black text-sm truncate">
-                {guestNameStr}
-              </span>
+      {/* Header — clay surface, greeting + floating avatar + embossed event card */}
+      <div className="pt-14 pb-6 px-5 relative z-10 max-w-lg w-full mx-auto">
+        <div className="header-anim">
+          {/* Greeting row with floating avatar */}
+          <div className="flex items-center justify-between gap-3 mb-6">
+            <div className="text-right min-w-0">
+              <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">
+                {getGreeting()}
+              </p>
+              <h2 className="text-2xl font-black text-slate-700 truncate">
+                {guestNameStr} 👋
+              </h2>
             </div>
             <button
               onClick={handleChangeName}
-              className="shrink-0 text-xs bg-white/20 hover:bg-white/30 text-white px-4 py-2.5 rounded-[0.9rem] transition-smooth font-bold flex items-center gap-1.5 active:scale-95 border border-white/40 button-pulse"
+              className="shrink-0 w-14 h-14 rounded-full flex items-center justify-center text-white font-black text-xl bg-[#f0eee7] shadow-[6px_6px_14px_rgba(0,0,0,0.1),-5px_-5px_12px_rgba(255,255,255,0.9)] active:scale-95 transition-transform"
+              style={{ backgroundColor: primary, boxShadow: `6px 6px 14px rgba(0,0,0,0.12), -5px -5px 12px rgba(255,255,255,0.85), ${clayIconDiscShadow}` }}
+              aria-label="החלף משתמש"
+              title="החלף משתמש"
             >
-              <UserX size={15} /> החלף
+              {guestInitial}
             </button>
+          </div>
+
+          {/* Embossed horizontal Event Card with pulsing Live dot */}
+          <div
+            className="rounded-[2.5rem] p-6 relative overflow-hidden text-white"
+            style={{
+              background: `linear-gradient(145deg, ${primary}, ${primary}cc)`,
+              boxShadow: `9px 9px 24px rgba(0,0,0,0.16), -7px -7px 18px rgba(255,255,255,0.55), inset 2px 2px 5px rgba(255,255,255,0.25), inset -2px -2px 5px rgba(0,0,0,0.12)`,
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="inline-flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full text-[11px] font-bold">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
+                </span>
+                האירוע פעיל
+              </div>
+              <PartyPopper size={22} className="opacity-85" />
+            </div>
+            <h1
+              className="text-3xl font-black mt-4 leading-tight drop-shadow-sm"
+              style={{ fontFamily: "'Assistant', sans-serif" }}
+            >
+              {name}
+            </h1>
+            {eventData.event_date && (
+              <p className="text-white/80 text-xs font-bold mt-2">
+                {new Date(eventData.event_date).toLocaleDateString("he-IL", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                })}
+                {eventData.location ? ` · ${eventData.location}` : ""}
+              </p>
+            )}
+            {/* Connected-as strip */}
+            <div className="mt-4 flex items-center justify-between gap-3 bg-white/15 rounded-full px-4 py-2.5 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.12),inset_-2px_-2px_5px_rgba(255,255,255,0.15)]">
+              <span className="text-white/70 text-[11px] font-bold uppercase tracking-wider">
+                מחובר כ: <span className="text-white">{guestNameStr}</span>
+              </span>
+              <button
+                onClick={handleChangeName}
+                className="shrink-0 text-xs bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-full transition-all font-bold flex items-center gap-1.5 active:scale-95"
+              >
+                <UserX size={14} /> החלף
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Content Area */}
-      <div className="px-3 -mt-10 relative z-20 w-full max-w-lg mx-auto flex-1 flex flex-col">
+      <div className="px-4 relative z-20 w-full max-w-lg mx-auto flex-1 flex flex-col">
         {/* Blessings Strip Ticker */}
         {active_modules.blessings && (
           <BlessingsStrip eventId={id} primaryColor={primary} />
         )}
 
         {/* Module Cards — stacked layout */}
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-4">
           {/* 1. Seating Card — first */}
           {active_modules.seating && (
-            <div className={`${GLASS} p-6 relative overflow-hidden group`}>
-              {/* Decorative background */}
-              <div
-                className="absolute inset-0 opacity-5"
-                style={{
-                  background: `linear-gradient(135deg, ${primary} 0%, transparent 100%)`,
-                }}
-              />
-
+            <div className={`${CLAY} p-6 relative overflow-hidden group`}>
               <button
                 onClick={(e) => openInfo(e, "seating")}
-                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 z-10 p-2 bg-white/50 hover:bg-white/80 rounded-full transition-smooth"
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 z-10 p-2.5 rounded-full bg-[#f0eee7] shadow-[3px_3px_7px_rgba(0,0,0,0.09),-3px_-3px_7px_rgba(255,255,255,0.9)] transition-all"
                 aria-label="מידע"
               >
                 <Info size={18} />
@@ -989,21 +959,13 @@ const Home = () => {
 
               {myTable === null ? (
                 <div className="flex justify-center py-6">
-                  <Loader2
-                    className="animate-spin"
-                    size={32}
-                    style={{ color: primary }}
-                  />
+                  <Loader2 className="animate-spin" size={32} style={{ color: primary }} />
                 </div>
               ) : myTable.found ? (
                 <div className="flex items-center justify-between gap-5 relative z-10">
                   <div className="flex flex-col items-center">
                     <div
-                      className="w-16 h-16 rounded-full flex items-center justify-center mb-3 shadow-elevated group-hover:scale-110 transition-smooth"
-                      style={{
-                        backgroundColor: `${primary}18`,
-                        boxShadow: `0 10px 30px ${primary}25`,
-                      }}
+                      className="w-16 h-16 rounded-full flex items-center justify-center mb-3 bg-[#f0eee7] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.09),inset_-4px_-4px_9px_rgba(255,255,255,0.85)] group-hover:scale-110 transition-transform"
                     >
                       <MapPin size={28} style={{ color: primary }} />
                     </div>
@@ -1014,8 +976,8 @@ const Home = () => {
                       className="text-7xl font-black leading-none"
                       style={{
                         color: primary,
-                        fontFamily: "'Playfair Display', serif",
-                        textShadow: `0 4px 12px ${primary}30`,
+                        fontFamily: "'Assistant', sans-serif",
+                        textShadow: `0 3px 8px rgba(0,0,0,0.12)`,
                       }}
                     >
                       {myTable.number}
@@ -1024,12 +986,8 @@ const Home = () => {
 
                   <button
                     onClick={() => fetchTableMates(myTable.number)}
-                    className="flex-1 flex flex-col items-center justify-center gap-2 py-6 rounded-[1.5rem] hover:opacity-85 active:scale-[0.97] transition-smooth border-2 shadow-elevated card-hover"
-                    style={{
-                      backgroundColor: `${primary}12`,
-                      borderColor: `${primary}25`,
-                      color: primary,
-                    }}
+                    className="flex-1 flex flex-col items-center justify-center gap-2 py-6 rounded-[1.8rem] active:scale-[0.97] transition-all bg-[#f0eee7] shadow-[6px_6px_14px_rgba(0,0,0,0.09),-6px_-6px_14px_rgba(255,255,255,0.9)] active:shadow-[inset_4px_4px_9px_rgba(0,0,0,0.1),inset_-4px_-4px_9px_rgba(255,255,255,0.8)]"
+                    style={{ color: primary }}
                   >
                     <Users size={28} />
                     <span className="text-xs font-black text-center leading-snug">
@@ -1041,7 +999,7 @@ const Home = () => {
                 </div>
               ) : (
                 <div className="text-center py-2">
-                  <h3 className="text-xl font-black text-slate-800 mb-1">
+                  <h3 className="text-xl font-black text-slate-700 mb-1">
                     לא נמצא שולחן
                   </h3>
                   <p className="text-slate-400 text-sm font-medium mb-5">
@@ -1049,7 +1007,7 @@ const Home = () => {
                   </p>
                   <button
                     onClick={handleChangeName}
-                    className="w-full bg-slate-50/80 hover:bg-slate-100/80 text-slate-700 font-bold py-3.5 px-6 rounded-[1.2rem] transition-colors flex justify-center items-center gap-2"
+                    className="w-full text-slate-600 font-bold py-3.5 px-6 rounded-full transition-all flex justify-center items-center gap-2 bg-[#f0eee7] shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)]"
                   >
                     <RefreshCw size={16} /> נסו שם אחר
                   </button>
@@ -1074,7 +1032,7 @@ const Home = () => {
             <div>
               <div
                 ref={modulesCarouselRef}
-                className="flex gap-3 overflow-x-auto snap-x snap-mandatory"
+                className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2"
                 style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                 onScroll={() => {
                   const el = modulesCarouselRef.current;
@@ -1084,10 +1042,7 @@ const Home = () => {
                 }}
               >
                 {active_modules.dating && (
-                  <div
-                    className="snap-start shrink-0"
-                    style={{ width: "calc(50% - 6px)" }}
-                  >
+                  <div className="snap-start shrink-0" style={{ width: "calc(50% - 6px)" }}>
                     <ActionModuleCard
                       mKey="dating"
                       primaryColor={primary}
@@ -1098,10 +1053,7 @@ const Home = () => {
                   </div>
                 )}
                 {active_modules.icebreaker && (
-                  <div
-                    className="snap-start shrink-0"
-                    style={{ width: "calc(50% - 6px)" }}
-                  >
+                  <div className="snap-start shrink-0" style={{ width: "calc(50% - 6px)" }}>
                     <ActionModuleCard
                       mKey="icebreaker"
                       primaryColor={primary}
@@ -1111,10 +1063,7 @@ const Home = () => {
                   </div>
                 )}
                 {active_modules.rideshare && (
-                  <div
-                    className="snap-start shrink-0"
-                    style={{ width: "calc(50% - 6px)" }}
-                  >
+                  <div className="snap-start shrink-0" style={{ width: "calc(50% - 6px)" }}>
                     <RideshareHomeCard
                       primaryColor={primary}
                       eventId={id}
@@ -1124,10 +1073,7 @@ const Home = () => {
                   </div>
                 )}
                 {active_modules.blessings && (
-                  <div
-                    className="snap-start shrink-0"
-                    style={{ width: "calc(50% - 6px)" }}
-                  >
+                  <div className="snap-start shrink-0" style={{ width: "calc(50% - 6px)" }}>
                     <BlessingsHomeCard
                       primaryColor={primary}
                       eventId={id}
@@ -1174,29 +1120,30 @@ const Home = () => {
       {/* Info Modal */}
       {infoModal && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-6 animate-in fade-in"
+          className="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center p-6 animate-in fade-in"
           onClick={() => setInfoModal(null)}
           role="dialog"
           aria-modal="true"
           aria-label={infoModal.title}
         >
           <div
-            className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl relative animate-in zoom-in-95 max-h-[90vh] overflow-y-auto"
+            className="rounded-[2.5rem] p-8 w-full max-w-sm text-center relative animate-in zoom-in-95 max-h-[90vh] overflow-y-auto bg-[#f0eee7] shadow-[14px_14px_34px_rgba(0,0,0,0.18),-10px_-10px_26px_rgba(255,255,255,0.9)]"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setInfoModal(null)}
-              className="absolute top-4 right-4 text-slate-400 bg-slate-50 hover:bg-slate-100 p-2 rounded-full transition-colors"
+              className="absolute top-4 right-4 text-slate-400 p-2.5 rounded-full bg-[#f0eee7] shadow-[3px_3px_7px_rgba(0,0,0,0.09),-3px_-3px_7px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)] transition-all"
               aria-label="סגור"
             >
               <X size={20} />
             </button>
             <div
               className={`w-20 h-20 mx-auto rounded-[1.5rem] flex items-center justify-center mb-6 ${infoModal.bg}`}
+              style={{ boxShadow: clayIconDiscShadow }}
             >
               <infoModal.icon size={40} className={infoModal.color} />
             </div>
-            <h3 className="text-2xl font-black text-slate-800 mb-3">
+            <h3 className="text-2xl font-black text-slate-700 mb-3">
               {infoModal.title}
             </h3>
             <p className="text-slate-500 font-medium leading-relaxed mb-8 text-sm">
@@ -1204,8 +1151,8 @@ const Home = () => {
             </p>
             <button
               onClick={() => setInfoModal(null)}
-              className="w-full text-white font-bold py-4 rounded-[1.2rem] transition-colors hover:opacity-90"
-              style={{ backgroundColor: primary }}
+              className="w-full text-white font-bold py-4 rounded-full transition-all active:scale-[0.97]"
+              style={clayPrimaryBtn(primary)}
             >
               הבנתי, תודה!
             </button>
@@ -1216,43 +1163,38 @@ const Home = () => {
       {/* Table Mates Modal */}
       {showMatesModal && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in"
+          className="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center p-4 animate-in fade-in"
           onClick={() => setShowMatesModal(false)}
           role="dialog"
           aria-modal="true"
           aria-label="השותפים לשולחן"
         >
           <div
-            className="bg-white rounded-[2.5rem] p-8 w-full max-w-sm text-center shadow-2xl relative animate-in zoom-in-95 max-h-[80vh] flex flex-col"
+            className="rounded-[2.5rem] p-8 w-full max-w-sm text-center relative animate-in zoom-in-95 max-h-[80vh] flex flex-col bg-[#f0eee7] shadow-[14px_14px_34px_rgba(0,0,0,0.18),-10px_-10px_26px_rgba(255,255,255,0.9)]"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setShowMatesModal(false)}
-              className="absolute top-4 right-4 text-slate-400 bg-slate-50 hover:bg-slate-100 p-2 rounded-full transition-colors z-10"
+              className="absolute top-4 right-4 text-slate-400 p-2.5 rounded-full bg-[#f0eee7] shadow-[3px_3px_7px_rgba(0,0,0,0.09),-3px_-3px_7px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)] transition-all z-10"
               aria-label="סגור"
             >
               <X size={20} />
             </button>
             <div
-              className="w-20 h-20 rounded-[1.5rem] flex items-center justify-center mx-auto mb-4"
-              style={{ backgroundColor: `${primary}18` }}
+              className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 bg-[#f0eee7] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.1),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]"
             >
               <Users size={36} style={{ color: primary }} />
             </div>
-            <h3 className="text-2xl font-black text-slate-800 mb-1">
+            <h3 className="text-2xl font-black text-slate-700 mb-1">
               השותפים לשולחן
             </h3>
             <p className="text-slate-400 font-bold mb-6 text-sm">
               שולחן מספר {myTable?.number}
             </p>
-            <div className="overflow-y-auto bg-slate-50 rounded-[1.5rem] p-5 text-right border border-slate-100 flex-1">
+            <div className={`overflow-y-auto rounded-[1.8rem] p-5 text-right flex-1 ${CLAY_INSET}`}>
               {loadingMates ? (
                 <div className="flex justify-center py-6">
-                  <Loader2
-                    className="animate-spin"
-                    size={28}
-                    style={{ color: primary }}
-                  />
+                  <Loader2 className="animate-spin" size={28} style={{ color: primary }} />
                 </div>
               ) : tableMates.length > 0 ? (
                 <ul className="space-y-3">
@@ -1279,8 +1221,8 @@ const Home = () => {
             </div>
             <button
               onClick={() => setShowMatesModal(false)}
-              className="w-full mt-4 text-white font-bold py-4 rounded-[1.2rem] transition-colors hover:opacity-90"
-              style={{ backgroundColor: primary }}
+              className="w-full mt-4 text-white font-bold py-4 rounded-full transition-all active:scale-[0.97]"
+              style={clayPrimaryBtn(primary)}
             >
               סגור
             </button>
