@@ -275,7 +275,7 @@ const Dating = () => {
         .from("dating-profiles")
         .upload(fileName, compressed, {
           contentType: "image/jpeg",
-          upsert: true,
+          upsert: false,
         });
       const {
         data: { publicUrl },

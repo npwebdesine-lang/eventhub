@@ -199,7 +199,7 @@ const Icebreaker = () => {
         .from("icebreaker-uploads")
         .upload(fileName, compressed, {
           contentType: "image/jpeg",
-          upsert: true,
+          upsert: false,
         });
       const {
         data: { publicUrl },
