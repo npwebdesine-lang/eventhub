@@ -30,8 +30,7 @@ import { useModalBehavior } from "../components/Modal";
    (#eeece5 / #e4e0d5) are carved in with inset shadows.
    ------------------------------------------------------------ */
 const CLAY_BG = "#eceadf";
-const CLAY_PAGE_BG =
-  "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)";
+const CLAY_PAGE_BG = "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)";
 const CLAY =
   "bg-[#f0eee7] shadow-[8px_8px_20px_rgba(0,0,0,0.09),-8px_-8px_20px_rgba(255,255,255,0.9)]";
 const CLAY_INSET =
@@ -605,7 +604,9 @@ const Invite = () => {
                 </div>
               )}
             </div>
-            <div className={`fade-up-item mt-8 p-6 rounded-[2.25rem] relative z-30 ${CLAY}`}>
+            <div
+              className={`fade-up-item mt-8 p-6 rounded-[2.25rem] relative z-30 ${CLAY}`}
+            >
               <ActionButtons
                 theme="light"
                 active_modules={active_modules}
@@ -735,9 +736,7 @@ const Invite = () => {
               </div>
             </div>
           ) : (
-            <div
-              className={`fade-up-item mb-12 p-6 rounded-[2.25rem] ${CLAY}`}
-            >
+            <div className={`fade-up-item mb-12 p-6 rounded-[2.25rem] ${CLAY}`}>
               <Sparkles
                 className="mx-auto mb-3 text-yellow-400 animate-pulse"
                 size={48}

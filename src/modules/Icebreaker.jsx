@@ -25,8 +25,7 @@ import gsap from "gsap";
    SOFT-CLAY / NEUMORPHISM DESIGN TOKENS  (shared across modules)
    ------------------------------------------------------------ */
 const CLAY_BG = "#eceadf";
-const CLAY_PAGE_BG =
-  "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)";
+const CLAY_PAGE_BG = "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)";
 const clayBtn = (color) => ({
   backgroundColor: color,
   boxShadow: `5px 5px 14px rgba(0,0,0,0.14), -4px -4px 12px rgba(255,255,255,0.7), inset 2px 2px 4px rgba(255,255,255,0.35), inset -2px -2px 4px rgba(0,0,0,0.12)`,
@@ -448,13 +447,17 @@ const Icebreaker = () => {
           >
             <Zap size={48} />
           </div>
-          <h1 className="text-4xl font-black mb-2 text-slate-700">IceBreaker</h1>
+          <h1 className="text-4xl font-black mb-2 text-slate-700">
+            IceBreaker
+          </h1>
           <p className="text-slate-500 font-medium mb-8 text-sm leading-relaxed">
             מצאו אנשים, בצעו משימות מצחיקות, ותעדו הכל.
           </p>
 
           <div className={`p-8 rounded-[2.5rem] ${clayRaised}`}>
-            <h2 className="text-lg font-bold mb-2 text-slate-700">תמונת זיהוי</h2>
+            <h2 className="text-lg font-bold mb-2 text-slate-700">
+              תמונת זיהוי
+            </h2>
             <p className="text-slate-400 text-sm mb-5">כדי שימצאו אתכם בקלות</p>
             <label className="relative cursor-pointer inline-block group mb-6">
               <div
@@ -462,13 +465,20 @@ const Icebreaker = () => {
                 style={{ boxShadow: clayInsetShadow }}
               >
                 {photoUrl ? (
-                  <img src={photoUrl} className="w-full h-full object-cover rounded-full" alt="profile" />
+                  <img
+                    src={photoUrl}
+                    className="w-full h-full object-cover rounded-full"
+                    alt="profile"
+                  />
                 ) : (
                   <Camera size={36} className="text-slate-300" />
                 )}
                 {uploading && (
                   <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-full">
-                    <Loader2 className="animate-spin" style={{ color: primaryColor }} />
+                    <Loader2
+                      className="animate-spin"
+                      style={{ color: primaryColor }}
+                    />
                   </div>
                 )}
               </div>
@@ -507,10 +517,7 @@ const Icebreaker = () => {
         style={{ background: CLAY_PAGE_BG }}
         dir="rtl"
       >
-        <div
-          ref={rouletteRef}
-          className={`p-12 rounded-[3rem] ${clayRaised}`}
-        >
+        <div ref={rouletteRef} className={`p-12 rounded-[3rem] ${clayRaised}`}>
           <Loader2
             className="animate-spin mx-auto mb-8"
             size={72}
@@ -572,14 +579,19 @@ const Icebreaker = () => {
           </h1>
 
           {/* Mission card */}
-          <div className={`p-8 rounded-[2.5rem] w-full max-w-md relative ${clayRaised}`}>
+          <div
+            className={`p-8 rounded-[2.5rem] w-full max-w-md relative ${clayRaised}`}
+          >
             <div
               className="absolute -top-5 right-6 w-12 h-12 rounded-full flex items-center justify-center text-white"
               style={clayBtn(primaryColor)}
             >
               <Target size={18} />
             </div>
-            <p className="text-[10px] font-bold uppercase tracking-widest mb-3 opacity-60" style={{ color: primaryColor }}>
+            <p
+              className="text-[10px] font-bold uppercase tracking-widest mb-3 opacity-60"
+              style={{ color: primaryColor }}
+            >
               פקודת מבצע
             </p>
             <p className="text-2xl font-black text-slate-700 leading-snug">
@@ -636,11 +648,16 @@ const Icebreaker = () => {
           <ChevronLeft size={22} />
         </button>
         <h1 className="text-2xl font-black flex items-center gap-2 text-slate-700">
-          IceBreaker <Zap size={18} style={{ fill: primaryColor, color: primaryColor }} />
+          IceBreaker{" "}
+          <Zap size={18} style={{ fill: primaryColor, color: primaryColor }} />
         </h1>
         <div className="w-11 h-11 rounded-[1rem] overflow-hidden bg-[#eeece5] shadow-[inset_2px_2px_5px_rgba(0,0,0,0.12),inset_-2px_-2px_5px_rgba(255,255,255,0.7)]">
           {myProfile?.photo_url ? (
-            <img src={myProfile.photo_url} className="w-full h-full object-cover" alt="avatar" />
+            <img
+              src={myProfile.photo_url}
+              className="w-full h-full object-cover"
+              alt="avatar"
+            />
           ) : (
             <User size={20} className="m-auto mt-2.5 text-slate-300" />
           )}
@@ -663,7 +680,9 @@ const Icebreaker = () => {
           >
             <Zap className="group-hover:animate-bounce" size={30} />
           </div>
-          <h2 className="text-2xl font-black text-slate-700">הגרל משימה חדשה</h2>
+          <h2 className="text-2xl font-black text-slate-700">
+            הגרל משימה חדשה
+          </h2>
           <p className="text-slate-400 font-medium mt-1 text-sm">
             לחצו כדי לקבל אתגר
           </p>
@@ -681,7 +700,9 @@ const Icebreaker = () => {
 
         <div className="space-y-5 pb-8">
           {feed.length === 0 ? (
-            <div className={`fade-up-item text-center py-14 rounded-[2rem] ${clayRaised}`}>
+            <div
+              className={`fade-up-item text-center py-14 rounded-[2rem] ${clayRaised}`}
+            >
               <ImagePlus size={40} className="mx-auto mb-4 text-slate-300" />
               <p className="text-slate-600 font-bold">הקיר ריק.</p>
               <p className="text-slate-400 text-sm mt-1">
@@ -697,9 +718,15 @@ const Icebreaker = () => {
                 {/* Mission text — debossed banner */}
                 <div
                   className="p-5 m-2 mb-0 rounded-[1.5rem]"
-                  style={{ backgroundColor: "#eeece5", boxShadow: clayInsetShadow }}
+                  style={{
+                    backgroundColor: "#eeece5",
+                    boxShadow: clayInsetShadow,
+                  }}
                 >
-                  <p className="text-[10px] font-bold uppercase tracking-widest mb-1 opacity-60" style={{ color: primaryColor }}>
+                  <p
+                    className="text-[10px] font-bold uppercase tracking-widest mb-1 opacity-60"
+                    style={{ color: primaryColor }}
+                  >
                     משימה שבוצעה:
                   </p>
                   <p className="text-base font-black text-slate-700 leading-snug">
@@ -715,7 +742,9 @@ const Icebreaker = () => {
                       className="w-full h-full object-cover rounded-[1.4rem]"
                       alt="Mission Proof"
                       loading="lazy"
-                      style={{ boxShadow: "inset 2px 2px 6px rgba(0,0,0,0.15)" }}
+                      style={{
+                        boxShadow: "inset 2px 2px 6px rgba(0,0,0,0.15)",
+                      }}
                     />
                   </div>
                 )}

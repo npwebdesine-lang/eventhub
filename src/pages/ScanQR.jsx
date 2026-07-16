@@ -143,7 +143,9 @@ const ScanQR = () => {
   return (
     <div
       className="min-h-screen flex flex-col font-sans"
-      style={{ background: "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)" }}
+      style={{
+        background: "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)",
+      }}
       dir="rtl"
     >
       <div className="pt-16 pb-12 px-6 relative z-10 text-center">

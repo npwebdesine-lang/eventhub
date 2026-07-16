@@ -29,8 +29,7 @@ const MESSAGES_LIMIT = 50;
    SOFT-CLAY / NEUMORPHISM DESIGN TOKENS  (shared across modules)
    ------------------------------------------------------------ */
 const CLAY_BG = "#eceadf";
-const CLAY_PAGE_BG =
-  "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)";
+const CLAY_PAGE_BG = "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)";
 const clayBtn = (color) => ({
   backgroundColor: color,
   boxShadow: `5px 5px 14px rgba(0,0,0,0.14), -4px -4px 12px rgba(255,255,255,0.7), inset 2px 2px 4px rgba(255,255,255,0.35), inset -2px -2px 4px rgba(0,0,0,0.12)`,

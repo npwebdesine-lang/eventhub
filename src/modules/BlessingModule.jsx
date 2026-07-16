@@ -22,8 +22,7 @@ import {
    SOFT-CLAY / NEUMORPHISM DESIGN TOKENS  (shared across modules)
    ------------------------------------------------------------ */
 const CLAY_BG = "#eceadf";
-const CLAY_PAGE_BG =
-  "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)";
+const CLAY_PAGE_BG = "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)";
 const clayBtn = (color) => ({
   backgroundColor: color,
   boxShadow: `5px 5px 14px rgba(0,0,0,0.14), -4px -4px 12px rgba(255,255,255,0.7), inset 2px 2px 4px rgba(255,255,255,0.35), inset -2px -2px 4px rgba(0,0,0,0.12)`,
@@ -255,9 +254,7 @@ const BlessingModule = () => {
                 animation: "bounce-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)",
               }}
             >
-              <div
-                className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 bg-[#f0eee7] shadow-[inset_5px_5px_11px_rgba(0,0,0,0.1),inset_-5px_-5px_11px_rgba(255,255,255,0.85)]"
-              >
+              <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 bg-[#f0eee7] shadow-[inset_5px_5px_11px_rgba(0,0,0,0.1),inset_-5px_-5px_11px_rgba(255,255,255,0.85)]">
                 <CheckCircle2 size={48} style={{ color: primaryColor }} />
               </div>
               <h3
@@ -302,7 +299,10 @@ const BlessingModule = () => {
               <form onSubmit={handleSubmit} className="space-y-5 text-right">
                 <div className="relative">
                   <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none z-10">
-                    <User size={18} style={{ color: primaryColor, opacity: 0.7 }} />
+                    <User
+                      size={18}
+                      style={{ color: primaryColor, opacity: 0.7 }}
+                    />
                   </div>
                   <input
                     type="text"
@@ -384,7 +384,9 @@ const BlessingModule = () => {
 
                 <button
                   type="submit"
-                  disabled={isSubmitting || !guestName.trim() || !message.trim()}
+                  disabled={
+                    isSubmitting || !guestName.trim() || !message.trim()
+                  }
                   className="w-full flex items-center justify-center gap-2 py-4 mt-6 rounded-full font-black text-lg transition-all active:scale-[0.97] disabled:cursor-not-allowed"
                   style={
                     isSubmitting || !guestName.trim() || !message.trim()

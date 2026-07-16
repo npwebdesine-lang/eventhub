@@ -31,8 +31,7 @@ const PAGE_SIZE = 12;
    SOFT-CLAY / NEUMORPHISM DESIGN TOKENS  (shared with Home.jsx)
    ------------------------------------------------------------ */
 const CLAY_BG = "#eceadf";
-const CLAY_PAGE_BG =
-  "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)";
+const CLAY_PAGE_BG = "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)";
 const CLAY =
   "rounded-[2.5rem] bg-[#f0eee7] shadow-[8px_8px_20px_rgba(0,0,0,0.09),-8px_-8px_20px_rgba(255,255,255,0.9)]";
 const CLAY_INSET =
@@ -417,7 +416,10 @@ const Photos = () => {
             >
               <div
                 className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-4"
-                style={{ boxShadow: "inset 2px 2px 5px rgba(255,255,255,0.5), inset -2px -2px 5px rgba(0,0,0,0.1)" }}
+                style={{
+                  boxShadow:
+                    "inset 2px 2px 5px rgba(255,255,255,0.5), inset -2px -2px 5px rgba(0,0,0,0.1)",
+                }}
               >
                 <CheckCircle2 size={40} className="text-emerald-500" />
               </div>
@@ -433,9 +435,7 @@ const Photos = () => {
             </div>
           ) : (
             <>
-              <div
-                className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5 bg-[#f0eee7] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.09),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]"
-              >
+              <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5 bg-[#f0eee7] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.09),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]">
                 <UploadCloud size={32} style={{ color: primaryColor }} />
               </div>
               <h2
@@ -461,7 +461,9 @@ const Photos = () => {
 
               {/* Progress bar — debossed track with filled pill */}
               {uploading && (
-                <div className={`w-full rounded-full h-4 mb-5 overflow-hidden p-0.5 ${CLAY_INSET}`}>
+                <div
+                  className={`w-full rounded-full h-4 mb-5 overflow-hidden p-0.5 ${CLAY_INSET}`}
+                >
                   <div
                     className="h-full rounded-full transition-all duration-500"
                     style={{
@@ -514,7 +516,11 @@ const Photos = () => {
             >
               האלבום המשותף
             </h3>
-            <Sparkles size={18} style={{ color: primaryColor }} className="animate-pulse" />
+            <Sparkles
+              size={18}
+              style={{ color: primaryColor }}
+              className="animate-pulse"
+            />
             {photos.length > 0 && (
               <span
                 className="text-white font-black text-sm px-3 py-1.5 rounded-full"
@@ -566,7 +572,11 @@ const Photos = () => {
                     <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                       <div className="flex items-center justify-between mb-1">
                         <p className="text-white text-sm font-black truncate flex items-center gap-1.5">
-                          <Heart size={12} className="fill-current" style={{ color: primaryColor }} />
+                          <Heart
+                            size={12}
+                            className="fill-current"
+                            style={{ color: primaryColor }}
+                          />
                           {photo.guest_name}
                         </p>
                         <ZoomIn size={14} className="text-white/80" />
@@ -654,7 +664,10 @@ const Photos = () => {
                 }}
                 aria-label="התמונה הקודמת"
               >
-                <ChevRight size={32} className="group-hover:scale-125 transition-transform" />
+                <ChevRight
+                  size={32}
+                  className="group-hover:scale-125 transition-transform"
+                />
               </button>
             )}
 
@@ -674,7 +687,10 @@ const Photos = () => {
                 }}
                 aria-label="התמונה הבאה"
               >
-                <ChevronLeft size={32} className="group-hover:scale-125 transition-transform" />
+                <ChevronLeft
+                  size={32}
+                  className="group-hover:scale-125 transition-transform"
+                />
               </button>
             )}
           </div>

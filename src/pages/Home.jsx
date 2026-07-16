@@ -83,8 +83,7 @@ const getGreeting = () => {
    Wells (#eeece5) are carved into the surface with inset shadows.
    ------------------------------------------------------------ */
 const CLAY_BG = "#eceadf"; // page base — matches design's inner-screen gradient start
-const CLAY_PAGE_BG =
-  "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)"; // full-viewport backdrop
+const CLAY_PAGE_BG = "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)"; // full-viewport backdrop
 const CLAY_CHIP_BG = "#e9e6dc"; // small identifier pills (badges, "1A" chip, etc.)
 // Extruded (cards, buttons) — pops OUT of the surface
 const CLAY =
@@ -177,10 +176,7 @@ const PhotoMarqueeCard = ({
 
       {/* Bottom */}
       <div className="p-6 text-center">
-        <h3
-          className="font-black text-lg mb-1"
-          style={{ color: primaryColor }}
-        >
+        <h3 className="font-black text-lg mb-1" style={{ color: primaryColor }}>
           כל אחד צלם
         </h3>
         <p className="text-slate-500 text-sm mb-5 font-medium">
@@ -210,7 +206,9 @@ const ActionModuleCard = ({
   if (!info) return null;
 
   return (
-    <div className={`${CLAY} p-5 flex flex-col items-center text-center h-full group`}>
+    <div
+      className={`${CLAY} p-5 flex flex-col items-center text-center h-full group`}
+    >
       <button
         onClick={(e) => openInfo(e, mKey)}
         className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 z-10 p-2 rounded-full bg-[#f0eee7] shadow-[2px_2px_6px_rgba(0,0,0,0.08),-2px_-2px_6px_rgba(255,255,255,0.9)] transition-all"
@@ -233,7 +231,10 @@ const ActionModuleCard = ({
         <info.icon size={26} className={info.color} />
       </div>
 
-      <h3 className="font-black text-slate-700 leading-tight mb-1.5" style={{ fontSize: "1.1rem" }}>
+      <h3
+        className="font-black text-slate-700 leading-tight mb-1.5"
+        style={{ fontSize: "1.1rem" }}
+      >
         {info.title}
       </h3>
       <p className="text-slate-500 text-xs leading-relaxed line-clamp-3 mb-4 flex-1 font-medium">
@@ -253,7 +254,9 @@ const ActionModuleCard = ({
 
 // ---- Rideshare Card (2 role buttons) ----
 const RideshareHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
-  <div className={`${CLAY} p-5 flex flex-col items-center text-center h-full group`}>
+  <div
+    className={`${CLAY} p-5 flex flex-col items-center text-center h-full group`}
+  >
     <button
       onClick={(e) => openInfo(e, "rideshare")}
       className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 z-10 p-2 rounded-full bg-[#f0eee7] shadow-[2px_2px_6px_rgba(0,0,0,0.08),-2px_-2px_6px_rgba(255,255,255,0.9)] transition-all"
@@ -269,7 +272,10 @@ const RideshareHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
       <Car size={26} className="text-amber-500" />
     </div>
 
-    <h3 className="font-black text-slate-700 mb-1.5" style={{ fontSize: "1.1rem" }}>
+    <h3
+      className="font-black text-slate-700 mb-1.5"
+      style={{ fontSize: "1.1rem" }}
+    >
       לוח טרמפים
     </h3>
     <p className="text-slate-500 text-xs mb-4 leading-relaxed flex-1 line-clamp-3 font-medium">
@@ -297,7 +303,9 @@ const RideshareHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
 
 // ---- Blessings Card ----
 const BlessingsHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
-  <div className={`${CLAY} p-5 flex flex-col items-center text-center h-full group`}>
+  <div
+    className={`${CLAY} p-5 flex flex-col items-center text-center h-full group`}
+  >
     <button
       onClick={(e) => openInfo(e, "blessings")}
       className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 z-10 p-2 rounded-full bg-[#f0eee7] shadow-[2px_2px_6px_rgba(0,0,0,0.08),-2px_-2px_6px_rgba(255,255,255,0.9)] transition-all"
@@ -313,7 +321,10 @@ const BlessingsHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
       <MessageCircle size={28} className="text-purple-500" />
     </div>
 
-    <h3 className="font-black text-slate-700 mb-1.5" style={{ fontSize: "1.1rem" }}>
+    <h3
+      className="font-black text-slate-700 mb-1.5"
+      style={{ fontSize: "1.1rem" }}
+    >
       ספר ברכות
     </h3>
     <p className="text-slate-500 text-xs mb-5 leading-relaxed font-medium flex-1">
@@ -452,11 +463,20 @@ const BlessingsStrip = ({ eventId, primaryColor }) => {
       className={`overflow-hidden rounded-full py-3.5 mb-4 flex items-center ${CLAY_INSET}`}
     >
       <div className="overflow-hidden flex-1">
-        <div ref={trackRef} className="flex whitespace-nowrap will-change-transform">
-          <span className="text-sm font-bold px-4" style={{ color: primaryColor }}>
+        <div
+          ref={trackRef}
+          className="flex whitespace-nowrap will-change-transform"
+        >
+          <span
+            className="text-sm font-bold px-4"
+            style={{ color: primaryColor }}
+          >
             {text}
           </span>
-          <span className="text-sm font-bold px-4" style={{ color: primaryColor }}>
+          <span
+            className="text-sm font-bold px-4"
+            style={{ color: primaryColor }}
+          >
             {text}
           </span>
         </div>
@@ -768,9 +788,7 @@ const Home = () => {
             animation: "bounce-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)",
           }}
         >
-          <div
-            className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5 bg-[#f0eee7] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.1),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]"
-          >
+          <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5 bg-[#f0eee7] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.1),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]">
             <PartyPopper style={{ color: primary }} size={32} />
           </div>
           <h1 className="text-3xl font-black text-slate-700 mb-1">
@@ -817,11 +835,19 @@ const Home = () => {
                 className="text-xs font-medium text-slate-500 leading-tight"
               >
                 אני מסכים/ה ל
-                <a href="/terms" target="_blank" className="underline font-bold">
+                <a
+                  href="/terms"
+                  target="_blank"
+                  className="underline font-bold"
+                >
                   תנאי השימוש
                 </a>{" "}
                 ול
-                <a href="/privacy" target="_blank" className="underline font-bold">
+                <a
+                  href="/privacy"
+                  target="_blank"
+                  className="underline font-bold"
+                >
                   מדיניות הפרטיות
                 </a>{" "}
                 של Eventick, ומאשר/ת את הצגת שמי ותמונותיי לשאר אורחי האירוע.
@@ -879,7 +905,10 @@ const Home = () => {
             <button
               onClick={handleChangeName}
               className="shrink-0 w-14 h-14 rounded-full flex items-center justify-center text-white font-black text-xl bg-[#f0eee7] shadow-[6px_6px_14px_rgba(0,0,0,0.1),-5px_-5px_12px_rgba(255,255,255,0.9)] active:scale-95 transition-transform"
-              style={{ backgroundColor: primary, boxShadow: `6px 6px 14px rgba(0,0,0,0.12), -5px -5px 12px rgba(255,255,255,0.85), ${clayIconDiscShadow}` }}
+              style={{
+                backgroundColor: primary,
+                boxShadow: `6px 6px 14px rgba(0,0,0,0.12), -5px -5px 12px rgba(255,255,255,0.85), ${clayIconDiscShadow}`,
+              }}
               aria-label="החלף משתמש"
               title="החלף משתמש"
             >
@@ -959,14 +988,16 @@ const Home = () => {
 
               {myTable === null ? (
                 <div className="flex justify-center py-6">
-                  <Loader2 className="animate-spin" size={32} style={{ color: primary }} />
+                  <Loader2
+                    className="animate-spin"
+                    size={32}
+                    style={{ color: primary }}
+                  />
                 </div>
               ) : myTable.found ? (
                 <div className="flex items-center justify-between gap-5 relative z-10">
                   <div className="flex flex-col items-center">
-                    <div
-                      className="w-16 h-16 rounded-full flex items-center justify-center mb-3 bg-[#f0eee7] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.09),inset_-4px_-4px_9px_rgba(255,255,255,0.85)] group-hover:scale-110 transition-transform"
-                    >
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center mb-3 bg-[#f0eee7] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.09),inset_-4px_-4px_9px_rgba(255,255,255,0.85)] group-hover:scale-110 transition-transform">
                       <MapPin size={28} style={{ color: primary }} />
                     </div>
                     <p className="text-slate-500 font-bold text-xs mb-1 uppercase tracking-wider">
@@ -1042,7 +1073,10 @@ const Home = () => {
                 }}
               >
                 {active_modules.dating && (
-                  <div className="snap-start shrink-0" style={{ width: "calc(50% - 6px)" }}>
+                  <div
+                    className="snap-start shrink-0"
+                    style={{ width: "calc(50% - 6px)" }}
+                  >
                     <ActionModuleCard
                       mKey="dating"
                       primaryColor={primary}
@@ -1053,7 +1087,10 @@ const Home = () => {
                   </div>
                 )}
                 {active_modules.icebreaker && (
-                  <div className="snap-start shrink-0" style={{ width: "calc(50% - 6px)" }}>
+                  <div
+                    className="snap-start shrink-0"
+                    style={{ width: "calc(50% - 6px)" }}
+                  >
                     <ActionModuleCard
                       mKey="icebreaker"
                       primaryColor={primary}
@@ -1063,7 +1100,10 @@ const Home = () => {
                   </div>
                 )}
                 {active_modules.rideshare && (
-                  <div className="snap-start shrink-0" style={{ width: "calc(50% - 6px)" }}>
+                  <div
+                    className="snap-start shrink-0"
+                    style={{ width: "calc(50% - 6px)" }}
+                  >
                     <RideshareHomeCard
                       primaryColor={primary}
                       eventId={id}
@@ -1073,7 +1113,10 @@ const Home = () => {
                   </div>
                 )}
                 {active_modules.blessings && (
-                  <div className="snap-start shrink-0" style={{ width: "calc(50% - 6px)" }}>
+                  <div
+                    className="snap-start shrink-0"
+                    style={{ width: "calc(50% - 6px)" }}
+                  >
                     <BlessingsHomeCard
                       primaryColor={primary}
                       eventId={id}
@@ -1180,9 +1223,7 @@ const Home = () => {
             >
               <X size={20} />
             </button>
-            <div
-              className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 bg-[#f0eee7] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.1),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]"
-            >
+            <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 bg-[#f0eee7] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.1),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]">
               <Users size={36} style={{ color: primary }} />
             </div>
             <h3 className="text-2xl font-black text-slate-700 mb-1">
@@ -1191,10 +1232,16 @@ const Home = () => {
             <p className="text-slate-400 font-bold mb-6 text-sm">
               שולחן מספר {myTable?.number}
             </p>
-            <div className={`overflow-y-auto rounded-[1.8rem] p-5 text-right flex-1 ${CLAY_INSET}`}>
+            <div
+              className={`overflow-y-auto rounded-[1.8rem] p-5 text-right flex-1 ${CLAY_INSET}`}
+            >
               {loadingMates ? (
                 <div className="flex justify-center py-6">
-                  <Loader2 className="animate-spin" size={28} style={{ color: primary }} />
+                  <Loader2
+                    className="animate-spin"
+                    size={28}
+                    style={{ color: primary }}
+                  />
                 </div>
               ) : tableMates.length > 0 ? (
                 <ul className="space-y-3">

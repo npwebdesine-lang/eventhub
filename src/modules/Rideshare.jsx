@@ -24,8 +24,7 @@ const formatDialer = (phone) => `tel:${phone.replace(/\D/g, "")}`;
    SOFT-CLAY / NEUMORPHISM DESIGN TOKENS  (shared across modules)
    ------------------------------------------------------------ */
 const CLAY_BG = "#eceadf";
-const CLAY_PAGE_BG =
-  "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)";
+const CLAY_PAGE_BG = "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)";
 const CLAY =
   "rounded-[2rem] bg-[#f0eee7] shadow-[8px_8px_20px_rgba(0,0,0,0.09),-8px_-8px_20px_rgba(255,255,255,0.9)]";
 const CLAY_INSET =
@@ -315,12 +314,12 @@ const Rideshare = () => {
         </button>
 
         <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full text-center">
-          <div
-            className="w-24 h-24 rounded-[2rem] flex items-center justify-center mx-auto mb-6 bg-[#f0eee7] shadow-[10px_10px_24px_rgba(0,0,0,0.1),-9px_-9px_22px_rgba(255,255,255,0.9)]"
-          >
+          <div className="w-24 h-24 rounded-[2rem] flex items-center justify-center mx-auto mb-6 bg-[#f0eee7] shadow-[10px_10px_24px_rgba(0,0,0,0.1),-9px_-9px_22px_rgba(255,255,255,0.9)]">
             <Car size={40} style={{ color: primaryColor }} />
           </div>
-          <h1 className="text-3xl font-black text-slate-700 mb-2">לוח טרמפים</h1>
+          <h1 className="text-3xl font-black text-slate-700 mb-2">
+            לוח טרמפים
+          </h1>
           <p className="text-slate-400 font-medium mb-10 text-sm">
             שתפו נסיעות — יחד זה יותר כיף
           </p>
@@ -529,7 +528,9 @@ const Rideshare = () => {
 
           {/* Locations */}
           {formData.direction && (
-            <div className={`fade-up-item ${CLAY} p-6 space-y-4 animate-in slide-in-from-top-2`}>
+            <div
+              className={`fade-up-item ${CLAY} p-6 space-y-4 animate-in slide-in-from-top-2`}
+            >
               <h3 className="font-bold text-slate-600 text-sm">
                 מאיפה / לאיפה?
               </h3>
@@ -629,7 +630,11 @@ const Rideshare = () => {
 
           <div className="space-y-4 text-right mb-8">
             {matches.map((match) => (
-              <RideCard key={match.id} ride={match} primaryColor={primaryColor} />
+              <RideCard
+                key={match.id}
+                ride={match}
+                primaryColor={primaryColor}
+              />
             ))}
           </div>
         </div>
