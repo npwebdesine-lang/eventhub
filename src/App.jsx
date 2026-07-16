@@ -14,6 +14,7 @@ const Admin = React.lazy(() => import("./pages/Admin"));
 const Album = React.lazy(() => import("./pages/Album"));
 const Privacy = React.lazy(() => import("./pages/Privacy"));
 const Terms = React.lazy(() => import("./pages/Terms"));
+const RsvpAction = React.lazy(() => import("./pages/RsvpAction"));
 
 // ייבוא המודולים באופן עצל
 const Photos = React.lazy(() => import("./modules/Photos"));
@@ -67,6 +68,15 @@ function App() {
               element={
                 <ErrorBoundary>
                   <Album />
+                </ErrorBoundary>
+              }
+            />
+            {/* קישור קסם לאישור/ביטול הגעה מוואטסאפ */}
+            <Route
+              path="/rsvp-action"
+              element={
+                <ErrorBoundary>
+                  <RsvpAction />
                 </ErrorBoundary>
               }
             />
