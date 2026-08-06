@@ -2,7 +2,9 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import { sanitize } from "../utils/sanitize";
 import { useModalBehavior } from "../components/Modal";
+import { useToast } from "../components/Toast";
 import GuestListManager from "../components/GuestListManager";
+import { parseSeatingFile, isValidSeatingRow } from "../lib/seatingImport";
 import {
   Settings,
   Plus,
@@ -95,8 +97,16 @@ const Admin = () => {
   const [copiedEventId, setCopiedEventId] = useState(null);
   const [copiedInviteId, setCopiedInviteId] = useState(null);
 
+  const { showToast } = useToast();
+  const seatingFileInputRef = useRef(null);
   const [isSeatingModalOpen, setIsSeatingModalOpen] = useState(false);
   const [seatingText, setSeatingText] = useState("");
+  // ייבוא מקובץ: preview הוא מצב הביניים בין פענוח לשמירה.
+  const [seatingPreview, setSeatingPreview] = useState(null);
+  const [seatingFileName, setSeatingFileName] = useState("");
+  const [seatingParsing, setSeatingParsing] = useState(false);
+  const [seatingDragOver, setSeatingDragOver] = useState(false);
+  const [seatingImporting, setSeatingImporting] = useState(false);
   const [seatingLoading, setSeatingLoading] = useState(false);
   const [savedGuestsCount, setSavedGuestsCount] = useState(0);
   const [seatingGuests, setSeatingGuests] = useState([]);
@@ -546,6 +556,96 @@ const Admin = () => {
       setSeatingLoading(false);
     }
   };
+  // --- ייבוא הושבה מקובץ (xlsx / csv / Google Sheets) ---
+  const resetSeatingImport = () => {
+    setSeatingPreview(null);
+    setSeatingFileName("");
+    setSeatingParsing(false);
+  };
+
+  const handleSeatingFile = async (file) => {
+    if (!file) return;
+    if (!/\.(xlsx|xls|csv)$/i.test(file.name)) {
+      showToast("קובץ לא נתמך — יש להעלות xlsx או csv", "warning");
+      return;
+    }
+    setSeatingParsing(true);
+    setSeatingFileName(file.name);
+    try {
+      const result = await parseSeatingFile(file);
+      if (result.rows.length === 0) {
+        showToast("לא נמצאו שורות בקובץ", "warning");
+        resetSeatingImport();
+        return;
+      }
+      setSeatingPreview(result);
+    } catch (error) {
+      console.error(error);
+      showToast("לא הצלחנו לקרוא את הקובץ", "error");
+      resetSeatingImport();
+    } finally {
+      setSeatingParsing(false);
+    }
+  };
+
+  // אין unique constraint על (event_id, guest_name) — ובכוונה, כי שני אורחים
+  // באותו שם הם מצב תקין. לכן במקום upsert: שם שכבר קיים מתעדכן, שם חדש נוסף.
+  // כך ייבוא חוזר של אותו קובץ לא מכפיל את הרשימה.
+  const confirmSeatingImport = async () => {
+    if (!seatingPreview) return;
+    const valid = seatingPreview.rows.filter(isValidSeatingRow);
+    if (valid.length === 0) {
+      showToast("אין שורות תקינות לייבוא", "warning");
+      return;
+    }
+    setSeatingImporting(true);
+    try {
+      const existingByName = new Map(
+        seatingGuests.map((g) => [g.guest_name.trim(), g]),
+      );
+      const toUpdate = [];
+      const toInsert = [];
+      valid.forEach((row) => {
+        const existing = existingByName.get(row.name);
+        if (existing) {
+          if (existing.table_number !== row.tableNumber) {
+            toUpdate.push({ id: existing.id, table_number: row.tableNumber });
+          }
+        } else {
+          toInsert.push({
+            event_id: selectedEvent.id,
+            guest_name: row.name,
+            table_number: row.tableNumber,
+          });
+        }
+      });
+
+      if (toInsert.length > 0) {
+        const { error } = await supabase.from("seating").insert(toInsert);
+        if (error) throw error;
+      }
+      for (const row of toUpdate) {
+        const { error } = await supabase
+          .from("seating")
+          .update({ table_number: row.table_number })
+          .eq("id", row.id);
+        if (error) throw error;
+      }
+
+      resetSeatingImport();
+      await openSeatingManager();
+      showToast(
+        `יובאו ${toInsert.length} אורחים חדשים, עודכנו ${toUpdate.length}`,
+        "success",
+      );
+    } catch (error) {
+      console.error(error);
+      showToast("הייבוא נכשל", "error");
+    } finally {
+      setSeatingImporting(false);
+    }
+  };
+
   const handleDeleteGuest = async (guestId, name) => {
     if (!window.confirm(`למחוק את ${name}?`)) return;
     try {
@@ -2236,13 +2336,186 @@ const Admin = () => {
                 <X size={28} />
               </button>
             </div>
-            <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+            {seatingPreview ? (
+              /* --- שלב התצוגה המקדימה: מחליף את אזור ההעלאה עד אישור/ביטול --- */
+              <div className="flex flex-1 flex-col overflow-hidden bg-[#f0eee7]">
+                <div className="shrink-0 border-b border-[#e4e0d5] p-6 md:px-8">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-lg font-black text-slate-800">
+                        תצוגה מקדימה — {sanitize(seatingFileName)}
+                      </h3>
+                      <p className="mt-1 text-sm font-bold text-slate-500">
+                        {seatingPreview.rows.filter(isValidSeatingRow).length}{" "}
+                        שורות תקינות
+                        {seatingPreview.rows.length -
+                          seatingPreview.rows.filter(isValidSeatingRow)
+                            .length >
+                          0 && (
+                          <span className="text-rose-600">
+                            {" "}
+                            ·{" "}
+                            {seatingPreview.rows.length -
+                              seatingPreview.rows.filter(isValidSeatingRow)
+                                .length}{" "}
+                            ידולגו
+                          </span>
+                        )}
+                      </p>
+                      {!seatingPreview.headerDetected && (
+                        <p className="mt-1 text-xs font-bold text-amber-600">
+                          לא זוהו כותרות — העמודה הראשונה נקראה כשם והשנייה
+                          כמספר שולחן
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={resetSeatingImport}
+                        disabled={seatingImporting}
+                        className="rounded-2xl bg-[#f0eee7] px-5 py-3 font-bold text-slate-600 shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] transition-all active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1)] disabled:opacity-50"
+                      >
+                        ביטול
+                      </button>
+                      <button
+                        onClick={confirmSeatingImport}
+                        disabled={seatingImporting}
+                        className="flex items-center gap-2 rounded-2xl bg-emerald-500 px-5 py-3 font-black text-white transition-colors hover:bg-emerald-600 disabled:opacity-50"
+                      >
+                        {seatingImporting ? (
+                          <Loader2 size={18} className="animate-spin" />
+                        ) : (
+                          <Check size={18} />
+                        )}
+                        אישור ושמירה במערכת
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto bg-[#eeece5] p-6 md:p-8">
+                  <table className="w-full border-separate border-spacing-y-2 text-right">
+                    <thead>
+                      <tr className="text-xs font-bold text-slate-400">
+                        <th className="px-3 pb-1">#</th>
+                        <th className="px-3 pb-1">שם האורח</th>
+                        <th className="px-3 pb-1">מספר שולחן</th>
+                        <th className="px-3 pb-1">סטטוס</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {seatingPreview.rows.map((row) => {
+                        const invalid = !isValidSeatingRow(row);
+                        return (
+                          <tr
+                            key={row.rowNumber}
+                            className={
+                              invalid ? "bg-rose-50" : "bg-[#f0eee7]"
+                            }
+                          >
+                            <td className="rounded-r-2xl px-3 py-2.5 text-xs font-bold text-slate-400">
+                              {row.rowNumber}
+                            </td>
+                            <td
+                              className={`px-3 py-2.5 font-bold ${row.issues.includes("missing_name") ? "text-rose-500" : "text-slate-700"}`}
+                            >
+                              {row.name ? sanitize(row.name) : "— חסר שם —"}
+                            </td>
+                            <td
+                              className={`px-3 py-2.5 font-bold ${row.issues.includes("missing_table") ? "text-rose-500" : "text-slate-700"}`}
+                            >
+                              {row.tableNumber
+                                ? sanitize(row.tableNumber)
+                                : "— חסר שולחן —"}
+                            </td>
+                            <td className="rounded-l-2xl px-3 py-2.5 text-xs font-bold">
+                              {invalid ? (
+                                <span className="text-rose-600">ידולג</span>
+                              ) : (
+                                <span className="text-emerald-600">תקין</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
               <div className="w-full md:w-1/2 p-8 border-l border-[#e4e0d5] flex flex-col bg-[#f0eee7] shrink-0">
+                {/* אזור גרירה — נטען דינמית, ולכן אין עלות עד שגוררים קובץ */}
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setSeatingDragOver(true);
+                  }}
+                  onDragLeave={() => setSeatingDragOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setSeatingDragOver(false);
+                    handleSeatingFile(e.dataTransfer.files?.[0]);
+                  }}
+                  onClick={() => seatingFileInputRef.current?.click()}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      seatingFileInputRef.current?.click();
+                    }
+                  }}
+                  className={`mb-4 cursor-pointer rounded-2xl border-2 border-dashed p-6 text-center transition-all ${
+                    seatingDragOver
+                      ? "border-emerald-500 bg-emerald-50"
+                      : "border-[#dcd7ca] bg-[#eeece5] hover:border-emerald-300"
+                  }`}
+                >
+                  {seatingParsing ? (
+                    <Loader2
+                      className="mx-auto animate-spin text-emerald-500"
+                      size={28}
+                    />
+                  ) : (
+                    <UploadCloud
+                      className="mx-auto text-slate-400"
+                      size={28}
+                    />
+                  )}
+                  <p className="mt-2 text-sm font-black text-slate-700">
+                    {seatingParsing
+                      ? "קורא את הקובץ..."
+                      : "גררו לכאן קובץ Excel או CSV"}
+                  </p>
+                  <p className="mt-1 text-xs font-medium text-slate-400">
+                    או לחצו לבחירה · xlsx, csv · גם ייצוא מ-Google Sheets
+                  </p>
+                </div>
+                <input
+                  ref={seatingFileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls,.csv"
+                  className="hidden"
+                  onChange={(e) => {
+                    handleSeatingFile(e.target.files?.[0]);
+                    e.target.value = ""; // מאפשר לבחור שוב את אותו קובץ
+                  }}
+                />
+
+                <div className="mb-3 flex items-center gap-3">
+                  <div className="h-px flex-1 bg-[#dcd7ca]" />
+                  <span className="text-xs font-bold text-slate-400">
+                    או הדבקה ידנית
+                  </span>
+                  <div className="h-px flex-1 bg-[#dcd7ca]" />
+                </div>
+
                 <textarea
                   value={seatingText}
                   onChange={(e) => setSeatingText(e.target.value)}
                   placeholder="ישראל ישראלי 12&#10;שרה כהן - 5"
-                  className="w-full flex-1 p-4 bg-[#eeece5] border border-[#dcd7ca] rounded-2xl min-h-[200px]"
+                  className="w-full flex-1 p-4 bg-[#eeece5] border border-[#dcd7ca] rounded-2xl min-h-[140px]"
                 />
                 <button
                   onClick={handleSaveSeating}
@@ -2279,6 +2552,7 @@ const Admin = () => {
                 </div>
               </div>
             </div>
+            )}
           </div>
         </div>
       )}
