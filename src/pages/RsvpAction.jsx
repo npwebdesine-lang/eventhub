@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import gsap from "gsap";
 import { Check, Loader2, Minus, Plus, X } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import { DEFAULT_DIETARY, DIETARY_OPTIONS } from "../lib/dietary";
 import { isValidUUIDv4 } from "../utils/deviceId";
 import { sanitize } from "../utils/sanitize";
 import { useToast } from "../components/Toast";
@@ -43,6 +44,7 @@ const ERROR_COPY = {
   invalid_status: "הקישור אינו תקין.",
   invalid_guests_count: "מספר האורחים חייב להיות בין 0 ל-20.",
   invalid_notes: "ההערה ארוכה מדי.",
+  invalid_dietary: "העדפת התזונה אינה תקינה.",
   invalid_link: "הקישור אינו תקין.",
   network: "תקלה בחיבור, נסו שוב.",
 };
@@ -69,17 +71,21 @@ export default function RsvpAction() {
   const [saving, setSaving] = useState(false);
   const [guestsCount, setGuestsCount] = useState(1);
   const [notes, setNotes] = useState("");
+  const [dietary, setDietary] = useState(DEFAULT_DIETARY);
 
   const confettiRef = useRef(null);
   const countTimeoutRef = useRef(null);
 
   const respond = useCallback(
-    async ({ status, count, guestNotes }) => {
+    async ({ status, count, guestNotes, mealChoice }) => {
       const { data, error } = await supabase.rpc("rsvp_respond", {
         p_guest_id: guestId,
         p_status: status,
         p_guests_count: count ?? null,
         p_notes: guestNotes ?? null,
+        // null משאיר את הבחירה הקיימת (coalesce ב-RPC) — כך שעדכון כמות
+        // או הערה לא דורס את העדפת התזונה.
+        p_dietary: mealChoice ?? null,
       });
       if (error) throw error;
       // returns table(...) → מערך עם שורה אחת
@@ -100,6 +106,7 @@ export default function RsvpAction() {
         setResult(row);
         setGuestsCount(row?.guests_count ?? 1);
         setNotes(row?.notes ?? "");
+        setDietary(row?.dietary ?? DEFAULT_DIETARY);
       } catch (error) {
         if (!isMounted) return;
         setErrorCode(errorCodeFrom(error));
@@ -143,13 +150,17 @@ export default function RsvpAction() {
     return () => clearTimeout(countTimeoutRef.current);
   }, []);
 
+  // מחזיר את השורה שנשמרה, או null בכישלון, כדי שבחירה בדידה (תזונה)
+  // תוכל לחזור לערך הקודם במקום להישאר על מצב שלא נשמר.
   const persist = async (payload) => {
     setSaving(true);
     try {
       const row = await respond({ status: result.status, ...payload });
       setResult(row);
+      return row;
     } catch (error) {
       showToast(ERROR_COPY[errorCodeFrom(error)], "error");
+      return null;
     } finally {
       setSaving(false);
     }
@@ -170,6 +181,18 @@ export default function RsvpAction() {
   const saveNotes = () => {
     if ((result?.notes ?? "") === notes) return;
     persist({ count: guestsCount, guestNotes: notes });
+  };
+
+  const changeDietary = async (value) => {
+    if (value === dietary) return;
+    const previous = dietary;
+    setDietary(value); // אופטימי — הלחיצה מרגישה מיידית
+    const row = await persist({
+      count: guestsCount,
+      guestNotes: notes,
+      mealChoice: value,
+    });
+    if (!row) setDietary(previous);
   };
 
   const flipStatus = () => {
@@ -285,6 +308,38 @@ export default function RsvpAction() {
                 >
                   <Plus size={18} className="text-slate-600" />
                 </button>
+              </div>
+            </div>
+
+            <div className={`${CLAY_INSET} mb-5 rounded-3xl p-4`}>
+              <p className="mb-3 text-sm font-semibold text-slate-500">
+                העדפת תזונה
+              </p>
+              <div
+                role="group"
+                aria-label="העדפת תזונה"
+                className="flex flex-wrap justify-center gap-2"
+              >
+                {DIETARY_OPTIONS.map((option) => {
+                  const active = dietary === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => changeDietary(option.value)}
+                      disabled={saving}
+                      aria-pressed={active}
+                      className={`flex items-center gap-1.5 rounded-2xl bg-[var(--clay-surface)] px-3.5 py-2 text-sm font-semibold transition-all disabled:opacity-60 ${
+                        active
+                          ? `${CLAY_INSET} text-slate-800`
+                          : `${CLAY_BUTTON} text-slate-500`
+                      }`}
+                    >
+                      <span aria-hidden="true">{option.emoji}</span>
+                      {option.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

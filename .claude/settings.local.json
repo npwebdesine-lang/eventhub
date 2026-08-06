@@ -46,7 +46,19 @@
       "mcp__claude_ai_Vercel__get_deployment",
       "Bash(mkdir -p docs/superpowers/specs)",
       "Bash(npx vite *)",
-      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('vercel.json','utf8'\\)\\); console.log\\('vercel.json parses OK'\\)\")"
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('vercel.json','utf8'\\)\\); console.log\\('vercel.json parses OK'\\)\")",
+      "Bash(host eihsjrfncqhbmseldren.supabase.co)",
+      "Bash(nslookup eihsjrfncqhbmseldren.supabase.co 8.8.8.8)",
+      "Bash(curl -s -o /dev/null -w \"http=%{http_code} dns=%{time_namelookup}s\\\\n\" --max-time 15 https://eihsjrfncqhbmseldren.supabase.co/auth/v1/health)",
+      "mcp__claude_ai_Supabase__restore_project",
+      "mcp__claude_ai_Supabase__list_organizations",
+      "mcp__claude_ai_Supabase__pause_project",
+      "mcp__claude_ai_Supabase__get_project",
+      "Bash(git fetch *)",
+      "Bash(git ls-remote *)",
+      "Bash(node -e ' *)",
+      "Bash(node -e 'const fs=require\\(\"fs\"\\);const p=\"src/components/GuestListManager.jsx\";let s=fs.readFileSync\\(p,\"utf8\"\\);const esc=\"\\\\\"\" + \"\\\\\\\\\" + \"uFEFF\" + \"\\\\\"\";s=s.replace\\(/\"\\\\uFEFF\"/, esc\\);fs.writeFileSync\\(p,s\\);console.log\\(\"remaining literal U+FEFF chars:\",\\(s.match\\(/\\\\uFEFF/g\\)||[]\\).length\\);')",
+      "Bash(echo \"eslint_exit=$?\")"
     ]
   }
 }

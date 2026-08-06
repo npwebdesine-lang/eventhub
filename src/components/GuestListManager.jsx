@@ -10,6 +10,11 @@ import {
   X,
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
+import {
+  DEFAULT_DIETARY,
+  DIETARY_OPTIONS,
+  dietaryLabelOf,
+} from "../lib/dietary";
 import { sanitize } from "../utils/sanitize";
 import { useToast } from "./Toast";
 
@@ -95,6 +100,7 @@ export const parseGuestLines = (text) => {
   return { valid, invalid };
 };
 
+const CSV_BOM = "\uFEFF"; // אקסל מזהה UTF-8 רק לפי ה-BOM בתחילת הקובץ
 const csvCell = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
 
 export default function GuestListManager({ eventId, eventName, onClose }) {
@@ -114,7 +120,9 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
     try {
       const { data, error } = await supabase
         .from("event_guests")
-        .select("id, guest_name, phone, status, guests_count, notes, responded_at")
+        .select(
+          "id, guest_name, phone, status, guests_count, notes, dietary, responded_at",
+        )
         .eq("event_id", eventId)
         .order("created_at", { ascending: true });
       if (error) throw error;
@@ -199,6 +207,27 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
     }
   };
 
+  // בחירה בדידה — במקום fetchGuests מלא בכישלון, מחזירים את השורה לערך הקודם
+  // כדי שהטבלה לא תקפוץ ושאר העריכות הפתוחות לא יאבדו.
+  const saveDietary = async (guest, dietary) => {
+    const previous = guest.dietary || DEFAULT_DIETARY;
+    if (previous === dietary) return;
+    setGuests((prev) =>
+      prev.map((g) => (g.id === guest.id ? { ...g, dietary } : g)),
+    );
+    const { error } = await supabase
+      .from("event_guests")
+      .update({ dietary })
+      .eq("id", guest.id);
+    if (error) {
+      console.error(error);
+      showToast("העדפת התזונה לא נשמרה", "error");
+      setGuests((prev) =>
+        prev.map((g) => (g.id === guest.id ? { ...g, dietary: previous } : g)),
+      );
+    }
+  };
+
   const copyMessage = async (guest) => {
     try {
       await navigator.clipboard.writeText(buildRsvpMessage(guest, origin));
@@ -210,20 +239,29 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
 
   const exportToCSV = () => {
     if (filtered.length === 0) return;
-    const header = ["שם", "טלפון", "סטטוס", "כמות אורחים", "הערות"];
+    const header = [
+      "שם",
+      "טלפון",
+      "סטטוס",
+      "כמות אורחים",
+      "העדפת תזונה",
+      "הערות",
+    ];
     const rows = filtered.map((g) =>
       [
         g.guest_name,
         g.phone || "",
         STATUS_LABEL[g.status] || g.status,
         g.guests_count,
+        dietaryLabelOf(g.dietary),
         g.notes || "",
       ]
         .map(csvCell)
         .join(","),
     );
-    // ﻿ (BOM) — בלעדיו אקסל מציג עברית כג'יבריש.
-    const csv = `﻿${header.map(csvCell).join(",")}\n${rows.join("\n")}\n`;
+    // BOM — בלעדיו אקסל מציג עברית כג'יבריש. כתוב כ-escape ולא כתו
+    // ממשי כדי שלא ייעלם בעריכה או בפורמט אוטומטי.
+    const csv = `${CSV_BOM}${header.map(csvCell).join(",")}\n${rows.join("\n")}\n`;
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -351,13 +389,14 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] border-separate border-spacing-y-2 text-right">
+              <table className="w-full min-w-[860px] border-separate border-spacing-y-2 text-right">
                 <thead>
                   <tr className="text-xs font-bold text-slate-400">
                     <th className="px-3 pb-1">שם</th>
                     <th className="px-3 pb-1">טלפון</th>
                     <th className="px-3 pb-1">סטטוס</th>
                     <th className="px-3 pb-1">כמות</th>
+                    <th className="px-3 pb-1">העדפת תזונה</th>
                     <th className="px-3 pb-1">הערות</th>
                     <th className="px-3 pb-1">קישור קסם</th>
                   </tr>
@@ -384,6 +423,22 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                         </td>
                         <td className="px-3 py-3 font-bold text-slate-700">
                           {guest.guests_count}
+                        </td>
+                        <td className="px-3 py-3">
+                          <select
+                            value={guest.dietary || DEFAULT_DIETARY}
+                            onChange={(event) =>
+                              saveDietary(guest, event.target.value)
+                            }
+                            aria-label={`העדפת תזונה עבור ${guest.guest_name}`}
+                            className={`${CLAY_INSET} w-full rounded-xl bg-[#f0eee7] px-3 py-1.5 text-sm text-slate-600 focus:outline-none`}
+                          >
+                            {DIETARY_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.emoji} {option.label}
+                              </option>
+                            ))}
+                          </select>
                         </td>
                         <td className="px-3 py-3">
                           <input
