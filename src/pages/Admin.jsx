@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import { sanitize } from "../utils/sanitize";
 import { useModalBehavior } from "../components/Modal";
+import GuestListManager from "../components/GuestListManager";
 import {
   Settings,
   Plus,
@@ -127,6 +128,10 @@ const Admin = () => {
   const [editingRsvpId, setEditingRsvpId] = useState(null);
   const [editRsvpName, setEditRsvpName] = useState("");
 
+  // רשימת מוזמנים מראש + קישורי קסם (event_guests) — נפרד מ-rsvps, שבו
+  // האורח ממלא את פרטיו בעצמו.
+  const [isGuestListOpen, setIsGuestListOpen] = useState(false);
+
   // --- מרכז הדיווחים והמודרציה ---
   const [isReportsModalOpen, setIsReportsModalOpen] = useState(false);
   const [reportsList, setReportsList] = useState([]);
@@ -151,11 +156,13 @@ const Admin = () => {
     isIcebreakerUserManagerOpen ||
     isRideshareManagerOpen ||
     isRsvpManagerOpen ||
+    isGuestListOpen ||
     isReportsModalOpen ||
     isBlessingsManagerOpen;
   useModalBehavior({
     open: anyModalOpen,
     onClose: () => {
+      setIsGuestListOpen(false);
       setIsGalleryOpen(false);
       setIsSeatingModalOpen(false);
       setIsQrModalOpen(false);
@@ -1599,6 +1606,12 @@ const Admin = () => {
                         >
                           <Users size={18} /> ניהול אישורי הגעה
                         </button>
+                        <button
+                          onClick={() => setIsGuestListOpen(true)}
+                          className="w-full py-3 bg-[#f0eee7] border border-emerald-200 text-emerald-600 font-bold rounded-xl hover:bg-emerald-50 transition-colors flex justify-center items-center gap-2 shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)]"
+                        >
+                          <MessageCircle size={18} /> רשימת מוזמנים וקישורי קסם
+                        </button>
                       </div>
                     )}
                   </div>
@@ -2236,6 +2249,14 @@ const Admin = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {isGuestListOpen && selectedEvent && !selectedEvent.isNew && (
+        <GuestListManager
+          eventId={selectedEvent.id}
+          eventName={formData.name}
+          onClose={() => setIsGuestListOpen(false)}
+        />
       )}
 
       {/* --- שאר הפופאפים... --- */}

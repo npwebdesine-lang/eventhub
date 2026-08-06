@@ -33,7 +33,20 @@
       "Bash(perl -i -pe ' *)",
       "Bash(perl -i -pe \"s/'Playfair Display', serif/'Assistant', sans-serif/g\" src/pages/Home.jsx src/pages/Album.jsx src/modules/Photos.jsx src/modules/BlessingModule.jsx)",
       "Bash(git stash *)",
-      "mcp__claude_ai_Supabase__list_projects"
+      "mcp__claude_ai_Supabase__list_projects",
+      "mcp__claude_ai_Supabase__list_tables",
+      "mcp__claude_ai_Supabase__list_migrations",
+      "mcp__claude_ai_Supabase__get_logs",
+      "Bash(echo \"ESLINT_EXIT=$?\")",
+      "Bash(git merge *)",
+      "Bash(git push *)",
+      "mcp__claude_ai_Vercel__list_teams",
+      "mcp__claude_ai_Vercel__list_projects",
+      "mcp__claude_ai_Vercel__list_deployments",
+      "mcp__claude_ai_Vercel__get_deployment",
+      "Bash(mkdir -p docs/superpowers/specs)",
+      "Bash(npx vite *)",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('vercel.json','utf8'\\)\\); console.log\\('vercel.json parses OK'\\)\")"
     ]
   }
 }
