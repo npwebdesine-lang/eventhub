@@ -58,8 +58,11 @@ export const toWhatsAppPhone = (phone) => {
   return null;
 };
 
-export const buildRsvpMessage = (guest, origin) =>
-  `היי ${guest.guest_name}, מתרגשים לקראת האירוע! נשמח לאישור סופי. לאישור: ${origin}/rsvp-action?id=${guest.id}&status=confirmed | לביטול: ${origin}/rsvp-action?id=${guest.id}&status=canceled`;
+// הקישור מצביע על ההזמנה עצמה (/invite/:eventId) עם guest_id — האורח רואה את
+// האירוע ואת אישור ההגעה במקום אחד. עמוד /rsvp-action נשאר פעיל כדי שקישורים
+// שכבר נשלחו בוואטסאפ ימשיכו לעבוד.
+export const buildRsvpMessage = (guest, origin, eventId) =>
+  `היי ${guest.guest_name}, מתרגשים לקראת האירוע! נשמח לאישור סופי. לאישור: ${origin}/invite/${eventId}?guest_id=${guest.id}&status=confirmed | לביטול: ${origin}/invite/${eventId}?guest_id=${guest.id}&status=canceled`;
 
 // "שם, טלפון, כמות" בכל שורה. טלפון וכמות אופציונליים.
 export const parseGuestLines = (text) => {
@@ -230,7 +233,7 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
 
   const copyMessage = async (guest) => {
     try {
-      await navigator.clipboard.writeText(buildRsvpMessage(guest, origin));
+      await navigator.clipboard.writeText(buildRsvpMessage(guest, origin, eventId));
       showToast("ההודעה הועתקה", "success");
     } catch {
       showToast("לא ניתן להעתיק", "error");
@@ -455,7 +458,7 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                           {waPhone ? (
                             <a
                               href={`https://wa.me/${waPhone}?text=${encodeURIComponent(
-                                buildRsvpMessage(guest, origin),
+                                buildRsvpMessage(guest, origin, eventId),
                               )}`}
                               target="_blank"
                               rel="noopener noreferrer"

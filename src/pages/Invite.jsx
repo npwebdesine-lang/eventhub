@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { DEFAULT_DIETARY, DIETARY_OPTIONS } from "../lib/dietary";
+import { isValidUUIDv4 } from "../utils/deviceId";
 import {
   Loader2,
   CalendarHeart,
@@ -42,6 +44,44 @@ const clayBtn = (color) => ({
 const clayFieldCls =
   "w-full p-4 rounded-[1.4rem] outline-none font-bold text-slate-700 placeholder:text-slate-400 bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.07),inset_-4px_-4px_9px_rgba(255,255,255,0.85)] focus:shadow-[inset_5px_5px_11px_rgba(0,0,0,0.09),inset_-5px_-5px_11px_rgba(255,255,255,0.9)] transition-all";
 
+// שלב ייעודי ל"קישור קסם" (?guest_id=). 1-4 נשארים הזרימה העצמאית הקיימת.
+const RSVP_STEP_GUEST = 0;
+const MAGIC_STATUSES = ["confirmed", "canceled"];
+
+// בורר העדפת תזונה — משמש גם בכרטיס קישור הקסם וגם לכל אורח בזרימה העצמאית.
+// compact=true מקטין לשורת גלולות צרה שמתאימה מתחת לשדה שם.
+const DietaryPicker = ({ value, onChange, primaryColor, disabled, compact }) => (
+  <div
+    role="group"
+    aria-label="העדפת תזונה"
+    className={`flex flex-wrap gap-2 ${compact ? "" : "justify-center"}`}
+  >
+    {DIETARY_OPTIONS.map((option) => {
+      const active = (value || DEFAULT_DIETARY) === option.value;
+      return (
+        <button
+          key={option.value}
+          type="button"
+          disabled={disabled}
+          aria-pressed={active}
+          onClick={() => onChange(option.value)}
+          className={`flex items-center gap-1.5 rounded-full font-bold transition-all disabled:opacity-50 ${
+            compact ? "px-3 py-1.5 text-xs" : "px-4 py-2.5 text-sm"
+          } ${
+            active
+              ? "text-white active:scale-95"
+              : "text-slate-500 bg-[#eeece5] shadow-[inset_3px_3px_7px_rgba(0,0,0,0.07),inset_-3px_-3px_7px_rgba(255,255,255,0.85)]"
+          }`}
+          style={active ? clayBtn(primaryColor) : undefined}
+        >
+          <span aria-hidden="true">{option.emoji}</span>
+          {option.label}
+        </button>
+      );
+    })}
+  </div>
+);
+
 // כפתורי פעולה משותפים (Moved outside to prevent re-mounting)
 const ActionButtons = ({
   theme,
@@ -51,6 +91,7 @@ const ActionButtons = ({
   primaryColor,
   setShowRsvp,
   setRsvpStep,
+  initialRsvpStep = 1,
   navigate,
 }) => {
   const isLight = theme === "light";
@@ -63,7 +104,7 @@ const ActionButtons = ({
         <button
           onClick={() => {
             setShowRsvp(true);
-            setRsvpStep(1);
+            setRsvpStep(initialRsvpStep);
           }}
           className="w-full flex items-center justify-center gap-3 text-white font-black py-4 rounded-full text-lg active:scale-[0.97] transition-transform"
           style={clayBtn(primaryColor)}
@@ -110,6 +151,7 @@ const ActionButtons = ({
 
 const Invite = () => {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [eventData, setEventData] = useState(null);
@@ -131,6 +173,21 @@ const Invite = () => {
   const [submitterPhone, setSubmitterPhone] = useState("");
   const [duplicateWarnings, setDuplicateWarnings] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // העדפת תזונה לכל אורח בזרימה העצמאית — rsvps היא שורה לאורח,
+  // כך שהפילוח לקייטרינג הוא GROUP BY פשוט.
+  const [guestDietaries, setGuestDietaries] = useState([DEFAULT_DIETARY]);
+
+  // ----------------------------------------
+  // Magic link: /invite/:id?guest_id=<uuid>
+  // ----------------------------------------
+  const magicGuestId = searchParams.get("guest_id");
+  const magicStatusHint = searchParams.get("status");
+  const [magicGuest, setMagicGuest] = useState(null);
+  const [magicCount, setMagicCount] = useState(1);
+  const [magicNotes, setMagicNotes] = useState("");
+  const [magicDietary, setMagicDietary] = useState(DEFAULT_DIETARY);
+  const [magicSaving, setMagicSaving] = useState(false);
+  const [magicSaved, setMagicSaved] = useState(false);
 
   // Refs לאנימציות רקע
   const bgDecor1 = useRef(null);
@@ -167,6 +224,64 @@ const Invite = () => {
       isMounted = false;
     };
   }, [id]);
+
+  // זיהוי אורח מקישור קסם. anon לא יכול לקרוא את event_guests ישירות (אין לו
+  // policy), ולכן הקריאה עוברת דרך ה-RPC rsvp_guest_lookup — read-only, כך
+  // שנחיתה על הדף לא יוצרת תשובה ולא מזיזה responded_at.
+  useEffect(() => {
+    if (!magicGuestId || !isValidUUIDv4(magicGuestId)) return;
+    let isMounted = true;
+
+    (async () => {
+      try {
+        const { data, error } = await supabase.rpc("rsvp_guest_lookup", {
+          p_guest_id: magicGuestId,
+        });
+        if (error) throw error;
+        const row = Array.isArray(data) ? data[0] : data;
+        // מזהה לא מוכר, או אורח ששייך לאירוע אחר — נפילה שקטה לזרימה העצמאית
+        // במקום לפנות לאדם הלא נכון בשמו.
+        if (!isMounted || !row || row.event_id !== id) return;
+
+        // ההודעה בוואטסאפ מבטיחה "לאישור / לביטול" בלחיצה אחת, ולכן status
+        // שמגיע ב-URL מוחל מיד — התנהגות זהה לעמוד /rsvp-action הקודם.
+        let finalRow = row;
+        if (
+          MAGIC_STATUSES.includes(magicStatusHint) &&
+          row.status !== magicStatusHint
+        ) {
+          const { data: applied, error: applyError } = await supabase.rpc(
+            "rsvp_respond",
+            {
+              p_guest_id: magicGuestId,
+              p_status: magicStatusHint,
+              p_guests_count: null,
+              p_notes: null,
+              p_dietary: null,
+            },
+          );
+          if (!isMounted) return;
+          if (!applyError) {
+            finalRow = (Array.isArray(applied) ? applied[0] : applied) || row;
+          }
+        }
+
+        setMagicGuest(finalRow);
+        setMagicCount(finalRow.guests_count ?? 1);
+        setMagicNotes(finalRow.notes ?? "");
+        setMagicDietary(finalRow.dietary ?? DEFAULT_DIETARY);
+        setShowRsvp(true);
+        setRsvpStep(RSVP_STEP_GUEST);
+      } catch (error) {
+        console.error(error);
+        // גם כאן: שקט, והזרימה העצמאית נשארת זמינה.
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [magicGuestId, magicStatusHint, id]);
 
   useEffect(() => {
     if (!eventData?.event_date) return;
@@ -272,11 +387,71 @@ const Invite = () => {
       );
   }, [rsvpStep, showRsvp]);
 
+  // מסלול קישור הקסם: כל שמירה עוברת ב-RPC אחד שמעדכן את השורה הקיימת
+  // ב-event_guests. שדות שלא נשלחים נשארים כפי שהם (coalesce ב-RPC), ולכן
+  // עדכון כמות לא דורס תזונה ולהפך.
+  const saveMagicResponse = async (overrides = {}) => {
+    if (!magicGuest) return null;
+    const payload = {
+      status: overrides.status ?? magicGuest.status,
+      count: overrides.count ?? magicCount,
+      notes: overrides.notes ?? magicNotes,
+      dietary: overrides.dietary ?? magicDietary,
+    };
+    setMagicSaving(true);
+    try {
+      const { data, error } = await supabase.rpc("rsvp_respond", {
+        p_guest_id: magicGuestId,
+        p_status: payload.status,
+        p_guests_count: payload.count,
+        p_notes: payload.notes || null,
+        p_dietary: payload.dietary,
+      });
+      if (error) throw error;
+      const row = (Array.isArray(data) ? data[0] : data) || null;
+      if (row) {
+        setMagicGuest(row);
+        setMagicCount(row.guests_count ?? payload.count);
+        setMagicNotes(row.notes ?? "");
+        setMagicDietary(row.dietary ?? DEFAULT_DIETARY);
+      }
+      setMagicSaved(true);
+      return row;
+    } catch (err) {
+      console.error("Magic RSVP error:", err);
+      showToast("שגיאה בשמירת אישור ההגעה", "error");
+      return null;
+    } finally {
+      setMagicSaving(false);
+    }
+  };
+
+  const changeMagicDietary = async (value) => {
+    const previous = magicDietary;
+    setMagicDietary(value); // אופטימי
+    const row = await saveMagicResponse({ dietary: value });
+    if (!row) setMagicDietary(previous);
+  };
+
+  const changeMagicCount = (delta) => {
+    const next = Math.min(20, Math.max(0, magicCount + delta));
+    if (next === magicCount) return;
+    setMagicCount(next);
+    saveMagicResponse({ count: next });
+  };
+
   const handleCountNext = () => {
     const newNames = [...guestNames];
     while (newNames.length < guestCount) newNames.push("");
     if (newNames.length > guestCount) newNames.length = guestCount;
     setGuestNames(newNames);
+
+    // מערך מקביל לשמות — נשמר באותו אורך כדי ש-guestDietaries[index] תמיד תואם
+    const newDietaries = [...guestDietaries];
+    while (newDietaries.length < guestCount) newDietaries.push(DEFAULT_DIETARY);
+    if (newDietaries.length > guestCount) newDietaries.length = guestCount;
+    setGuestDietaries(newDietaries);
+
     setRsvpStep(2);
   };
 
@@ -284,6 +459,12 @@ const Invite = () => {
     const updatedNames = [...guestNames];
     updatedNames[index] = value;
     setGuestNames(updatedNames);
+  };
+
+  const handleDietaryChange = (index, value) => {
+    const updated = [...guestDietaries];
+    updated[index] = value;
+    setGuestDietaries(updated);
   };
 
   const handleVerifyBeforeSubmit = async (e) => {
@@ -322,12 +503,13 @@ const Invite = () => {
     try {
       const groupId = `group_${crypto.randomUUID().split("-")[0]}`;
       const submitterName = guestNames[0].trim();
-      const inserts = guestNames.map((name) => ({
+      const inserts = guestNames.map((name, index) => ({
         event_id: id,
         group_id: groupId,
         submitter_name: submitterName,
         submitter_phone: submitterPhone,
         guest_name: name.trim(),
+        dietary: guestDietaries[index] || DEFAULT_DIETARY,
       }));
 
       // מעבר מ-upsert ל-insert רגיל כדי למנוע את שגיאת 400 של ה-Unique Constraint
@@ -341,6 +523,7 @@ const Invite = () => {
         setRsvpStep(1);
         setGuestCount(1);
         setGuestNames([""]);
+        setGuestDietaries([DEFAULT_DIETARY]);
         setSubmitterPhone("");
       }, 4000);
     } catch (err) {
@@ -504,6 +687,8 @@ const Invite = () => {
               primaryColor={primaryColor}
               setShowRsvp={setShowRsvp}
               setRsvpStep={setRsvpStep}
+
+              initialRsvpStep={magicGuest ? RSVP_STEP_GUEST : 1}
               navigate={navigate}
             />
           </div>
@@ -615,6 +800,8 @@ const Invite = () => {
                 primaryColor={primaryColor}
                 setShowRsvp={setShowRsvp}
                 setRsvpStep={setRsvpStep}
+
+                initialRsvpStep={magicGuest ? RSVP_STEP_GUEST : 1}
                 navigate={navigate}
               />
             </div>
@@ -756,6 +943,8 @@ const Invite = () => {
             primaryColor={primaryColor}
             setShowRsvp={setShowRsvp}
             setRsvpStep={setRsvpStep}
+
+            initialRsvpStep={magicGuest ? RSVP_STEP_GUEST : 1}
             navigate={navigate}
           />
         </div>
@@ -793,6 +982,118 @@ const Invite = () => {
               >
                 <X size={20} />
               </button>
+            )}
+
+            {rsvpStep === RSVP_STEP_GUEST && magicGuest && (
+              <div className="step-anim pt-4">
+                <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.09),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]">
+                  {magicGuest.status === "canceled" ? (
+                    <X size={32} className="text-slate-400" />
+                  ) : (
+                    <CheckCircle2 size={32} style={{ color: primaryColor }} />
+                  )}
+                </div>
+                <h2 className="text-2xl font-black text-slate-700 mb-1 text-center">
+                  היי {magicGuest.guest_name},
+                </h2>
+                <p className="text-slate-500 font-medium text-center mb-6 text-sm">
+                  {magicGuest.status === "confirmed"
+                    ? "אישרנו את הגעתך! 🎉"
+                    : magicGuest.status === "canceled"
+                      ? "נשמח לראותך בפעם הבאה 💛"
+                      : "נשמח לדעת אם תגיעו"}
+                </p>
+
+                <div className="flex gap-3 mb-6">
+                  {[
+                    { value: "confirmed", label: "מגיע/ה" },
+                    { value: "canceled", label: "לא אגיע" },
+                  ].map((option) => {
+                    const active = magicGuest.status === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        disabled={magicSaving}
+                        onClick={() =>
+                          saveMagicResponse({ status: option.value })
+                        }
+                        className={`flex-1 font-bold py-4 rounded-full transition-all disabled:opacity-50 ${
+                          active
+                            ? "text-white active:scale-[0.97]"
+                            : "text-slate-600 bg-[#e9e6dc] shadow-[5px_5px_12px_rgba(0,0,0,0.08),-5px_-5px_12px_rgba(255,255,255,0.9)]"
+                        }`}
+                        style={active ? clayBtn(primaryColor) : undefined}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {magicGuest.status === "confirmed" && (
+                  <>
+                    <div className="rounded-[1.4rem] p-4 mb-4 bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.07),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]">
+                      <p className="text-xs font-bold text-slate-400 mb-3 text-center">
+                        כמה תגיעו סך הכל?
+                      </p>
+                      <div className="flex items-center justify-center gap-5">
+                        <button
+                          type="button"
+                          onClick={() => changeMagicCount(-1)}
+                          disabled={magicSaving}
+                          aria-label="פחות אורחים"
+                          className="w-12 h-12 rounded-full text-slate-600 font-black text-xl flex items-center justify-center bg-[#e9e6dc] shadow-[5px_5px_12px_rgba(0,0,0,0.08),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1)] disabled:opacity-50"
+                        >
+                          -
+                        </button>
+                        <span className="text-4xl font-black text-slate-700 w-12 text-center">
+                          {magicCount}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => changeMagicCount(1)}
+                          disabled={magicSaving}
+                          aria-label="עוד אורחים"
+                          className="w-12 h-12 rounded-full text-slate-600 font-black text-xl flex items-center justify-center bg-[#e9e6dc] shadow-[5px_5px_12px_rgba(0,0,0,0.08),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1)] disabled:opacity-50"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mb-4">
+                      <p className="text-xs font-bold text-slate-400 mb-3 text-center">
+                        העדפת תזונה
+                      </p>
+                      <DietaryPicker
+                        value={magicDietary}
+                        onChange={changeMagicDietary}
+                        primaryColor={primaryColor}
+                        disabled={magicSaving}
+                      />
+                    </div>
+
+                    <textarea
+                      value={magicNotes}
+                      onChange={(e) => setMagicNotes(e.target.value)}
+                      onBlur={() => {
+                        if ((magicGuest.notes ?? "") !== magicNotes) {
+                          saveMagicResponse({ notes: magicNotes });
+                        }
+                      }}
+                      maxLength={500}
+                      rows={2}
+                      placeholder="הערות (אלרגיות, הסעה...)"
+                      className={`${clayFieldCls} resize-none mb-2`}
+                    />
+                  </>
+                )}
+
+                <p className="h-5 text-center text-xs font-bold text-slate-400">
+                  {magicSaving ? "שומר..." : magicSaved ? "נשמר ✓" : ""}
+                </p>
+              </div>
             )}
 
             {rsvpStep === 1 && (
@@ -875,22 +1176,35 @@ const Invite = () => {
                     </label>
                     <div className="space-y-3">
                       {guestNames.map((name, index) => (
-                        <div key={index} className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 font-bold text-sm shrink-0 bg-[#eeece5] shadow-[inset_3px_3px_7px_rgba(0,0,0,0.07),inset_-3px_-3px_7px_rgba(255,255,255,0.85)]">
-                            {index + 1}
+                        <div key={index} className="space-y-2">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 font-bold text-sm shrink-0 bg-[#eeece5] shadow-[inset_3px_3px_7px_rgba(0,0,0,0.07),inset_-3px_-3px_7px_rgba(255,255,255,0.85)]">
+                              {index + 1}
+                            </div>
+                            <input
+                              type="text"
+                              required
+                              placeholder={
+                                index === 0 ? "השם שלך" : `שם אורח ${index + 1}`
+                              }
+                              value={name}
+                              onChange={(e) =>
+                                handleNameChange(index, e.target.value)
+                              }
+                              className={clayFieldCls}
+                            />
                           </div>
-                          <input
-                            type="text"
-                            required
-                            placeholder={
-                              index === 0 ? "השם שלך" : `שם אורח ${index + 1}`
-                            }
-                            value={name}
-                            onChange={(e) =>
-                              handleNameChange(index, e.target.value)
-                            }
-                            className={clayFieldCls}
-                          />
+                          {/* pr-11 מיישר את הגלולות לקו השדה (w-8 + gap-3) */}
+                          <div className="pr-11">
+                            <DietaryPicker
+                              value={guestDietaries[index]}
+                              onChange={(value) =>
+                                handleDietaryChange(index, value)
+                              }
+                              primaryColor={primaryColor}
+                              compact
+                            />
+                          </div>
                         </div>
                       ))}
                     </div>
