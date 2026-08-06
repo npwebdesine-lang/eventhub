@@ -3,6 +3,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { DEFAULT_DIETARY, DIETARY_OPTIONS } from "../lib/dietary";
 import { isValidUUIDv4 } from "../utils/deviceId";
+import { sanitize } from "../utils/sanitize";
 import {
   Loader2,
   CalendarHeart,
@@ -47,6 +48,26 @@ const clayFieldCls =
 // שלב ייעודי ל"קישור קסם" (?guest_id=). 1-4 נשארים הזרימה העצמאית הקיימת.
 const RSVP_STEP_GUEST = 0;
 const MAGIC_STATUSES = ["confirmed", "canceled"];
+
+const PHONE_PATTERN = /^[0-9+\-\s]{7,15}$/; // זהה ל-check constraint על event_guests
+
+// ה-RPC זורק raise exception; PostgREST מחזיר את הטקסט בתוך message.
+const RSVP_ERROR_COPY = {
+  invalid_guest_name: "השם חייב להכיל בין תו אחד ל-100 תווים.",
+  invalid_phone: "מספר הטלפון אינו תקין.",
+  invalid_guests_count: "מספר האורחים חייב להיות בין 0 ל-20.",
+  invalid_dietary: "העדפת התזונה אינה תקינה.",
+  event_not_found: "האירוע לא נמצא.",
+  network: "שגיאה בשמירת אישור ההגעה",
+};
+
+const rsvpErrorCode = (error) => {
+  const message = error?.message || "";
+  return (
+    Object.keys(RSVP_ERROR_COPY).find((code) => message.includes(code)) ||
+    "network"
+  );
+};
 
 // בורר העדפת תזונה — משמש גם בכרטיס קישור הקסם וגם לכל אורח בזרימה העצמאית.
 // compact=true מקטין לשורת גלולות צרה שמתאימה מתחת לשדה שם.
@@ -173,9 +194,9 @@ const Invite = () => {
   const [submitterPhone, setSubmitterPhone] = useState("");
   const [duplicateWarnings, setDuplicateWarnings] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // העדפת תזונה לכל אורח בזרימה העצמאית — rsvps היא שורה לאורח,
-  // כך שהפילוח לקייטרינג הוא GROUP BY פשוט.
-  const [guestDietaries, setGuestDietaries] = useState([DEFAULT_DIETARY]);
+  // הרשמה עצמאית יוצרת שורה אחת ב-event_guests (מקור אמת יחיד), ולכן העדפת
+  // התזונה היא אחת להזמנה — לא אחת לאורח.
+  const [partyDietary, setPartyDietary] = useState(DEFAULT_DIETARY);
 
   // ----------------------------------------
   // Magic link: /invite/:id?guest_id=<uuid>
@@ -445,13 +466,6 @@ const Invite = () => {
     while (newNames.length < guestCount) newNames.push("");
     if (newNames.length > guestCount) newNames.length = guestCount;
     setGuestNames(newNames);
-
-    // מערך מקביל לשמות — נשמר באותו אורך כדי ש-guestDietaries[index] תמיד תואם
-    const newDietaries = [...guestDietaries];
-    while (newDietaries.length < guestCount) newDietaries.push(DEFAULT_DIETARY);
-    if (newDietaries.length > guestCount) newDietaries.length = guestCount;
-    setGuestDietaries(newDietaries);
-
     setRsvpStep(2);
   };
 
@@ -461,30 +475,27 @@ const Invite = () => {
     setGuestNames(updatedNames);
   };
 
-  const handleDietaryChange = (index, value) => {
-    const updated = [...guestDietaries];
-    updated[index] = value;
-    setGuestDietaries(updated);
-  };
-
+  // ההרשמה כולה עוברת ב-RPC: ל-anon אין policy על event_guests ולכן הוא לא
+  // יכול לקרוא או לכתוב אותה ישירות. שתי הפונקציות security definer מגבילות
+  // אותו בדיוק לשתי הפעולות האלה.
   const handleVerifyBeforeSubmit = async (e) => {
     e.preventDefault();
     if (guestNames.some((name) => !name.trim()) || !submitterPhone.trim()) {
       showToast("אנא מלאו את כל השמות ואת מספר הטלפון", "warning");
       return;
     }
+    if (!PHONE_PATTERN.test(submitterPhone.trim())) {
+      showToast("מספר הטלפון אינו תקין", "warning");
+      return;
+    }
     setIsSubmitting(true);
     try {
-      const { data, error } = await supabase
-        .from("rsvps")
-        .select("guest_name, submitter_name")
-        .eq("event_id", id)
-        .in(
-          "guest_name",
-          guestNames.map((n) => n.trim()),
-        );
+      const { data, error } = await supabase.rpc("rsvp_check_duplicates", {
+        p_event_id: id,
+        p_names: guestNames.map((n) => n.trim()),
+      });
       if (error) throw error;
-      if (data && data.length > 0) {
+      if (Array.isArray(data) && data.length > 0) {
         setDuplicateWarnings(data);
         setRsvpStep(3);
       } else {
@@ -498,23 +509,21 @@ const Invite = () => {
     }
   };
 
+  // שורה אחת ב-event_guests להזמנה: השם הראשון הוא בעל ההזמנה, השאר נשמרים
+  // ב-notes (אין עמודה ייעודית), וה-guests_count הוא סך המגיעים.
   const executeSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const groupId = `group_${crypto.randomUUID().split("-")[0]}`;
-      const submitterName = guestNames[0].trim();
-      const inserts = guestNames.map((name, index) => ({
-        event_id: id,
-        group_id: groupId,
-        submitter_name: submitterName,
-        submitter_phone: submitterPhone,
-        guest_name: name.trim(),
-        dietary: guestDietaries[index] || DEFAULT_DIETARY,
-      }));
-
-      // מעבר מ-upsert ל-insert רגיל כדי למנוע את שגיאת 400 של ה-Unique Constraint
-      const { error } = await supabase.from("rsvps").insert(inserts);
-
+      const [mainName, ...companions] = guestNames.map((n) => n.trim());
+      const { error } = await supabase.rpc("rsvp_self_register", {
+        p_event_id: id,
+        p_guest_name: mainName,
+        p_phone: submitterPhone.trim(),
+        p_guests_count: guestCount,
+        p_companions: companions.filter(Boolean),
+        p_dietary: partyDietary,
+        p_notes: null,
+      });
       if (error) throw error;
 
       setRsvpStep(4);
@@ -523,12 +532,12 @@ const Invite = () => {
         setRsvpStep(1);
         setGuestCount(1);
         setGuestNames([""]);
-        setGuestDietaries([DEFAULT_DIETARY]);
+        setPartyDietary(DEFAULT_DIETARY);
         setSubmitterPhone("");
       }, 4000);
     } catch (err) {
       console.error("Submit Error:", err);
-      showToast("שגיאה בשמירת אישור ההגעה", "error");
+      showToast(RSVP_ERROR_COPY[rsvpErrorCode(err)], "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -1176,38 +1185,37 @@ const Invite = () => {
                     </label>
                     <div className="space-y-3">
                       {guestNames.map((name, index) => (
-                        <div key={index} className="space-y-2">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 font-bold text-sm shrink-0 bg-[#eeece5] shadow-[inset_3px_3px_7px_rgba(0,0,0,0.07),inset_-3px_-3px_7px_rgba(255,255,255,0.85)]">
-                              {index + 1}
-                            </div>
-                            <input
-                              type="text"
-                              required
-                              placeholder={
-                                index === 0 ? "השם שלך" : `שם אורח ${index + 1}`
-                              }
-                              value={name}
-                              onChange={(e) =>
-                                handleNameChange(index, e.target.value)
-                              }
-                              className={clayFieldCls}
-                            />
+                        <div key={index} className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 font-bold text-sm shrink-0 bg-[#eeece5] shadow-[inset_3px_3px_7px_rgba(0,0,0,0.07),inset_-3px_-3px_7px_rgba(255,255,255,0.85)]">
+                            {index + 1}
                           </div>
-                          {/* pr-11 מיישר את הגלולות לקו השדה (w-8 + gap-3) */}
-                          <div className="pr-11">
-                            <DietaryPicker
-                              value={guestDietaries[index]}
-                              onChange={(value) =>
-                                handleDietaryChange(index, value)
-                              }
-                              primaryColor={primaryColor}
-                              compact
-                            />
-                          </div>
+                          <input
+                            type="text"
+                            required
+                            placeholder={
+                              index === 0 ? "השם שלך" : `שם אורח ${index + 1}`
+                            }
+                            value={name}
+                            onChange={(e) =>
+                              handleNameChange(index, e.target.value)
+                            }
+                            className={clayFieldCls}
+                          />
                         </div>
                       ))}
                     </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-[#dcd7ca]">
+                    <label className="text-xs font-bold text-slate-400 pl-2 block mb-3">
+                      העדפת תזונה
+                    </label>
+                    <DietaryPicker
+                      value={partyDietary}
+                      onChange={setPartyDietary}
+                      primaryColor={primaryColor}
+                      compact
+                    />
                   </div>
                 </div>
 
@@ -1246,7 +1254,7 @@ const Invite = () => {
                       className="text-sm font-bold text-amber-800 flex items-center gap-2"
                     >
                       <span className="w-1.5 h-1.5 bg-amber-400 rounded-full shrink-0"></span>
-                      השם "{dup.guest_name}" נוסף על ידי: {dup.submitter_name}
+                      השם "{sanitize(dup.guest_name || "")}" כבר רשום באירוע
                     </p>
                   ))}
                 </div>

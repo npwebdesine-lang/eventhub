@@ -122,11 +122,6 @@ const Admin = () => {
   const [rideshareList, setRideshareList] = useState([]);
   const [rideshareLoading, setRideshareLoading] = useState(false);
 
-  const [isRsvpManagerOpen, setIsRsvpManagerOpen] = useState(false);
-  const [rsvpList, setRsvpList] = useState([]);
-  const [rsvpLoading, setRsvpLoading] = useState(false);
-  const [editingRsvpId, setEditingRsvpId] = useState(null);
-  const [editRsvpName, setEditRsvpName] = useState("");
 
   // רשימת מוזמנים מראש + קישורי קסם (event_guests) — נפרד מ-rsvps, שבו
   // האורח ממלא את פרטיו בעצמו.
@@ -155,7 +150,6 @@ const Admin = () => {
     isIcebreakerModalOpen ||
     isIcebreakerUserManagerOpen ||
     isRideshareManagerOpen ||
-    isRsvpManagerOpen ||
     isGuestListOpen ||
     isReportsModalOpen ||
     isBlessingsManagerOpen;
@@ -170,7 +164,6 @@ const Admin = () => {
       setIsIcebreakerModalOpen(false);
       setIsIcebreakerUserManagerOpen(false);
       setIsRideshareManagerOpen(false);
-      setIsRsvpManagerOpen(false);
       setIsReportsModalOpen(false);
       setIsBlessingsManagerOpen(false);
     },
@@ -188,10 +181,13 @@ const Admin = () => {
     if (selectedEvent && !selectedEvent.isNew) {
       const fetchStats = async () => {
         const [rsvps, photos, dating, reports, blessings] = await Promise.all([
+          // event_guests הוא מקור האמת היחיד למוזמנים — גם רשימה מיובאת מראש
+          // וגם הרשמות מדף ההזמנה. rsvps מכיל רק היסטוריה מלפני האיחוד.
           supabase
-            .from("rsvps")
+            .from("event_guests")
             .select("id", { count: "exact", head: true })
-            .eq("event_id", selectedEvent.id),
+            .eq("event_id", selectedEvent.id)
+            .eq("status", "confirmed"),
           supabase
             .from("photos")
             .select("id", { count: "exact", head: true })
@@ -737,80 +733,6 @@ const Admin = () => {
     }
   };
 
-  const openRsvpManager = async () => {
-    setIsRsvpManagerOpen(true);
-    setRsvpLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("rsvps")
-        .select("*")
-        .eq("event_id", selectedEvent.id)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      setRsvpList(data || []);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setRsvpLoading(false);
-    }
-  };
-  const handleDeleteRsvp = async (rsvpId, name) => {
-    if (!window.confirm(`למחוק את אישור ההגעה של ${name}?`)) return;
-    try {
-      await supabase.from("rsvps").delete().eq("id", rsvpId);
-      setRsvpList((prev) => prev.filter((r) => r.id !== rsvpId));
-      setEventStats((prev) => ({
-        ...prev,
-        rsvps: Math.max(0, prev.rsvps - 1),
-      }));
-    } catch (error) {
-      alert("שגיאה במחיקה");
-    }
-  };
-  const startEditingRsvp = (rsvp) => {
-    setEditingRsvpId(rsvp.id);
-    setEditRsvpName(rsvp.guest_name);
-  };
-  const saveRsvpEdit = async (rsvpId) => {
-    if (!editRsvpName.trim()) return alert("חובה להזין שם");
-    try {
-      const { error } = await supabase
-        .from("rsvps")
-        .update({ guest_name: editRsvpName })
-        .eq("id", rsvpId);
-      if (error) throw error;
-      setRsvpList((prev) =>
-        prev.map((r) =>
-          r.id === rsvpId ? { ...r, guest_name: editRsvpName } : r,
-        ),
-      );
-      setEditingRsvpId(null);
-    } catch (error) {
-      alert("שגיאה בעדכון");
-    }
-  };
-  const exportRsvpToCSV = () => {
-    const sorted = [...rsvpList].sort((a, b) =>
-      (a.group_id || "").localeCompare(b.group_id || ""),
-    );
-    let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
-    csvContent += "שם האורח,מי מילא את הטופס,טלפון,אלרגנים,תאריך רישום\n";
-    sorted.forEach((row) => {
-      const date = new Date(row.created_at).toLocaleDateString("he-IL");
-      const allergens =
-        Array.isArray(row.allergens) && row.allergens.length > 0
-          ? row.allergens.join(", ")
-          : "";
-      csvContent += `"${row.guest_name}","${row.submitter_name}","${row.submitter_phone}","${allergens}","${date}"\n`;
-    });
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `RSVP_${formData.name}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
 
   // פונקציות המודרציה
   const openReportsManager = async () => {
@@ -1600,17 +1522,13 @@ const Admin = () => {
                         <p className="text-sm text-slate-600 font-medium mb-3">
                           כפתור לאישור הגעה יופיע כעת בדף ההזמנה הדיגיטלית.
                         </p>
-                        <button
-                          onClick={openRsvpManager}
-                          className="w-full py-3 bg-[#f0eee7] border border-blue-200 text-blue-600 font-bold rounded-xl hover:bg-blue-50 transition-colors flex justify-center items-center gap-2 shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)]"
-                        >
-                          <Users size={18} /> ניהול אישורי הגעה
-                        </button>
+                        {/* מסך ניהול אחד לכל המוזמנים — גם מיובאים מראש וגם
+                            נרשמים מדף ההזמנה. ניהול ה-RSVP הנפרד הוסר. */}
                         <button
                           onClick={() => setIsGuestListOpen(true)}
                           className="w-full py-3 bg-[#f0eee7] border border-emerald-200 text-emerald-600 font-bold rounded-xl hover:bg-emerald-50 transition-colors flex justify-center items-center gap-2 shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)]"
                         >
-                          <MessageCircle size={18} /> רשימת מוזמנים וקישורי קסם
+                          <Users size={18} /> ניהול מוזמנים ואישורי הגעה
                         </button>
                       </div>
                     )}
@@ -2260,123 +2178,6 @@ const Admin = () => {
       )}
 
       {/* --- שאר הפופאפים... --- */}
-      {isRsvpManagerOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-[200]">
-          <div className="bg-[#f0eee7] w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]">
-            <div className="p-6 md:p-8 border-b border-[#e4e0d5] flex justify-between items-center bg-blue-50/50 shrink-0">
-              <div>
-                <h2 className="text-2xl font-black text-slate-800">
-                  אישורי הגעה (RSVP)
-                </h2>
-                <p className="text-blue-600 font-bold mt-1">
-                  סה"כ אישרו הגעה: {rsvpList.length} אורחים
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={exportRsvpToCSV}
-                  disabled={rsvpList.length === 0}
-                  className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-xl font-bold transition-colors flex items-center gap-2 shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] disabled:opacity-50"
-                >
-                  <Download size={18} /> ייצוא לאקסל
-                </button>
-                <button
-                  onClick={() => setIsRsvpManagerOpen(false)}
-                  className="p-2 hover:bg-blue-100 text-blue-600 rounded-full transition-colors"
-                >
-                  <X size={24} />
-                </button>
-              </div>
-            </div>
-            <div className="flex-1 bg-[#eeece5] p-6 md:p-8 overflow-y-auto">
-              {rsvpLoading ? (
-                <div className="flex justify-center py-20">
-                  <Loader2 className="animate-spin text-blue-500" size={48} />
-                </div>
-              ) : rsvpList.length === 0 ? (
-                <div className="text-center py-20 text-slate-400">
-                  <CheckCircle2 size={48} className="mx-auto mb-3 opacity-20" />
-                  <p className="font-medium text-lg">
-                    עדיין לא התקבלו אישורי הגעה.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {rsvpList.map((guest) => (
-                    <div
-                      key={guest.id}
-                      className="bg-[#f0eee7] p-4 rounded-2xl border border-[#dcd7ca] flex flex-col md:flex-row items-start md:items-center justify-between shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] hover:border-blue-200 transition-colors gap-4"
-                    >
-                      <div className="flex-1 w-full">
-                        {editingRsvpId === guest.id ? (
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="text"
-                              value={editRsvpName}
-                              onChange={(e) => setEditRsvpName(e.target.value)}
-                              className="w-full p-2 bg-[#eeece5] border border-[#dcd7ca] rounded-lg text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                          </div>
-                        ) : (
-                          <div>
-                            <h4 className="font-bold text-slate-800 text-lg">
-                              {sanitize(guest.guest_name || "")}
-                            </h4>
-                            <p className="text-xs text-slate-500 font-medium mt-1">
-                              נרשם ע"י: {sanitize(guest.submitter_name || "")} |{" "}
-                              {sanitize(guest.submitter_phone || "")}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex items-center justify-end gap-2 shrink-0 bg-[#eeece5] p-1.5 rounded-xl w-full md:w-auto">
-                        {editingRsvpId === guest.id ? (
-                          <>
-                            <button
-                              onClick={() => saveRsvpEdit(guest.id)}
-                              className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                              title="שמור"
-                            >
-                              <Check size={18} />
-                            </button>
-                            <button
-                              onClick={() => setEditingRsvpId(null)}
-                              className="p-2 text-slate-400 hover:bg-slate-200 rounded-lg transition-colors"
-                              title="ביטול"
-                            >
-                              <X size={18} />
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button
-                              onClick={() => startEditingRsvp(guest)}
-                              className="p-2 text-indigo-600 hover:bg-indigo-100 rounded-lg transition-colors flex items-center gap-1 font-bold text-sm"
-                              title="ערוך"
-                            >
-                              <Edit2 size={16} /> ערוך
-                            </button>
-                            <div className="w-px h-6 bg-slate-200 mx-1"></div>
-                            <button
-                              onClick={() =>
-                                handleDeleteRsvp(guest.id, guest.guest_name)
-                              }
-                              className="p-2 text-rose-500 hover:bg-rose-100 rounded-lg transition-colors flex items-center gap-1 font-bold text-sm"
-                              title="מחק"
-                            >
-                              <Trash2 size={16} /> מחק
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {isGalleryOpen && (
         <div className="fixed inset-0 z-[200] bg-slate-900/90 flex flex-col animate-in fade-in duration-300">

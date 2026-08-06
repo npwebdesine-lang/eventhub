@@ -1,10 +1,17 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Check,
   Copy,
   Download,
   Loader2,
   MessageCircle,
+  Trash2,
   Upload,
   Users,
   X,
@@ -115,6 +122,10 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
   const [importOpen, setImportOpen] = useState(false);
   const [importText, setImportText] = useState("");
   const [importing, setImporting] = useState(false);
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState(null);
+  const deleteTimerRef = useRef(null);
+
+  useEffect(() => () => clearTimeout(deleteTimerRef.current), []);
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
 
@@ -194,41 +205,94 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
     }
   };
 
-  const saveNotes = async (guest, notes) => {
-    if ((guest.notes ?? "") === notes) return;
+  // עדכון שדה בודד בשורה. אופטימי, ובכישלון מחזיר את הערך הקודם בלבד — במקום
+  // fetchGuests מלא, כדי שהטבלה לא תקפוץ ושאר העריכות הפתוחות לא יאבדו.
+  // הוולידציה כאן מקבילה ל-check constraints על event_guests; בלעדיה השגיאה
+  // חוזרת כ-23514 גולמי בלי שהמנהל יבין מה נדחה.
+  const saveField = async (guest, field, rawValue) => {
+    const previous = guest[field] ?? null;
+    let value = rawValue;
+
+    if (field === "guest_name") {
+      value = String(rawValue ?? "").trim();
+      if (value.length < 1 || value.length > 100) {
+        showToast("השם חייב להכיל בין תו אחד ל-100 תווים", "warning");
+        setGuests((prev) => [...prev]); // מאלץ רינדור מחדש כדי להחזיר את הקלט
+        return;
+      }
+    }
+
+    if (field === "phone") {
+      value = String(rawValue ?? "").trim() || null;
+      if (value && !PHONE_PATTERN.test(value)) {
+        showToast("מספר הטלפון אינו תקין", "warning");
+        setGuests((prev) => [...prev]);
+        return;
+      }
+    }
+
+    if (field === "guests_count") {
+      value = Number(rawValue);
+      if (!Number.isInteger(value) || value < 0 || value > 20) {
+        showToast("כמות האורחים חייבת להיות בין 0 ל-20", "warning");
+        setGuests((prev) => [...prev]);
+        return;
+      }
+    }
+
+    if (field === "notes") {
+      value = String(rawValue ?? "").trim() || null;
+      if (value && value.length > 500) {
+        showToast("ההערה ארוכה מדי (עד 500 תווים)", "warning");
+        return;
+      }
+    }
+
+    if ((previous ?? "") === (value ?? "")) return;
+
     setGuests((prev) =>
-      prev.map((g) => (g.id === guest.id ? { ...g, notes } : g)),
+      prev.map((g) => (g.id === guest.id ? { ...g, [field]: value } : g)),
     );
     const { error } = await supabase
       .from("event_guests")
-      .update({ notes: notes || null })
+      .update({ [field]: value })
       .eq("id", guest.id);
     if (error) {
       console.error(error);
-      showToast("ההערה לא נשמרה", "error");
-      fetchGuests();
+      showToast("השינוי לא נשמר", "error");
+      setGuests((prev) =>
+        prev.map((g) => (g.id === guest.id ? { ...g, [field]: previous } : g)),
+      );
     }
   };
 
-  // בחירה בדידה — במקום fetchGuests מלא בכישלון, מחזירים את השורה לערך הקודם
-  // כדי שהטבלה לא תקפוץ ושאר העריכות הפתוחות לא יאבדו.
-  const saveDietary = async (guest, dietary) => {
-    const previous = guest.dietary || DEFAULT_DIETARY;
-    if (previous === dietary) return;
-    setGuests((prev) =>
-      prev.map((g) => (g.id === guest.id ? { ...g, dietary } : g)),
+  // מחיקה בשני שלבים: לחיצה ראשונה מסמנת, שנייה מוחקת. הסימון מתאפס לבד
+  // אחרי 4 שניות כדי שכפתור "אשר?" לא יישאר דרוך על שורה שנשכחה.
+  const requestDelete = (guestId) => {
+    clearTimeout(deleteTimerRef.current);
+    setConfirmingDeleteId(guestId);
+    deleteTimerRef.current = setTimeout(
+      () => setConfirmingDeleteId(null),
+      4000,
     );
+  };
+
+  const confirmDelete = async (guest) => {
+    clearTimeout(deleteTimerRef.current);
+    setConfirmingDeleteId(null);
+    const snapshot = guests;
+    setGuests((prev) => prev.filter((g) => g.id !== guest.id));
     const { error } = await supabase
       .from("event_guests")
-      .update({ dietary })
+      .delete()
       .eq("id", guest.id);
     if (error) {
       console.error(error);
-      showToast("העדפת התזונה לא נשמרה", "error");
-      setGuests((prev) =>
-        prev.map((g) => (g.id === guest.id ? { ...g, dietary: previous } : g)),
-      );
+      showToast("המחיקה נכשלה", "error");
+      setGuests(snapshot);
+      return;
     }
+    showToast(`${guest.guest_name} נמחק/ה`, "success");
   };
 
   const copyMessage = async (guest) => {
@@ -392,7 +456,7 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[860px] border-separate border-spacing-y-2 text-right">
+              <table className="w-full min-w-[1040px] border-separate border-spacing-y-2 text-right">
                 <thead>
                   <tr className="text-xs font-bold text-slate-400">
                     <th className="px-3 pb-1">שם</th>
@@ -402,6 +466,7 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                     <th className="px-3 pb-1">העדפת תזונה</th>
                     <th className="px-3 pb-1">הערות</th>
                     <th className="px-3 pb-1">קישור קסם</th>
+                    <th className="px-3 pb-1">מחיקה</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -409,29 +474,70 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                     const waPhone = toWhatsAppPhone(guest.phone);
                     return (
                       <tr key={guest.id} className="bg-[#f0eee7]">
-                        <td
-                          className={`${CLAY_RAISED} rounded-r-2xl px-3 py-3 font-bold text-slate-700`}
-                        >
-                          {sanitize(guest.guest_name || "")}
-                        </td>
-                        <td className="px-3 py-3 text-sm text-slate-500">
-                          {sanitize(guest.phone || "—")}
+                        <td className={`${CLAY_RAISED} rounded-r-2xl px-3 py-3`}>
+                          <input
+                            key={`name-${guest.id}-${guest.guest_name}`}
+                            defaultValue={guest.guest_name || ""}
+                            onBlur={(event) =>
+                              saveField(guest, "guest_name", event.target.value)
+                            }
+                            maxLength={100}
+                            aria-label="שם המוזמן"
+                            className={`${CLAY_INSET} w-full rounded-xl bg-[#f0eee7] px-3 py-1.5 text-sm font-bold text-slate-700 focus:outline-none`}
+                          />
                         </td>
                         <td className="px-3 py-3">
-                          <span
-                            className={`rounded-lg px-2.5 py-1 text-xs font-bold ${STATUS_BADGE[guest.status]}`}
-                          >
-                            {STATUS_LABEL[guest.status]}
-                          </span>
+                          <input
+                            key={`phone-${guest.id}-${guest.phone}`}
+                            defaultValue={guest.phone || ""}
+                            onBlur={(event) =>
+                              saveField(guest, "phone", event.target.value)
+                            }
+                            dir="ltr"
+                            placeholder="050-0000000"
+                            aria-label="טלפון"
+                            className={`${CLAY_INSET} w-full rounded-xl bg-[#f0eee7] px-3 py-1.5 text-right text-sm text-slate-600 placeholder:text-slate-400 focus:outline-none`}
+                          />
                         </td>
-                        <td className="px-3 py-3 font-bold text-slate-700">
-                          {guest.guests_count}
+                        <td className="px-3 py-3">
+                          <select
+                            value={guest.status}
+                            onChange={(event) =>
+                              saveField(guest, "status", event.target.value)
+                            }
+                            aria-label="סטטוס"
+                            className={`w-full rounded-lg px-2.5 py-1.5 text-xs font-bold focus:outline-none ${STATUS_BADGE[guest.status]}`}
+                          >
+                            {Object.entries(STATUS_LABEL).map(([key, label]) => (
+                              <option key={key} value={key}>
+                                {label}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="px-3 py-3">
+                          <input
+                            key={`count-${guest.id}-${guest.guests_count}`}
+                            type="number"
+                            min={0}
+                            max={20}
+                            defaultValue={guest.guests_count}
+                            onBlur={(event) =>
+                              saveField(
+                                guest,
+                                "guests_count",
+                                event.target.value,
+                              )
+                            }
+                            aria-label="כמות אורחים"
+                            className={`${CLAY_INSET} w-16 rounded-xl bg-[#f0eee7] px-2 py-1.5 text-center text-sm font-bold text-slate-700 focus:outline-none`}
+                          />
                         </td>
                         <td className="px-3 py-3">
                           <select
                             value={guest.dietary || DEFAULT_DIETARY}
                             onChange={(event) =>
-                              saveDietary(guest, event.target.value)
+                              saveField(guest, "dietary", event.target.value)
                             }
                             aria-label={`העדפת תזונה עבור ${guest.guest_name}`}
                             className={`${CLAY_INSET} w-full rounded-xl bg-[#f0eee7] px-3 py-1.5 text-sm text-slate-600 focus:outline-none`}
@@ -445,16 +551,18 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                         </td>
                         <td className="px-3 py-3">
                           <input
+                            key={`notes-${guest.id}-${guest.notes}`}
                             defaultValue={guest.notes || ""}
                             onBlur={(event) =>
-                              saveNotes(guest, event.target.value.trim())
+                              saveField(guest, "notes", event.target.value)
                             }
                             maxLength={500}
                             placeholder="הוסף הערה..."
+                            aria-label="הערות"
                             className={`${CLAY_INSET} w-full rounded-xl bg-[#f0eee7] px-3 py-1.5 text-sm text-slate-600 placeholder:text-slate-400 focus:outline-none`}
                           />
                         </td>
-                        <td className={`${CLAY_RAISED} rounded-l-2xl px-3 py-3`}>
+                        <td className="px-3 py-3">
                           {waPhone ? (
                             <a
                               href={`https://wa.me/${waPhone}?text=${encodeURIComponent(
@@ -473,6 +581,24 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                               className="flex items-center gap-1.5 text-sm font-bold text-slate-500 hover:text-slate-700"
                             >
                               <Copy size={16} /> העתק
+                            </button>
+                          )}
+                        </td>
+                        <td className={`${CLAY_RAISED} rounded-l-2xl px-3 py-3`}>
+                          {confirmingDeleteId === guest.id ? (
+                            <button
+                              onClick={() => confirmDelete(guest)}
+                              className="flex items-center gap-1.5 rounded-xl bg-rose-500 px-3 py-1.5 text-sm font-bold text-white transition-colors hover:bg-rose-600"
+                            >
+                              <Trash2 size={16} /> לאשר?
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => requestDelete(guest.id)}
+                              aria-label={`מחיקת ${guest.guest_name}`}
+                              className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-bold text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-500"
+                            >
+                              <Trash2 size={16} /> מחק
                             </button>
                           )}
                         </td>
