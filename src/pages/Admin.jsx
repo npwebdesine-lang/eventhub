@@ -132,7 +132,6 @@ const Admin = () => {
   const [rideshareList, setRideshareList] = useState([]);
   const [rideshareLoading, setRideshareLoading] = useState(false);
 
-
   // רשימת מוזמנים מראש + קישורי קסם (event_guests) — נפרד מ-rsvps, שבו
   // האורח ממלא את פרטיו בעצמו.
   const [isGuestListOpen, setIsGuestListOpen] = useState(false);
@@ -832,7 +831,6 @@ const Admin = () => {
       alert("תקלה במחיקה");
     }
   };
-
 
   // פונקציות המודרציה
   const openReportsManager = async () => {
@@ -2349,8 +2347,7 @@ const Admin = () => {
                         {seatingPreview.rows.filter(isValidSeatingRow).length}{" "}
                         שורות תקינות
                         {seatingPreview.rows.length -
-                          seatingPreview.rows.filter(isValidSeatingRow)
-                            .length >
+                          seatingPreview.rows.filter(isValidSeatingRow).length >
                           0 && (
                           <span className="text-rose-600">
                             {" "}
@@ -2409,9 +2406,7 @@ const Admin = () => {
                         return (
                           <tr
                             key={row.rowNumber}
-                            className={
-                              invalid ? "bg-rose-50" : "bg-[#f0eee7]"
-                            }
+                            className={invalid ? "bg-rose-50" : "bg-[#f0eee7]"}
                           >
                             <td className="rounded-r-2xl px-3 py-2.5 text-xs font-bold text-slate-400">
                               {row.rowNumber}
@@ -2444,114 +2439,114 @@ const Admin = () => {
               </div>
             ) : (
               <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
-              <div className="w-full md:w-1/2 p-8 border-l border-[#e4e0d5] flex flex-col bg-[#f0eee7] shrink-0">
-                {/* אזור גרירה — נטען דינמית, ולכן אין עלות עד שגוררים קובץ */}
-                <div
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setSeatingDragOver(true);
-                  }}
-                  onDragLeave={() => setSeatingDragOver(false)}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setSeatingDragOver(false);
-                    handleSeatingFile(e.dataTransfer.files?.[0]);
-                  }}
-                  onClick={() => seatingFileInputRef.current?.click()}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
+                <div className="w-full md:w-1/2 p-8 border-l border-[#e4e0d5] flex flex-col bg-[#f0eee7] shrink-0">
+                  {/* אזור גרירה — נטען דינמית, ולכן אין עלות עד שגוררים קובץ */}
+                  <div
+                    onDragOver={(e) => {
                       e.preventDefault();
-                      seatingFileInputRef.current?.click();
-                    }
-                  }}
-                  className={`mb-4 cursor-pointer rounded-2xl border-2 border-dashed p-6 text-center transition-all ${
-                    seatingDragOver
-                      ? "border-emerald-500 bg-emerald-50"
-                      : "border-[#dcd7ca] bg-[#eeece5] hover:border-emerald-300"
-                  }`}
-                >
-                  {seatingParsing ? (
-                    <Loader2
-                      className="mx-auto animate-spin text-emerald-500"
-                      size={28}
-                    />
-                  ) : (
-                    <UploadCloud
-                      className="mx-auto text-slate-400"
-                      size={28}
-                    />
-                  )}
-                  <p className="mt-2 text-sm font-black text-slate-700">
-                    {seatingParsing
-                      ? "קורא את הקובץ..."
-                      : "גררו לכאן קובץ Excel או CSV"}
-                  </p>
-                  <p className="mt-1 text-xs font-medium text-slate-400">
-                    או לחצו לבחירה · xlsx, csv · גם ייצוא מ-Google Sheets
-                  </p>
-                </div>
-                <input
-                  ref={seatingFileInputRef}
-                  type="file"
-                  accept=".xlsx,.xls,.csv"
-                  className="hidden"
-                  onChange={(e) => {
-                    handleSeatingFile(e.target.files?.[0]);
-                    e.target.value = ""; // מאפשר לבחור שוב את אותו קובץ
-                  }}
-                />
+                      setSeatingDragOver(true);
+                    }}
+                    onDragLeave={() => setSeatingDragOver(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setSeatingDragOver(false);
+                      handleSeatingFile(e.dataTransfer.files?.[0]);
+                    }}
+                    onClick={() => seatingFileInputRef.current?.click()}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        seatingFileInputRef.current?.click();
+                      }
+                    }}
+                    className={`mb-4 cursor-pointer rounded-2xl border-2 border-dashed p-6 text-center transition-all ${
+                      seatingDragOver
+                        ? "border-emerald-500 bg-emerald-50"
+                        : "border-[#dcd7ca] bg-[#eeece5] hover:border-emerald-300"
+                    }`}
+                  >
+                    {seatingParsing ? (
+                      <Loader2
+                        className="mx-auto animate-spin text-emerald-500"
+                        size={28}
+                      />
+                    ) : (
+                      <UploadCloud
+                        className="mx-auto text-slate-400"
+                        size={28}
+                      />
+                    )}
+                    <p className="mt-2 text-sm font-black text-slate-700">
+                      {seatingParsing
+                        ? "קורא את הקובץ..."
+                        : "גררו לכאן קובץ Excel או CSV"}
+                    </p>
+                    <p className="mt-1 text-xs font-medium text-slate-400">
+                      או לחצו לבחירה · xlsx, csv · גם ייצוא מ-Google Sheets
+                    </p>
+                  </div>
+                  <input
+                    ref={seatingFileInputRef}
+                    type="file"
+                    accept=".xlsx,.xls,.csv"
+                    className="hidden"
+                    onChange={(e) => {
+                      handleSeatingFile(e.target.files?.[0]);
+                      e.target.value = ""; // מאפשר לבחור שוב את אותו קובץ
+                    }}
+                  />
 
-                <div className="mb-3 flex items-center gap-3">
-                  <div className="h-px flex-1 bg-[#dcd7ca]" />
-                  <span className="text-xs font-bold text-slate-400">
-                    או הדבקה ידנית
-                  </span>
-                  <div className="h-px flex-1 bg-[#dcd7ca]" />
-                </div>
+                  <div className="mb-3 flex items-center gap-3">
+                    <div className="h-px flex-1 bg-[#dcd7ca]" />
+                    <span className="text-xs font-bold text-slate-400">
+                      או הדבקה ידנית
+                    </span>
+                    <div className="h-px flex-1 bg-[#dcd7ca]" />
+                  </div>
 
-                <textarea
-                  value={seatingText}
-                  onChange={(e) => setSeatingText(e.target.value)}
-                  placeholder="ישראל ישראלי 12&#10;שרה כהן - 5"
-                  className="w-full flex-1 p-4 bg-[#eeece5] border border-[#dcd7ca] rounded-2xl min-h-[140px]"
-                />
-                <button
-                  onClick={handleSaveSeating}
-                  className="w-full mt-4 bg-emerald-500 text-white font-black py-4 rounded-2xl hover:bg-emerald-600"
-                >
-                  פענח והוסף לרשימה
-                </button>
-              </div>
-              <div className="w-full md:w-1/2 bg-[#eeece5] p-8 overflow-y-auto">
-                <div className="space-y-3">
-                  {seatingGuests.map((guest) => (
-                    <div
-                      key={guest.id}
-                      className="bg-[#f0eee7] p-3 rounded-2xl flex justify-between"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="bg-emerald-100 text-emerald-700 w-10 h-10 flex items-center justify-center rounded-xl">
-                          {guest.table_number}
-                        </div>
-                        <span className="font-bold text-slate-700">
-                          {sanitize(guest.guest_name || "")}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() =>
-                          handleDeleteGuest(guest.id, guest.guest_name)
-                        }
-                        className="text-rose-500"
+                  <textarea
+                    value={seatingText}
+                    onChange={(e) => setSeatingText(e.target.value)}
+                    placeholder="ישראל ישראלי 12&#10;שרה כהן - 5"
+                    className="w-full flex-1 p-4 bg-[#eeece5] border border-[#dcd7ca] rounded-2xl min-h-[140px]"
+                  />
+                  <button
+                    onClick={handleSaveSeating}
+                    className="w-full mt-4 bg-emerald-500 text-white font-black py-4 rounded-2xl hover:bg-emerald-600"
+                  >
+                    פענח והוסף לרשימה
+                  </button>
+                </div>
+                <div className="w-full md:w-1/2 bg-[#eeece5] p-8 overflow-y-auto">
+                  <div className="space-y-3">
+                    {seatingGuests.map((guest) => (
+                      <div
+                        key={guest.id}
+                        className="bg-[#f0eee7] p-3 rounded-2xl flex justify-between"
                       >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  ))}
+                        <div className="flex items-center gap-3">
+                          <div className="bg-emerald-100 text-emerald-700 w-10 h-10 flex items-center justify-center rounded-xl">
+                            {guest.table_number}
+                          </div>
+                          <span className="font-bold text-slate-700">
+                            {sanitize(guest.guest_name || "")}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() =>
+                            handleDeleteGuest(guest.id, guest.guest_name)
+                          }
+                          className="text-rose-500"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
             )}
           </div>
         </div>

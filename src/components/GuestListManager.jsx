@@ -22,6 +22,7 @@ import {
   DIETARY_OPTIONS,
   dietaryLabelOf,
 } from "../lib/dietary";
+import { parseGuestFile, isValidGuestRow } from "../lib/guestImport";
 import { sanitize } from "../utils/sanitize";
 import { useToast } from "./Toast";
 
@@ -65,9 +66,12 @@ export const toWhatsAppPhone = (phone) => {
   return null;
 };
 
-// הקישור מצביע על ההזמנה עצמה (/invite/:eventId) עם guest_id — האורח רואה את
-// האירוע ואת אישור ההגעה במקום אחד. עמוד /rsvp-action נשאר פעיל כדי שקישורים
-// שכבר נשלחו בוואטסאפ ימשיכו לעבוד.
+// הקישור מצביע על ההזמנה המאוחדת (/invite/:eventId?guest_id=) — האורח רואה
+// את האירוע ואת אישור ההגעה במקום אחד.
+//
+// ה-status נשאר בשאילתה כי שני הקישורים בהודעה חייבים להיות שונים: בלעדיו
+// "לאישור" ו"לביטול" היו אותה כתובת בדיוק. Invite.jsx מחיל את הערך הזה מיד
+// עם הטעינה, ולכן לחיצה אחת עדיין מספיקה — בדיוק כמו ב-/rsvp-action.
 export const buildRsvpMessage = (guest, origin, eventId) =>
   `היי ${guest.guest_name}, מתרגשים לקראת האירוע! נשמח לאישור סופי. לאישור: ${origin}/invite/${eventId}?guest_id=${guest.id}&status=confirmed | לביטול: ${origin}/invite/${eventId}?guest_id=${guest.id}&status=canceled`;
 
@@ -81,11 +85,17 @@ export const parseGuestLines = (text) => {
     .map((line) => line.trim())
     .filter(Boolean)
     .forEach((line, index) => {
-      const [rawName, rawPhone, rawCount] = line.split(",").map((p) => p?.trim());
+      const [rawName, rawPhone, rawCount] = line
+        .split(",")
+        .map((p) => p?.trim());
       const lineNumber = index + 1;
 
       if (!rawName || rawName.length < 1 || rawName.length > 100) {
-        invalid.push({ lineNumber, line, reason: "שם חסר או ארוך מ-100 תווים" });
+        invalid.push({
+          lineNumber,
+          line,
+          reason: "שם חסר או ארוך מ-100 תווים",
+        });
         return;
       }
       if (rawPhone && !PHONE_PATTERN.test(rawPhone)) {
@@ -125,6 +135,17 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
   const [confirmingDeleteId, setConfirmingDeleteId] = useState(null);
   const deleteTimerRef = useRef(null);
 
+  // ייבוא מקובץ: filePreview הוא מצב הביניים בין פענוח לשמירה.
+  const fileInputRef = useRef(null);
+  const [filePreview, setFilePreview] = useState(null);
+  const [fileName, setFileName] = useState("");
+  const [parsingFile, setParsingFile] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+
+  // מעקב שליחה — מקומי לסשן בלבד ולא נשמר ב-DB: המטרה היא לדעת איפה
+  // עצרתי ברשימה עכשיו, לא לתעד היסטוריית שליחות.
+  const [sentIds, setSentIds] = useState(() => new Set());
+
   useEffect(() => () => clearTimeout(deleteTimerRef.current), []);
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -153,6 +174,71 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
     fetchGuests();
   }, [fetchGuests]);
 
+  const resetFileImport = () => {
+    setFilePreview(null);
+    setFileName("");
+    setParsingFile(false);
+  };
+
+  const handleFile = async (file) => {
+    if (!file) return;
+    if (!/\.(xlsx|xls|csv)$/i.test(file.name)) {
+      showToast("קובץ לא נתמך — יש להעלות xlsx או csv", "warning");
+      return;
+    }
+    setParsingFile(true);
+    setFileName(file.name);
+    try {
+      const result = await parseGuestFile(file);
+      if (result.rows.length === 0) {
+        showToast("לא נמצאו שורות בקובץ", "warning");
+        resetFileImport();
+        return;
+      }
+      setFilePreview(result);
+    } catch (error) {
+      console.error(error);
+      showToast("לא הצלחנו לקרוא את הקובץ", "error");
+      resetFileImport();
+    } finally {
+      setParsingFile(false);
+    }
+  };
+
+  // השמירה היא שמייצרת את ה-UUID של כל אורח, ולכן רק אחריה יש קישור קסם לשלוח.
+  const saveImportedGuests = async () => {
+    if (!filePreview) return;
+    const valid = filePreview.rows.filter(isValidGuestRow);
+    if (valid.length === 0) {
+      showToast("אין שורות תקינות לשמירה", "warning");
+      return;
+    }
+    setImporting(true);
+    try {
+      const { error } = await supabase.from("event_guests").insert(
+        valid.map((row) => ({
+          event_id: eventId,
+          guest_name: row.name,
+          phone: row.phone, // כבר מנורמל ל-972…
+          guests_count: row.guestsCount,
+        })),
+      );
+      if (error) throw error;
+      showToast(`נשמרו ${valid.length} מוזמנים`, "success");
+      resetFileImport();
+      setImportOpen(false);
+      fetchGuests();
+    } catch (error) {
+      console.error(error);
+      showToast("שמירת המוזמנים נכשלה", "error");
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const markSent = (guestId) =>
+    setSentIds((prev) => new Set(prev).add(guestId));
+
   const counts = useMemo(
     () => ({
       all: guests.length,
@@ -173,12 +259,18 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
   );
 
   const filtered = useMemo(
-    () => (activeTab === "all" ? guests : guests.filter((g) => g.status === activeTab)),
+    () =>
+      activeTab === "all"
+        ? guests
+        : guests.filter((g) => g.status === activeTab),
     [guests, activeTab],
   );
 
   const preview = useMemo(
-    () => (importText.trim() ? parseGuestLines(importText) : { valid: [], invalid: [] }),
+    () =>
+      importText.trim()
+        ? parseGuestLines(importText)
+        : { valid: [], invalid: [] },
     [importText],
   );
 
@@ -189,9 +281,11 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
     }
     setImporting(true);
     try {
-      const { error } = await supabase.from("event_guests").insert(
-        preview.valid.map((guest) => ({ ...guest, event_id: eventId })),
-      );
+      const { error } = await supabase
+        .from("event_guests")
+        .insert(
+          preview.valid.map((guest) => ({ ...guest, event_id: eventId })),
+        );
       if (error) throw error;
       showToast(`נוספו ${preview.valid.length} מוזמנים`, "success");
       setImportText("");
@@ -297,7 +391,9 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
 
   const copyMessage = async (guest) => {
     try {
-      await navigator.clipboard.writeText(buildRsvpMessage(guest, origin, eventId));
+      await navigator.clipboard.writeText(
+        buildRsvpMessage(guest, origin, eventId),
+      );
       showToast("ההודעה הועתקה", "success");
     } catch {
       showToast("לא ניתן להעתיק", "error");
@@ -353,6 +449,12 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
             </h2>
             <p className="mt-1 font-bold text-emerald-600">
               {confirmedSeats} מקומות אושרו · {counts.all} מוזמנים
+              {sentIds.size > 0 && (
+                <span className="text-slate-500">
+                  {" "}
+                  · נשלחו {sentIds.size} בסשן הזה
+                </span>
+              )}
             </p>
           </div>
           <div className="flex gap-3">
@@ -378,8 +480,177 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
           </div>
         </div>
 
-        {importOpen && (
+        {/* --- תצוגה מקדימה של קובץ: מחליפה את אזור הייבוא עד אישור/ביטול --- */}
+        {filePreview && (
+          <div className="flex min-h-0 shrink-0 flex-col border-b border-[#e4e0d5] bg-[#f5f3ee]">
+            <div className="flex flex-wrap items-center justify-between gap-3 p-6 pb-3">
+              <div>
+                <h3 className="font-black text-slate-800">
+                  תצוגה מקדימה — {sanitize(fileName)}
+                </h3>
+                <p className="mt-1 text-sm font-bold text-slate-500">
+                  {filePreview.rows.filter(isValidGuestRow).length} שורות תקינות
+                  {filePreview.rows.length -
+                    filePreview.rows.filter(isValidGuestRow).length >
+                    0 && (
+                    <span className="text-rose-600">
+                      {" "}
+                      ·{" "}
+                      {filePreview.rows.length -
+                        filePreview.rows.filter(isValidGuestRow).length}{" "}
+                      ידולגו
+                    </span>
+                  )}
+                </p>
+                {!filePreview.headerDetected && (
+                  <p className="mt-1 text-xs font-bold text-amber-600">
+                    לא זוהו כותרות — העמודה הראשונה נקראה כשם והשנייה כטלפון
+                  </p>
+                )}
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={resetFileImport}
+                  disabled={importing}
+                  className={`${CLAY_RAISED} rounded-xl bg-[#f0eee7] px-4 py-2 font-bold text-slate-600 disabled:opacity-50`}
+                >
+                  ביטול
+                </button>
+                <button
+                  onClick={saveImportedGuests}
+                  disabled={importing}
+                  className="flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 font-black text-white transition-colors hover:bg-emerald-600 disabled:opacity-50"
+                >
+                  {importing ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    <Check size={18} />
+                  )}
+                  שמור מוזמנים
+                </button>
+              </div>
+            </div>
+            <div className="max-h-[38vh] overflow-y-auto px-6 pb-6">
+              <table className="w-full border-separate border-spacing-y-2 text-right">
+                <thead>
+                  <tr className="text-xs font-bold text-slate-400">
+                    <th className="px-3 pb-1">#</th>
+                    <th className="px-3 pb-1">שם</th>
+                    <th className="px-3 pb-1">טלפון (מנורמל)</th>
+                    <th className="px-3 pb-1">כמות</th>
+                    <th className="px-3 pb-1">סטטוס</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filePreview.rows.map((row) => {
+                    const invalid = !isValidGuestRow(row);
+                    return (
+                      <tr
+                        key={row.rowNumber}
+                        className={invalid ? "bg-rose-50" : "bg-[#f0eee7]"}
+                      >
+                        <td className="rounded-r-xl px-3 py-2 text-xs font-bold text-slate-400">
+                          {row.rowNumber}
+                        </td>
+                        <td
+                          className={`px-3 py-2 font-bold ${row.issues.includes("missing_name") ? "text-rose-500" : "text-slate-700"}`}
+                        >
+                          {row.name ? sanitize(row.name) : "— חסר שם —"}
+                        </td>
+                        <td
+                          dir="ltr"
+                          className={`px-3 py-2 text-right text-sm font-bold ${row.issues.includes("invalid_phone") ? "text-rose-500" : "text-slate-600"}`}
+                        >
+                          {row.phone
+                            ? sanitize(row.phone)
+                            : row.rawPhone
+                              ? `${sanitize(row.rawPhone)} ✗`
+                              : "—"}
+                        </td>
+                        <td className="px-3 py-2 font-bold text-slate-700">
+                          {row.guestsCount}
+                        </td>
+                        <td className="rounded-l-xl px-3 py-2 text-xs font-bold">
+                          {invalid ? (
+                            <span className="text-rose-600">ידולג</span>
+                          ) : (
+                            <span className="text-emerald-600">תקין</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {importOpen && !filePreview && (
           <div className="shrink-0 border-b border-[#e4e0d5] bg-[#f5f3ee] p-6">
+            {/* אזור גרירה — SheetJS נטען דינמית רק כשבאמת גוררים קובץ */}
+            <div
+              onDragOver={(event) => {
+                event.preventDefault();
+                setDragOver(true);
+              }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={(event) => {
+                event.preventDefault();
+                setDragOver(false);
+                handleFile(event.dataTransfer.files?.[0]);
+              }}
+              onClick={() => fileInputRef.current?.click()}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  fileInputRef.current?.click();
+                }
+              }}
+              className={`mb-4 cursor-pointer rounded-2xl border-2 border-dashed p-6 text-center transition-all ${
+                dragOver
+                  ? "border-emerald-500 bg-emerald-50"
+                  : "border-[#dcd7ca] bg-[#f0eee7] hover:border-emerald-300"
+              }`}
+            >
+              {parsingFile ? (
+                <Loader2
+                  className="mx-auto animate-spin text-emerald-500"
+                  size={26}
+                />
+              ) : (
+                <Upload className="mx-auto text-slate-400" size={26} />
+              )}
+              <p className="mt-2 text-sm font-black text-slate-700">
+                {parsingFile
+                  ? "קורא את הקובץ..."
+                  : "גררו לכאן קובץ Excel או CSV"}
+              </p>
+              <p className="mt-1 text-xs font-medium text-slate-400">
+                או לחצו לבחירה · xlsx, csv · מזהה כותרות שם/טלפון בעברית
+              </p>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              className="hidden"
+              onChange={(event) => {
+                handleFile(event.target.files?.[0]);
+                event.target.value = ""; // מאפשר לבחור שוב את אותו קובץ
+              }}
+            />
+
+            <div className="mb-3 flex items-center gap-3">
+              <div className="h-px flex-1 bg-[#dcd7ca]" />
+              <span className="text-xs font-bold text-slate-400">
+                או הדבקה ידנית
+              </span>
+              <div className="h-px flex-1 bg-[#dcd7ca]" />
+            </div>
+
             <p className="mb-2 text-sm font-bold text-slate-600">
               הדביקו שורה לכל מוזמן: שם, טלפון, כמות
             </p>
@@ -404,7 +675,8 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                     <ul className="space-y-0.5 text-xs text-rose-600">
                       {preview.invalid.map((row) => (
                         <li key={row.lineNumber}>
-                          שורה {row.lineNumber}: {sanitize(row.line)} — {row.reason}
+                          שורה {row.lineNumber}: {sanitize(row.line)} —{" "}
+                          {row.reason}
                         </li>
                       ))}
                     </ul>
@@ -474,7 +746,9 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                     const waPhone = toWhatsAppPhone(guest.phone);
                     return (
                       <tr key={guest.id} className="bg-[#f0eee7]">
-                        <td className={`${CLAY_RAISED} rounded-r-2xl px-3 py-3`}>
+                        <td
+                          className={`${CLAY_RAISED} rounded-r-2xl px-3 py-3`}
+                        >
                           <input
                             key={`name-${guest.id}-${guest.guest_name}`}
                             defaultValue={guest.guest_name || ""}
@@ -508,11 +782,13 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                             aria-label="סטטוס"
                             className={`w-full rounded-lg px-2.5 py-1.5 text-xs font-bold focus:outline-none ${STATUS_BADGE[guest.status]}`}
                           >
-                            {Object.entries(STATUS_LABEL).map(([key, label]) => (
-                              <option key={key} value={key}>
-                                {label}
-                              </option>
-                            ))}
+                            {Object.entries(STATUS_LABEL).map(
+                              ([key, label]) => (
+                                <option key={key} value={key}>
+                                  {label}
+                                </option>
+                              ),
+                            )}
                           </select>
                         </td>
                         <td className="px-3 py-3">
@@ -570,21 +846,45 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                               )}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center gap-1.5 text-sm font-bold text-emerald-600 hover:text-emerald-700"
+                              onClick={() => markSent(guest.id)}
+                              aria-label={`שליחת וואטסאפ אל ${guest.guest_name}`}
+                              className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-bold transition-all ${
+                                sentIds.has(guest.id)
+                                  ? `${CLAY_INSET} bg-[#f0eee7] text-slate-400`
+                                  : `${CLAY_RAISED} bg-emerald-500 text-white hover:bg-emerald-600`
+                              }`}
                             >
-                              <MessageCircle size={16} /> וואטסאפ
+                              {sentIds.has(guest.id) ? (
+                                <>
+                                  <Check size={16} /> נשלח
+                                </>
+                              ) : (
+                                <>
+                                  <MessageCircle size={16} /> שלח וואטסאפ
+                                </>
+                              )}
                             </a>
                           ) : (
                             <button
-                              onClick={() => copyMessage(guest)}
+                              onClick={() => {
+                                copyMessage(guest);
+                                markSent(guest.id);
+                              }}
                               title="אין טלפון תקין — העתקת ההודעה"
-                              className="flex items-center gap-1.5 text-sm font-bold text-slate-500 hover:text-slate-700"
+                              className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-bold transition-all ${
+                                sentIds.has(guest.id)
+                                  ? `${CLAY_INSET} bg-[#f0eee7] text-slate-400`
+                                  : `${CLAY_RAISED} bg-[#f0eee7] text-slate-600`
+                              }`}
                             >
-                              <Copy size={16} /> העתק
+                              <Copy size={16} />
+                              {sentIds.has(guest.id) ? "הועתק" : "העתק"}
                             </button>
                           )}
                         </td>
-                        <td className={`${CLAY_RAISED} rounded-l-2xl px-3 py-3`}>
+                        <td
+                          className={`${CLAY_RAISED} rounded-l-2xl px-3 py-3`}
+                        >
                           {confirmingDeleteId === guest.id ? (
                             <button
                               onClick={() => confirmDelete(guest)}

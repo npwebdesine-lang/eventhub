@@ -71,7 +71,13 @@ const rsvpErrorCode = (error) => {
 
 // בורר העדפת תזונה — משמש גם בכרטיס קישור הקסם וגם לכל אורח בזרימה העצמאית.
 // compact=true מקטין לשורת גלולות צרה שמתאימה מתחת לשדה שם.
-const DietaryPicker = ({ value, onChange, primaryColor, disabled, compact }) => (
+const DietaryPicker = ({
+  value,
+  onChange,
+  primaryColor,
+  disabled,
+  compact,
+}) => (
   <div
     role="group"
     aria-label="העדפת תזונה"
@@ -696,7 +702,6 @@ const Invite = () => {
               primaryColor={primaryColor}
               setShowRsvp={setShowRsvp}
               setRsvpStep={setRsvpStep}
-
               initialRsvpStep={magicGuest ? RSVP_STEP_GUEST : 1}
               navigate={navigate}
             />
@@ -809,7 +814,6 @@ const Invite = () => {
                 primaryColor={primaryColor}
                 setShowRsvp={setShowRsvp}
                 setRsvpStep={setRsvpStep}
-
                 initialRsvpStep={magicGuest ? RSVP_STEP_GUEST : 1}
                 navigate={navigate}
               />
@@ -952,7 +956,6 @@ const Invite = () => {
             primaryColor={primaryColor}
             setShowRsvp={setShowRsvp}
             setRsvpStep={setRsvpStep}
-
             initialRsvpStep={magicGuest ? RSVP_STEP_GUEST : 1}
             navigate={navigate}
           />

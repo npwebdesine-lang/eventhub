@@ -68,9 +68,12 @@ export default function Modal({
 
   if (!open) return null;
 
-  const alignment = variant === "sheet" ? "items-end sm:items-center" : "items-center";
+  const alignment =
+    variant === "sheet" ? "items-end sm:items-center" : "items-center";
   const radius =
-    variant === "sheet" ? "rounded-t-[2rem] sm:rounded-[2rem]" : "rounded-[2rem]";
+    variant === "sheet"
+      ? "rounded-t-[2rem] sm:rounded-[2rem]"
+      : "rounded-[2rem]";
 
   return (
     <div

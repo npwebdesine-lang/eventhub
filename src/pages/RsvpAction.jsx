@@ -66,7 +66,9 @@ export default function RsvpAction() {
     isValidUUIDv4(guestId) && VALID_STATUSES.includes(requestedStatus);
 
   const [result, setResult] = useState(null);
-  const [errorCode, setErrorCode] = useState(linkIsValid ? null : "invalid_link");
+  const [errorCode, setErrorCode] = useState(
+    linkIsValid ? null : "invalid_link",
+  );
   const [loading, setLoading] = useState(linkIsValid);
   const [saving, setSaving] = useState(false);
   const [guestsCount, setGuestsCount] = useState(1);
