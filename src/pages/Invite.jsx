@@ -20,6 +20,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Navigation,
+  MapPin,
 } from "lucide-react";
 import gsap from "gsap";
 import { getLuminance } from "../lib/colors";
@@ -66,6 +67,40 @@ const rsvpErrorCode = (error) => {
   return (
     Object.keys(RSVP_ERROR_COPY).find((code) => message.includes(code)) ||
     "network"
+  );
+};
+
+// שורת המיקום — הכתובת עצמה ולא רק כפתור הניווט. עד עכשיו האורח היה צריך
+// ללחוץ על "נווט לאירוע" רק כדי לגלות איפה זה.
+//
+// מחזיר null כשאין מיקום, ולכן כל קורא אחראי גם למרווח התחתון שלו — ראו
+// המרווח המותנה על שורת התאריך, כדי שהפריסה לא תתכווץ כשאין כתובת.
+const LocationLine = ({ location, primaryColor, size = "md", className = "" }) => {
+  const text = (location || "").trim();
+  if (!text) return null;
+  const isSmall = size === "sm";
+  return (
+    <div
+      className={`flex items-center justify-center gap-2 ${className}`}
+      title={text}
+    >
+      <span
+        className={`grid place-items-center rounded-full shrink-0 bg-[#eeece5] shadow-[inset_2px_2px_5px_rgba(0,0,0,0.08),inset_-2px_-2px_5px_rgba(255,255,255,0.85)] ${
+          isSmall ? "w-6 h-6" : "w-7 h-7"
+        }`}
+      >
+        <MapPin
+          size={isSmall ? 12 : 14}
+          style={{ color: primaryColor }}
+          aria-hidden="true"
+        />
+      </span>
+      <span
+        className={`font-medium text-slate-500 ${isSmall ? "text-sm" : "text-base"}`}
+      >
+        {sanitize(text)}
+      </span>
+    </div>
   );
 };
 
@@ -792,9 +827,18 @@ const Invite = () => {
                 היום זה קורה!
               </h2>
             )}
-            <p className="fade-up-item text-slate-500 font-medium mb-8">
+            <p
+              className={`fade-up-item text-slate-500 font-medium ${
+                location ? "mb-2" : "mb-8"
+              }`}
+            >
               ב- {new Date(event_date).toLocaleDateString("he-IL")}
             </p>
+            <LocationLine
+              location={location}
+              primaryColor={primaryColor}
+              className="fade-up-item mb-8"
+            />
             <ActionButtons
               theme="light"
               active_modules={active_modules}
@@ -851,6 +895,12 @@ const Invite = () => {
                 <Clock size={16} />{" "}
                 {new Date(event_date).toLocaleDateString("he-IL")}
               </p>
+              <LocationLine
+                location={location}
+                primaryColor={primaryColor}
+                size="sm"
+                className="mt-2"
+              />
             </div>
             <div
               className="fade-up-item rounded-[2rem] -mt-8 mx-4 p-6 relative z-20 text-white"
@@ -980,11 +1030,18 @@ const Invite = () => {
             {name}
           </h1>
           <p
-            className={`fade-up-item text-xl ${subTextColor} mb-12 font-medium flex items-center justify-center gap-2`}
+            className={`fade-up-item text-xl ${subTextColor} ${
+              location ? "mb-3" : "mb-12"
+            } font-medium flex items-center justify-center gap-2`}
           >
             <Clock size={20} />{" "}
             {new Date(event_date).toLocaleDateString("he-IL")}
           </p>
+          <LocationLine
+            location={location}
+            primaryColor={primaryColor}
+            className="fade-up-item mb-12"
+          />
 
           {!isHappeningNow ? (
             <div
