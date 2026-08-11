@@ -66,17 +66,42 @@ async function fetchEvent(eventId) {
   return Array.isArray(rows) && rows.length ? rows[0] : null;
 }
 
+// מקור אמת ל-origin. לא נגזר מכותרות הבקשה:
+//   Host ו-X-Forwarded-Host נשלטים על ידי הלקוח. אם הם היו מרכיבים את
+//   ה-origin, בקשה עם X-Forwarded-Host: evil.com הייתה גורמת לתשובה להיכתב
+//   עם og:url של evil.com — והתשובה נשמרת ב-CDN (s-maxage), כך שכל מי
+//   שביקש אחריה היה מקבל את הגרסה המורעלת. זה cache poisoning קלאסי דרך
+//   קלט לא ממופתח.
+//
+// VERCEL_PROJECT_PRODUCTION_URL ו-VERCEL_URL מוזרקים על ידי הפלטפורמה ואינם
+// ניתנים לזיוף מהרשת.
+const TRUSTED_ORIGIN =
+  process.env.PUBLIC_ORIGIN ||
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : "");
+
+// כתובת הדפלוימנט עצמו — משמשת רק לנפילה לקריאת המעטפת ברשת.
+const SELF_ORIGIN = process.env.VERCEL_URL
+  ? `https://${process.env.VERCEL_URL}`
+  : "";
+
 // שתי דרכים להשיג את המעטפת, לפי הסדר:
 //   1. מהדיסק — dist/index.html נארז עם הפונקציה דרך functions.includeFiles.
-//   2. מהרשת — אם האריזה לא כללה אותו. /index.html הוא קובץ סטטי אמיתי,
+//   2. מהרשת, מהדפלוימנט של עצמנו בלבד. /index.html הוא קובץ סטטי אמיתי,
 //      ו-Vercel בודק את מערכת הקבצים לפני ה-rewrites, ולכן אין כאן לולאה.
-async function loadShell(origin) {
+//
+// ה-origin כאן חייב להגיע מהפלטפורמה ולא מהבקשה: הגוף שמוחזר מה-fetch הופך
+// להיות גוף התשובה שלנו כמות שהוא. origin שנשלט על ידי תוקף היה גורם לנו
+// להגיש HTML זר מהדומיין שלנו.
+async function loadShell() {
   try {
     const { readFile } = await import("node:fs/promises");
     const { join } = await import("node:path");
     return await readFile(join(process.cwd(), "dist", "index.html"), "utf8");
   } catch {
-    const response = await fetch(`${origin}/index.html`, {
+    if (!SELF_ORIGIN) throw new Error("shell_unavailable");
+    const response = await fetch(`${SELF_ORIGIN}/index.html`, {
       signal: AbortSignal.timeout(2500),
     });
     if (!response.ok) throw new Error("shell_unavailable");
@@ -111,16 +136,19 @@ const buildTags = ({ title, description, image, url }) => {
 };
 
 export default async function handler(request, response) {
-  const host = request.headers["x-forwarded-host"] || request.headers.host;
-  const proto = request.headers["x-forwarded-proto"] || "https";
-  const origin = `${proto}://${host}`;
+  // בפיתוח מקומי אין משתני פלטפורמה, ואז נופלים ל-Host. זה בטוח כאן: מחוץ
+  // ל-Vercel אין CDN שישמור תשובה מורעלת, והכתובת משמשת רק לתגיות.
+  const origin =
+    TRUSTED_ORIGIN ||
+    SELF_ORIGIN ||
+    `${request.headers["x-forwarded-proto"] || "http"}://${request.headers.host}`;
 
   const eventId = String(request.query?.id || "");
   const canonical = `${origin}/invite/${eventId}`;
 
   let shell;
   try {
-    shell = await loadShell(origin);
+    shell = await loadShell();
   } catch {
     // בלי המעטפת אין מה להגיש: המשתמש חייב את תגיות ה-script עם ה-hash
     // של הבילד הנוכחי, ואי אפשר לנחש אותן.
