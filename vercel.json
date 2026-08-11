@@ -1,5 +1,14 @@
 {
+  "functions": {
+    "api/invite.js": {
+      "includeFiles": "dist/index.html"
+    }
+  },
   "rewrites": [
+    {
+      "source": "/invite/:id",
+      "destination": "/api/invite?id=:id"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
