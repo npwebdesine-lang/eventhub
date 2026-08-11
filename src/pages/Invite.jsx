@@ -202,7 +202,8 @@ const Invite = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   // הרשמה עצמאית יוצרת שורה אחת ב-event_guests (מקור אמת יחיד), ולכן העדפת
   // התזונה היא אחת להזמנה — לא אחת לאורח.
-  const [partyDietary, setPartyDietary] = useState(DEFAULT_DIETARY);
+  // אדם אחד = שורה אחת = העדפה אחת. מערך מקביל ל-guestNames לפי אינדקס.
+  const [guestDietaries, setGuestDietaries] = useState([DEFAULT_DIETARY]);
 
   // ----------------------------------------
   // Magic link: /invite/:id?guest_id=<uuid>
@@ -210,7 +211,11 @@ const Invite = () => {
   const magicGuestId = searchParams.get("guest_id");
   const magicStatusHint = searchParams.get("status");
   const [magicGuest, setMagicGuest] = useState(null);
-  const [magicCount, setMagicCount] = useState(1);
+  // שאר בני החבורה — שורות אמיתיות ב-event_guests שחולקות את אותו טלפון.
+  const [magicCompanions, setMagicCompanions] = useState([]);
+  const [newCompanionName, setNewCompanionName] = useState("");
+  const [newCompanionDietary, setNewCompanionDietary] = useState(DEFAULT_DIETARY);
+  const [companionBusy, setCompanionBusy] = useState(false);
   const [magicNotes, setMagicNotes] = useState("");
   const [magicDietary, setMagicDietary] = useState(DEFAULT_DIETARY);
   const [magicSaving, setMagicSaving] = useState(false);
@@ -261,11 +266,14 @@ const Invite = () => {
 
     (async () => {
       try {
-        const { data, error } = await supabase.rpc("rsvp_guest_lookup", {
+        // rsvp_guest_group מחזיר את כל בני החבורה (אותו טלפון), כי כל אדם
+        // הוא שורה נפרדת עם ההעדפה שלו. is_self מסמן את מי שהקישור שייך לו.
+        const { data, error } = await supabase.rpc("rsvp_guest_group", {
           p_guest_id: magicGuestId,
         });
         if (error) throw error;
-        const row = Array.isArray(data) ? data[0] : data;
+        const rows = Array.isArray(data) ? data : [];
+        const row = rows.find((entry) => entry.is_self) || rows[0];
         // מזהה לא מוכר, או אורח ששייך לאירוע אחר — נפילה שקטה לזרימה העצמאית
         // במקום לפנות לאדם הלא נכון בשמו.
         if (!isMounted || !row || row.event_id !== id) return;
@@ -294,9 +302,9 @@ const Invite = () => {
         }
 
         setMagicGuest(finalRow);
-        setMagicCount(finalRow.guests_count ?? 1);
         setMagicNotes(finalRow.notes ?? "");
         setMagicDietary(finalRow.dietary ?? DEFAULT_DIETARY);
+        setMagicCompanions(rows.filter((entry) => !entry.is_self));
         setShowRsvp(true);
         setRsvpStep(RSVP_STEP_GUEST);
       } catch (error) {
@@ -421,7 +429,9 @@ const Invite = () => {
     if (!magicGuest) return null;
     const payload = {
       status: overrides.status ?? magicGuest.status,
-      count: overrides.count ?? magicCount,
+      // כל שורה היא אדם אחד, ולכן guests_count תמיד 1. null משאיר את הערך
+      // הקיים (coalesce ב-RPC) ומונע החייאה של המונה הישן.
+      count: null,
       notes: overrides.notes ?? magicNotes,
       dietary: overrides.dietary ?? magicDietary,
     };
@@ -438,7 +448,6 @@ const Invite = () => {
       const row = (Array.isArray(data) ? data[0] : data) || null;
       if (row) {
         setMagicGuest(row);
-        setMagicCount(row.guests_count ?? payload.count);
         setMagicNotes(row.notes ?? "");
         setMagicDietary(row.dietary ?? DEFAULT_DIETARY);
       }
@@ -460,11 +469,86 @@ const Invite = () => {
     if (!row) setMagicDietary(previous);
   };
 
-  const changeMagicCount = (delta) => {
-    const next = Math.min(20, Math.max(0, magicCount + delta));
-    if (next === magicCount) return;
-    setMagicCount(next);
-    saveMagicResponse({ count: next });
+  // הגדלת החבורה מוסיפה שורה אמיתית ולא מגדילה מונה: לאדם החדש יש שם משלו
+  // והעדפת תזונה משלו. השורה הראשית נשארת guests_count = 1.
+  const addCompanion = async () => {
+    const name = newCompanionName.trim();
+    if (!name) {
+      showToast("אנא הזינו שם", "warning");
+      return;
+    }
+    setCompanionBusy(true);
+    try {
+      const { data, error } = await supabase.rpc("rsvp_add_companion", {
+        p_primary_guest_id: magicGuestId,
+        p_guest_name: name,
+        p_dietary: newCompanionDietary,
+      });
+      if (error) throw error;
+      setMagicCompanions((prev) => [
+        ...prev,
+        {
+          id: data,
+          guest_name: name,
+          dietary: newCompanionDietary,
+          status: magicGuest?.status ?? "confirmed",
+          guests_count: 1,
+          is_self: false,
+        },
+      ]);
+      setNewCompanionName("");
+      setNewCompanionDietary(DEFAULT_DIETARY);
+      setMagicSaved(true);
+    } catch (err) {
+      console.error("add companion:", err);
+      showToast(RSVP_ERROR_COPY[rsvpErrorCode(err)], "error");
+    } finally {
+      setCompanionBusy(false);
+    }
+  };
+
+  const removeCompanion = async (companionId) => {
+    setCompanionBusy(true);
+    const previous = magicCompanions;
+    setMagicCompanions((prev) => prev.filter((c) => c.id !== companionId));
+    try {
+      const { error } = await supabase.rpc("rsvp_remove_companion", {
+        p_primary_guest_id: magicGuestId,
+        p_companion_id: companionId,
+      });
+      if (error) throw error;
+    } catch (err) {
+      console.error("remove companion:", err);
+      showToast("לא הצלחנו להסיר את האורח", "error");
+      setMagicCompanions(previous); // החזרה למצב הקודם
+    } finally {
+      setCompanionBusy(false);
+    }
+  };
+
+  // כל בן חבורה הוא שורה עצמאית, ולכן ההעדפה שלו נשמרת דרך rsvp_respond
+  // על ה-id שלו — לא על השורה הראשית.
+  const changeCompanionDietary = async (companion, value) => {
+    const previous = companion.dietary;
+    setMagicCompanions((prev) =>
+      prev.map((c) => (c.id === companion.id ? { ...c, dietary: value } : c)),
+    );
+    const { error } = await supabase.rpc("rsvp_respond", {
+      p_guest_id: companion.id,
+      p_status: companion.status ?? "confirmed",
+      p_guests_count: null,
+      p_notes: null,
+      p_dietary: value,
+    });
+    if (error) {
+      console.error(error);
+      showToast("העדפת התזונה לא נשמרה", "error");
+      setMagicCompanions((prev) =>
+        prev.map((c) =>
+          c.id === companion.id ? { ...c, dietary: previous } : c,
+        ),
+      );
+    }
   };
 
   const handleCountNext = () => {
@@ -472,6 +556,14 @@ const Invite = () => {
     while (newNames.length < guestCount) newNames.push("");
     if (newNames.length > guestCount) newNames.length = guestCount;
     setGuestNames(newNames);
+
+    // מערך מקביל לשמות: guestDietaries[i] שייך ל-guestNames[i]. נשמר באותו
+    // אורך בדיוק כדי שהצמד לא יזוז כשמשנים את מספר המגיעים.
+    const newDietaries = [...guestDietaries];
+    while (newDietaries.length < guestCount) newDietaries.push(DEFAULT_DIETARY);
+    if (newDietaries.length > guestCount) newDietaries.length = guestCount;
+    setGuestDietaries(newDietaries);
+
     setRsvpStep(2);
   };
 
@@ -479,6 +571,12 @@ const Invite = () => {
     const updatedNames = [...guestNames];
     updatedNames[index] = value;
     setGuestNames(updatedNames);
+  };
+
+  const handleGuestDietaryChange = (index, value) => {
+    const updated = [...guestDietaries];
+    updated[index] = value;
+    setGuestDietaries(updated);
   };
 
   // ההרשמה כולה עוברת ב-RPC: ל-anon אין policy על event_guests ולכן הוא לא
@@ -515,19 +613,22 @@ const Invite = () => {
     }
   };
 
-  // שורה אחת ב-event_guests להזמנה: השם הראשון הוא בעל ההזמנה, השאר נשמרים
-  // ב-notes (אין עמודה ייעודית), וה-guests_count הוא סך המגיעים.
+  // אדם אחד = שורה אחת = העדפת תזונה אחת. ה-RPC מקבל מערך מסודר ומכניס שורה
+  // לכל אדם, כולן עם אותו טלפון — הטלפון הוא מפתח הקיבוץ בצד המנהל.
   const executeSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const [mainName, ...companions] = guestNames.map((n) => n.trim());
+      const party = guestNames
+        .map((name, index) => ({
+          name: name.trim(),
+          dietary: guestDietaries[index] || DEFAULT_DIETARY,
+        }))
+        .filter((guest) => guest.name);
+
       const { error } = await supabase.rpc("rsvp_self_register", {
         p_event_id: id,
-        p_guest_name: mainName,
         p_phone: submitterPhone.trim(),
-        p_guests_count: guestCount,
-        p_companions: companions.filter(Boolean),
-        p_dietary: partyDietary,
+        p_guests: party,
         p_notes: null,
       });
       if (error) throw error;
@@ -538,7 +639,7 @@ const Invite = () => {
         setRsvpStep(1);
         setGuestCount(1);
         setGuestNames([""]);
-        setPartyDietary(DEFAULT_DIETARY);
+        setGuestDietaries([DEFAULT_DIETARY]);
         setSubmitterPhone("");
       }, 4000);
     } catch (err) {
@@ -1045,45 +1146,87 @@ const Invite = () => {
 
                 {magicGuest.status === "confirmed" && (
                   <>
+                    {/* ההעדפה שלך — השורה שהקישור שייך לה */}
                     <div className="rounded-[1.4rem] p-4 mb-4 bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.07),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]">
-                      <p className="text-xs font-bold text-slate-400 mb-3 text-center">
-                        כמה תגיעו סך הכל?
-                      </p>
-                      <div className="flex items-center justify-center gap-5">
-                        <button
-                          type="button"
-                          onClick={() => changeMagicCount(-1)}
-                          disabled={magicSaving}
-                          aria-label="פחות אורחים"
-                          className="w-12 h-12 rounded-full text-slate-600 font-black text-xl flex items-center justify-center bg-[#e9e6dc] shadow-[5px_5px_12px_rgba(0,0,0,0.08),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1)] disabled:opacity-50"
-                        >
-                          -
-                        </button>
-                        <span className="text-4xl font-black text-slate-700 w-12 text-center">
-                          {magicCount}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => changeMagicCount(1)}
-                          disabled={magicSaving}
-                          aria-label="עוד אורחים"
-                          className="w-12 h-12 rounded-full text-slate-600 font-black text-xl flex items-center justify-center bg-[#e9e6dc] shadow-[5px_5px_12px_rgba(0,0,0,0.08),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1)] disabled:opacity-50"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="mb-4">
-                      <p className="text-xs font-bold text-slate-400 mb-3 text-center">
-                        העדפת תזונה
+                      <p className="text-xs font-bold text-slate-400 mb-3">
+                        העדפת התזונה שלך
                       </p>
                       <DietaryPicker
                         value={magicDietary}
                         onChange={changeMagicDietary}
                         primaryColor={primaryColor}
                         disabled={magicSaving}
+                        compact
                       />
+                    </div>
+
+                    {/* כל מי שמגיע איתך הוא שורה נפרדת עם העדפה משלו */}
+                    <div className="rounded-[1.4rem] p-4 mb-4 bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.07),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]">
+                      <p className="text-xs font-bold text-slate-400 mb-3">
+                        מי מגיע איתך? ({magicCompanions.length})
+                      </p>
+
+                      <div className="space-y-3">
+                        {magicCompanions.map((companion) => (
+                          <div
+                            key={companion.id}
+                            className="rounded-[1.2rem] bg-[#f0eee7] p-3 shadow-[4px_4px_10px_rgba(0,0,0,0.06),-4px_-4px_10px_rgba(255,255,255,0.9)]"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-bold text-slate-700">
+                                {sanitize(companion.guest_name)}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => removeCompanion(companion.id)}
+                                disabled={companionBusy}
+                                aria-label={`הסרת ${companion.guest_name}`}
+                                className="rounded-full p-1.5 text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-500 disabled:opacity-50"
+                              >
+                                <X size={16} />
+                              </button>
+                            </div>
+                            <div className="mt-2">
+                              <DietaryPicker
+                                value={companion.dietary}
+                                onChange={(value) =>
+                                  changeCompanionDietary(companion, value)
+                                }
+                                primaryColor={primaryColor}
+                                disabled={companionBusy}
+                                compact
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="mt-3 rounded-[1.2rem] bg-[#f0eee7] p-3 shadow-[inset_3px_3px_7px_rgba(0,0,0,0.06),inset_-3px_-3px_7px_rgba(255,255,255,0.9)]">
+                        <input
+                          type="text"
+                          value={newCompanionName}
+                          onChange={(e) => setNewCompanionName(e.target.value)}
+                          maxLength={100}
+                          placeholder="שם האורח הנוסף"
+                          className={`${clayFieldCls} bg-[#eeece5] mb-2`}
+                        />
+                        <DietaryPicker
+                          value={newCompanionDietary}
+                          onChange={setNewCompanionDietary}
+                          primaryColor={primaryColor}
+                          disabled={companionBusy}
+                          compact
+                        />
+                        <button
+                          type="button"
+                          onClick={addCompanion}
+                          disabled={companionBusy || !newCompanionName.trim()}
+                          className="mt-3 w-full rounded-full py-3 font-bold text-white transition-all active:scale-[0.97] disabled:opacity-40"
+                          style={clayBtn(primaryColor)}
+                        >
+                          {companionBusy ? "מוסיף..." : "+ הוספת אורח"}
+                        </button>
+                      </div>
                     </div>
 
                     <textarea
@@ -1184,41 +1327,45 @@ const Invite = () => {
 
                   <div className="pt-2 border-t border-[#dcd7ca]">
                     <label className="text-xs font-bold text-slate-400 pl-2 block mb-3">
-                      שמות האורחים (שם פרטי ומשפחה)
+                      שמות האורחים והעדפת תזונה לכל אחד
                     </label>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {guestNames.map((name, index) => (
-                        <div key={index} className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 font-bold text-sm shrink-0 bg-[#eeece5] shadow-[inset_3px_3px_7px_rgba(0,0,0,0.07),inset_-3px_-3px_7px_rgba(255,255,255,0.85)]">
-                            {index + 1}
+                        <div
+                          key={index}
+                          className="rounded-[1.4rem] bg-[#eeece5] p-3 shadow-[inset_4px_4px_9px_rgba(0,0,0,0.07),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 font-bold text-sm shrink-0 bg-[#f0eee7] shadow-[3px_3px_7px_rgba(0,0,0,0.08),-3px_-3px_7px_rgba(255,255,255,0.9)]">
+                              {index + 1}
+                            </div>
+                            <input
+                              type="text"
+                              required
+                              placeholder={
+                                index === 0 ? "השם שלך" : `שם אורח ${index + 1}`
+                              }
+                              value={name}
+                              onChange={(e) =>
+                                handleNameChange(index, e.target.value)
+                              }
+                              className={`${clayFieldCls} bg-[#f0eee7]`}
+                            />
                           </div>
-                          <input
-                            type="text"
-                            required
-                            placeholder={
-                              index === 0 ? "השם שלך" : `שם אורח ${index + 1}`
-                            }
-                            value={name}
-                            onChange={(e) =>
-                              handleNameChange(index, e.target.value)
-                            }
-                            className={clayFieldCls}
-                          />
+                          {/* בורר ייעודי לאדם הזה — כל שורה נשמרת עם ההעדפה שלה */}
+                          <div className="mt-3 pr-11">
+                            <DietaryPicker
+                              value={guestDietaries[index]}
+                              onChange={(value) =>
+                                handleGuestDietaryChange(index, value)
+                              }
+                              primaryColor={primaryColor}
+                              compact
+                            />
+                          </div>
                         </div>
                       ))}
                     </div>
-                  </div>
-
-                  <div className="pt-2 border-t border-[#dcd7ca]">
-                    <label className="text-xs font-bold text-slate-400 pl-2 block mb-3">
-                      העדפת תזונה
-                    </label>
-                    <DietaryPicker
-                      value={partyDietary}
-                      onChange={setPartyDietary}
-                      primaryColor={primaryColor}
-                      compact
-                    />
                   </div>
                 </div>
 

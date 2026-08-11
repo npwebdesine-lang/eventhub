@@ -249,6 +249,19 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
     [guests],
   );
 
+  // אדם אחד = שורה אחת, ולכן חבורה מזוהה רק לפי טלפון משותף. הספירה מתבצעת
+  // על כל המוזמנים ולא על התצוגה המסוננת, אחרת מעבר ללשונית "אישרו" היה
+  // מקטין את מספר בני החבורה ונראה כמו באג.
+  const phoneGroupSizes = useMemo(() => {
+    const sizes = new Map();
+    guests.forEach((guest) => {
+      const key = (guest.phone || "").trim();
+      if (!key) return; // בלי טלפון אין מפתח קיבוץ — שורה בודדת
+      sizes.set(key, (sizes.get(key) || 0) + 1);
+    });
+    return sizes;
+  }, [guests]);
+
   // המספר היחיד שאולם או קייטרינג מבקשים
   const confirmedSeats = useMemo(
     () =>
@@ -744,6 +757,8 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                 <tbody>
                   {filtered.map((guest) => {
                     const waPhone = toWhatsAppPhone(guest.phone);
+                    const groupSize =
+                      phoneGroupSizes.get((guest.phone || "").trim()) || 1;
                     return (
                       <tr key={guest.id} className="bg-[#f0eee7]">
                         <td
@@ -772,6 +787,16 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                             aria-label="טלפון"
                             className={`${CLAY_INSET} w-full rounded-xl bg-[#f0eee7] px-3 py-1.5 text-right text-sm text-slate-600 placeholder:text-slate-400 focus:outline-none`}
                           />
+                          {/* טלפון משותף = הגיעו יחד. הסימון הוא הרמז היחיד
+                              לקיבוץ אחרי שכל אדם הפך לשורה עצמאית. */}
+                          {groupSize > 1 && (
+                            <span
+                              title={`${groupSize} אורחים עם אותו טלפון — הגיעו יחד`}
+                              className="mt-1 inline-flex items-center gap-1 rounded-lg bg-indigo-100 px-2 py-0.5 text-[11px] font-bold text-indigo-700"
+                            >
+                              <Users size={11} /> חבורה של {groupSize}
+                            </span>
+                          )}
                         </td>
                         <td className="px-3 py-3">
                           <select
