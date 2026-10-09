@@ -17,9 +17,78 @@ h6 {
   letter-spacing: -0.01em;
 }
 
+/* ==================== CLAY DESIGN TOKENS ==================== */
+/* מקור האמת היחיד לסגנון ה-Clay. כל טוקן כאן הופך גם ל-utility של Tailwind
+   (bg-clay-surface, shadow-clay, rounded-clay...) וגם למשתנה CSS שזמין ל-JS
+   (var(--color-clay-surface)) — static כדי שהמשתנים ייפלטו גם בלי שימוש
+   ב-class. ערכי הטקסט נמדדו מול כל משטחי החימר: clay-muted עובר 4.5:1 (AA)
+   על כולם, גם על הכהה ביותר (#e2ddd0). */
+@theme static {
+  /* משטחים */
+  --color-clay-page: #eceadf; /* רקע הדף */
+  --color-clay-page-end: #e2ddd0; /* סוף מעבר הרקע */
+  --color-clay-surface: #f0eee7; /* כרטיסים וכפתורים בולטים */
+  --color-clay-well: #eeece5; /* שדות ובארות שקועות */
+  --color-clay-well-deep: #e4e0d5; /* באר עמוקה / קווי הפרדה רכים */
+  --color-clay-chip: #e9e6dc; /* תגיות וכפתורים משניים */
+  --color-clay-sheet: #e8e4da; /* גיליונות ומודאלים */
+  --color-clay-shade: #e0dccf; /* hover ושלד טעינה */
+  --color-clay-line: #dcd7ca; /* גבולות */
+  --color-clay-scrim: rgb(74 82 89 / 0.35); /* רקע מאחורי מודאל */
+
+  /* דיו */
+  --color-clay-ink: #5b6169; /* כפתור כהה (טקסט לבן 6.25:1) */
+  --color-clay-ink-hover: #4a5259;
+  --color-clay-muted: #58606b; /* טקסט משני, 4.69:1 לפחות */
+
+  /* צבע מותג ברירת מחדל לאירוע שלא הוגדר לו צבע */
+  --color-clay-primary: #8fa7b8;
+
+  /* הבלטה (raised) — מהקטן לגדול */
+  --shadow-clay-sm:
+    4px 4px 10px rgb(0 0 0 / 0.08), -4px -4px 10px rgb(255 255 255 / 0.9);
+  --shadow-clay-md:
+    6px 6px 14px rgb(0 0 0 / 0.09), -6px -6px 14px rgb(255 255 255 / 0.9);
+  --shadow-clay:
+    8px 8px 20px rgb(0 0 0 / 0.09), -8px -8px 20px rgb(255 255 255 / 0.9);
+  --shadow-clay-lg:
+    12px 12px 30px rgb(0 0 0 / 0.1), -12px -12px 30px rgb(255 255 255 / 0.9);
+  /* שקיעה (inset) */
+  --shadow-clay-inset:
+    inset 4px 4px 9px rgb(0 0 0 / 0.07),
+    inset -4px -4px 9px rgb(255 255 255 / 0.85);
+  --shadow-clay-inset-deep:
+    inset 4px 4px 9px rgb(0 0 0 / 0.09),
+    inset -4px -4px 9px rgb(255 255 255 / 0.85);
+  /* מצב לחוץ (active) של כפתור בולט */
+  --shadow-clay-pressed:
+    inset 3px 3px 7px rgb(0 0 0 / 0.1), inset -3px -3px 7px rgb(255 255 255 / 0.8);
+  /* כפתור צבעוני (צבע האירוע / דיו) */
+  --shadow-clay-btn:
+    5px 5px 14px rgb(0 0 0 / 0.14), -4px -4px 12px rgb(255 255 255 / 0.7),
+    inset 2px 2px 4px rgb(255 255 255 / 0.35),
+    inset -2px -2px 4px rgb(0 0 0 / 0.12);
+  --shadow-clay-modal:
+    0 -14px 40px rgb(0 0 0 / 0.16), 0 14px 40px rgb(0 0 0 / 0.12);
+
+  /* פינות */
+  --radius-clay-field: 1.4rem; /* שדות קלט */
+  --radius-clay: 2.25rem; /* כרטיסים */
+  --radius-clay-lg: 2.5rem; /* גיליונות, מודאלים, כרטיסי גיבור */
+}
+
+/* רקע הדף: מעבר עדין בין שני גווני החימר */
+@utility bg-clay-gradient {
+  background: linear-gradient(
+    160deg,
+    var(--color-clay-page) 0%,
+    var(--color-clay-page-end) 100%
+  );
+}
+
 /* Warm clay surface as the app-wide default backdrop */
 body {
-  background: #eceadf;
+  background: var(--color-clay-page);
 }
 
 /* ==================== MOBILE VIEWPORT ==================== */
@@ -172,14 +241,12 @@ body {
 
 /* Legacy aliases — remapped to the soft-clay recipe (no blur, matte surface) */
 .glass-card {
-  background: #f0eee7;
-  box-shadow:
-    8px 8px 20px rgba(0, 0, 0, 0.09),
-    -8px -8px 20px rgba(255, 255, 255, 0.9);
+  background: var(--color-clay-surface);
+  box-shadow: var(--shadow-clay);
 }
 
 .glass-dark {
-  background: #5b6169;
+  background: var(--color-clay-ink);
   box-shadow:
     5px 5px 14px rgba(0, 0, 0, 0.18),
     inset 2px 2px 4px rgba(255, 255, 255, 0.2),

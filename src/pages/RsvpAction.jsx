@@ -6,6 +6,8 @@ import { supabase } from "../lib/supabase";
 import { DEFAULT_DIETARY, DIETARY_OPTIONS } from "../lib/dietary";
 import { isValidUUIDv4 } from "../utils/deviceId";
 import { useToast } from "../components/Toast";
+import { CLAY_BUTTON, CLAY_INSET, CLAY_RAISED, DEFAULT_PRIMARY } from "../lib/clay";
+import { accentOn } from "../lib/colors";
 
 // עיבוד "קישור קסם" מוואטסאפ: /rsvp-action?id=<uuid>&status=confirmed|canceled
 // ה-UUID עצמו הוא ההרשאה — אין ל-anon גישה ישירה לטבלת event_guests, וכל
@@ -14,27 +16,21 @@ import { useToast } from "../components/Toast";
 const VALID_STATUSES = ["confirmed", "canceled"];
 const CONFETTI_COUNT = 36;
 
-// Claymorphism: משטח בהיר תמיד (הבלטה/שקיעה לא נקראות על רקע כהה),
-// גוון לפי צבעי האירוע.
-const CLAY_CARD =
-  "rounded-[2.5rem] bg-[var(--clay-surface)] shadow-[10px_10px_24px_var(--clay-shadow),-10px_-10px_24px_var(--clay-light)]";
-const CLAY_INSET =
-  "shadow-[inset_6px_6px_12px_var(--clay-shadow),inset_-6px_-6px_12px_var(--clay-light)]";
-const CLAY_BUTTON =
-  "rounded-2xl transition-transform active:scale-95 shadow-[6px_6px_14px_var(--clay-shadow),-6px_-6px_14px_var(--clay-light)] active:shadow-[inset_4px_4px_10px_var(--clay-shadow),inset_-4px_-4px_10px_var(--clay-light)]";
-
-const FALLBACK_ACCENT = "#f9a8d4";
+// אותו Clay כמו שאר האפליקציה (טוקנים משותפים). עד עכשיו לעמוד הזה הייתה
+// פלטה משלו — משטח אפור-כחלחל וצבע ברירת מחדל ורוד — והאורח קפץ ממנו
+// להזמנה שנראית כמו אפליקציה אחרת. צבע האירוע נשמר לאייקונים ולקונפטי.
+const CARD = `rounded-clay-lg ${CLAY_RAISED}`;
+const BUTTON = `rounded-full active:scale-95 ${CLAY_BUTTON}`;
 
 const clayVars = (designConfig) => {
-  const accent = designConfig?.colors?.primary || FALLBACK_ACCENT;
+  const accent = designConfig?.colors?.primary || DEFAULT_PRIMARY;
   const accent2 = designConfig?.colors?.secondary || accent;
   return {
-    "--clay-accent": accent,
-    "--clay-accent-2": accent2,
-    // גוון פסטלי רך הנגזר מצבע האירוע, כדי שהאורח לא יקפוץ למסך "זר"
-    "--clay-surface": `color-mix(in srgb, ${accent} 8%, #eff2f7)`,
-    "--clay-shadow": "rgba(9, 12, 24, 0.16)",
-    "--clay-light": "rgba(255, 255, 255, 0.9)",
+    // משמש לאייקונים על המשטח — מוכהה עד 4.5:1 אם צריך.
+    "--clay-accent": accentOn(accent),
+    // קונפטי בלבד (קישוטי) — הצבעים המקוריים של האירוע.
+    "--confetti-1": accent,
+    "--confetti-2": accent2,
   };
 };
 
@@ -209,7 +205,7 @@ export default function RsvpAction() {
       <div
         dir="rtl"
         style={clayVars(null)}
-        className="min-h-screen flex items-center justify-center bg-[var(--clay-surface)]"
+        className="min-h-screen flex items-center justify-center bg-clay-gradient"
       >
         <Loader2
           className="animate-spin"
@@ -225,16 +221,16 @@ export default function RsvpAction() {
       <div
         dir="rtl"
         style={clayVars(null)}
-        className="min-h-screen flex items-center justify-center p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] bg-[var(--clay-surface)]"
+        className="min-h-screen flex items-center justify-center p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] bg-clay-gradient"
       >
-        <div className={`${CLAY_CARD} w-full max-w-md p-10 text-center`}>
+        <div className={`${CARD} w-full max-w-md p-10 text-center`}>
           <div
             className={`${CLAY_INSET} mx-auto mb-6 grid h-20 w-20 place-items-center rounded-full`}
           >
-            <X size={34} className="text-slate-400" />
+            <X size={34} className="text-clay-muted" />
           </div>
-          <h1 className="mb-3 text-2xl font-bold text-slate-700">אופס</h1>
-          <p className="text-slate-500">{ERROR_COPY[errorCode]}</p>
+          <h1 className="mb-3 text-2xl font-black text-slate-700">אופס</h1>
+          <p className="text-clay-muted">{ERROR_COPY[errorCode]}</p>
         </div>
       </div>
     );
@@ -244,9 +240,9 @@ export default function RsvpAction() {
     <div
       dir="rtl"
       style={styleVars}
-      className="min-h-screen flex items-center justify-center p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] bg-[var(--clay-surface)]"
+      className="min-h-screen flex items-center justify-center p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] bg-clay-gradient"
     >
-      <div className={`${CLAY_CARD} relative w-full max-w-md p-9 text-center`}>
+      <div className={`${CARD} relative w-full max-w-md p-9 text-center`}>
         {confirmed && (
           <div
             ref={confettiRef}
@@ -259,7 +255,7 @@ export default function RsvpAction() {
                 className="absolute h-2.5 w-2.5 rounded-[3px]"
                 style={{
                   background:
-                    index % 2 ? "var(--clay-accent)" : "var(--clay-accent-2)",
+                    index % 2 ? "var(--confetti-1)" : "var(--confetti-2)",
                 }}
               />
             ))}
@@ -272,21 +268,21 @@ export default function RsvpAction() {
           {confirmed ? (
             <Check size={44} style={{ color: "var(--clay-accent)" }} />
           ) : (
-            <X size={40} className="text-slate-400" />
+            <X size={40} className="text-clay-muted" />
           )}
         </div>
 
-        <h1 className="mb-2 text-2xl font-bold text-slate-700">
+        <h1 className="mb-2 text-2xl font-black text-slate-700">
           היי {result?.guest_name || ""},
         </h1>
-        <p className="mb-8 text-lg text-slate-500">
+        <p className="mb-8 text-lg text-clay-muted">
           {confirmed ? "אישרנו את הגעתך! 🎉" : "נשמח לראותך בפעם הבאה 💛"}
         </p>
 
         {confirmed && (
           <>
             <div className={`${CLAY_INSET} mb-5 rounded-3xl p-4`}>
-              <p className="mb-3 text-sm font-semibold text-slate-500">
+              <p className="mb-3 text-sm font-semibold text-clay-muted">
                 כמה אורחים?
               </p>
               <div className="flex items-center justify-center gap-5">
@@ -294,7 +290,7 @@ export default function RsvpAction() {
                   type="button"
                   onClick={() => changeCount(-1)}
                   aria-label="פחות אורחים"
-                  className={`${CLAY_BUTTON} grid h-11 w-11 place-items-center bg-[var(--clay-surface)]`}
+                  className={`${BUTTON} grid h-11 w-11 place-items-center`}
                 >
                   <Minus size={18} className="text-slate-600" />
                 </button>
@@ -305,7 +301,7 @@ export default function RsvpAction() {
                   type="button"
                   onClick={() => changeCount(1)}
                   aria-label="עוד אורחים"
-                  className={`${CLAY_BUTTON} grid h-11 w-11 place-items-center bg-[var(--clay-surface)]`}
+                  className={`${BUTTON} grid h-11 w-11 place-items-center`}
                 >
                   <Plus size={18} className="text-slate-600" />
                 </button>
@@ -313,7 +309,7 @@ export default function RsvpAction() {
             </div>
 
             <div className={`${CLAY_INSET} mb-5 rounded-3xl p-4`}>
-              <p className="mb-3 text-sm font-semibold text-slate-500">
+              <p className="mb-3 text-sm font-semibold text-clay-muted">
                 העדפת תזונה
               </p>
               <div
@@ -330,10 +326,10 @@ export default function RsvpAction() {
                       onClick={() => changeDietary(option.value)}
                       disabled={saving}
                       aria-pressed={active}
-                      className={`flex items-center gap-1.5 rounded-2xl bg-[var(--clay-surface)] min-h-11 px-3.5 text-sm font-semibold transition-all disabled:opacity-60 ${
+                      className={`flex items-center gap-1.5 rounded-full min-h-11 px-3.5 text-sm font-bold transition-all disabled:opacity-60 ${
                         active
                           ? `${CLAY_INSET} text-slate-800`
-                          : `${CLAY_BUTTON} text-slate-500`
+                          : `${BUTTON} text-clay-muted`
                       }`}
                     >
                       <span aria-hidden="true">{option.emoji}</span>
@@ -351,7 +347,7 @@ export default function RsvpAction() {
               maxLength={500}
               rows={2}
               placeholder="הערות (אלרגיות, הסעה...)"
-              className={`${CLAY_INSET} mb-6 w-full resize-none rounded-3xl bg-transparent p-4 text-slate-700 placeholder:text-slate-400 focus:outline-none`}
+              className={`${CLAY_INSET} mb-6 w-full resize-none rounded-3xl p-4 text-slate-700 placeholder:text-clay-muted focus:outline-none`}
             />
           </>
         )}
@@ -361,7 +357,7 @@ export default function RsvpAction() {
             type="button"
             onClick={flipStatus}
             disabled={saving}
-            className="min-h-11 py-3 text-sm font-semibold text-slate-500 underline-offset-4 hover:underline disabled:opacity-50"
+            className="min-h-11 py-3 text-sm font-semibold text-clay-muted underline-offset-4 hover:underline disabled:opacity-50"
           >
             {confirmed ? "טעות? עבור לביטול" : "שינית את דעתך? אשר הגעה"}
           </button>
@@ -369,14 +365,14 @@ export default function RsvpAction() {
           {result?.event_id && (
             <Link
               to={`/invite/${result.event_id}`}
-              className={`${CLAY_BUTTON} w-full bg-[var(--clay-surface)] px-6 py-4 font-bold text-slate-700`}
+              className={`${BUTTON} w-full px-6 py-4 font-bold text-slate-700`}
             >
               לפרטי האירוע ←
             </Link>
           )}
         </div>
 
-        <p className="mt-6 h-4 text-xs text-slate-400">
+        <p className="mt-6 h-4 text-xs text-clay-muted">
           {saving ? "שומר..." : ""}
         </p>
       </div>

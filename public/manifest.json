@@ -3,8 +3,8 @@
   "short_name": "Eventick",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#020617",
-  "theme_color": "#3b82f6",
+  "background_color": "#eceadf",
+  "theme_color": "#eceadf",
   "orientation": "portrait-primary",
   "icons": [
     {

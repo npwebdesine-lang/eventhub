@@ -19,20 +19,9 @@ import {
   AlertCircle,
 } from "lucide-react";
 import gsap from "gsap";
+import { CLAY_RAISED, DEFAULT_PRIMARY, clayButtonStyle } from "../lib/clay";
+import { accentOn } from "../lib/colors";
 
-/* ============================================================
-   SOFT-CLAY / NEUMORPHISM DESIGN TOKENS  (shared across modules)
-   ------------------------------------------------------------ */
-const CLAY_BG = "#eceadf";
-const CLAY_PAGE_BG = "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)";
-const clayBtn = (color) => ({
-  backgroundColor: color,
-  boxShadow: `5px 5px 14px rgba(0,0,0,0.14), -4px -4px 12px rgba(255,255,255,0.7), inset 2px 2px 4px rgba(255,255,255,0.35), inset -2px -2px 4px rgba(0,0,0,0.12)`,
-});
-const clayRaised =
-  "bg-[#f0eee7] shadow-[8px_8px_20px_rgba(0,0,0,0.09),-8px_-8px_20px_rgba(255,255,255,0.9)]";
-const clayInsetShadow =
-  "inset 5px 5px 10px rgba(0,0,0,0.07), inset -5px -5px 10px rgba(255,255,255,0.85)";
 
 const Icebreaker = () => {
   const [searchParams] = useSearchParams();
@@ -463,27 +452,25 @@ const Icebreaker = () => {
   if (view === "loading" || !eventData) {
     return (
       <div
-        className="min-h-screen flex justify-center items-center"
-        style={{ background: CLAY_PAGE_BG }}
+        className="min-h-screen flex justify-center items-center bg-clay-gradient"
       >
-        <Loader2 className="animate-spin text-slate-400" size={48} />
+        <Loader2 className="animate-spin text-clay-muted" size={48} />
       </div>
     );
   }
 
-  const primaryColor = eventData.design_config?.colors?.primary || "#8fa7b8";
+  const primaryColor = eventData.design_config?.colors?.primary || DEFAULT_PRIMARY;
 
   // ---- Register ----
   if (view === "register") {
     return (
       <div
-        className="min-h-screen flex flex-col items-center justify-center p-6"
-        style={{ background: CLAY_PAGE_BG }}
+        className="min-h-screen flex flex-col items-center justify-center p-6 bg-clay-gradient"
         dir="rtl"
       >
         <button
           onClick={() => navigate(-1)}
-          className="absolute right-6 top-[calc(2rem+env(safe-area-inset-top))] p-3 rounded-full z-10 text-slate-500 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
+          className="absolute right-6 top-[calc(2rem+env(safe-area-inset-top))] p-3 rounded-full z-10 text-clay-muted bg-clay-surface shadow-clay-md active:shadow-clay-pressed transition-all"
         >
           <ChevronLeft size={24} />
         </button>
@@ -491,26 +478,26 @@ const Icebreaker = () => {
         <div className="w-full max-w-sm text-center relative z-10">
           <div
             className="inline-flex p-5 rounded-[1.5rem] mb-6 text-white"
-            style={clayBtn(primaryColor)}
+            style={clayButtonStyle(primaryColor)}
           >
             <Zap size={48} />
           </div>
           <h1 className="text-4xl font-black mb-2 text-slate-700">
             IceBreaker
           </h1>
-          <p className="text-slate-500 font-medium mb-8 text-sm leading-relaxed">
+          <p className="text-clay-muted font-medium mb-8 text-sm leading-relaxed">
             מצאו אנשים, בצעו משימות מצחיקות, ותעדו הכל.
           </p>
 
-          <div className={`p-8 rounded-[2.5rem] ${clayRaised}`}>
+          <div className={`p-8 rounded-clay-lg ${CLAY_RAISED}`}>
             <h2 className="text-lg font-bold mb-2 text-slate-700">
               תמונת זיהוי
             </h2>
-            <p className="text-slate-400 text-sm mb-5">כדי שימצאו אתכם בקלות</p>
+            <p className="text-clay-muted text-sm mb-5">כדי שימצאו אתכם בקלות</p>
             <label className="relative cursor-pointer inline-block group mb-6">
               <div
-                className="w-36 h-36 mx-auto rounded-full flex items-center justify-center overflow-hidden p-2 bg-[#eeece5]"
-                style={{ boxShadow: clayInsetShadow }}
+                className="w-36 h-36 mx-auto rounded-full flex items-center justify-center overflow-hidden p-2 bg-clay-well"
+                style={{ boxShadow: "var(--shadow-clay-inset)" }}
               >
                 {photoUrl ? (
                   <img
@@ -525,7 +512,7 @@ const Icebreaker = () => {
                   <div className="absolute inset-0 bg-white/70 flex items-center justify-center rounded-full">
                     <Loader2
                       className="animate-spin"
-                      style={{ color: primaryColor }}
+                      style={{ color: accentOn(primaryColor) }}
                     />
                   </div>
                 )}
@@ -542,7 +529,7 @@ const Icebreaker = () => {
               onClick={handleJoinGame}
               disabled={isJoining}
               className="w-full font-black py-4 rounded-full text-xl transition-all active:scale-[0.98] disabled:opacity-50 text-white"
-              style={clayBtn(primaryColor)}
+              style={clayButtonStyle(primaryColor)}
             >
               {isJoining ? (
                 <Loader2 className="animate-spin mx-auto" size={24} />
@@ -560,20 +547,19 @@ const Icebreaker = () => {
   if (view === "roulette") {
     return (
       <div
-        className="min-h-screen flex flex-col items-center justify-center text-center p-6"
-        style={{ background: CLAY_PAGE_BG }}
+        className="min-h-screen flex flex-col items-center justify-center text-center p-6 bg-clay-gradient"
         dir="rtl"
       >
-        <div ref={rouletteRef} className={`p-12 rounded-[3rem] ${clayRaised}`}>
+        <div ref={rouletteRef} className={`p-12 rounded-clay-lg ${CLAY_RAISED}`}>
           <Loader2
             className="animate-spin mx-auto mb-8"
             size={72}
-            style={{ color: primaryColor }}
+            style={{ color: accentOn(primaryColor) }}
           />
           <h2 className="text-3xl font-black mb-2 text-slate-700">
             מאתר קורבן...
           </h2>
-          <p className="text-lg font-medium mt-3 animate-pulse text-slate-400">
+          <p className="text-lg font-medium mt-3 animate-pulse text-clay-muted">
             מגריל משימה חשאית
           </p>
         </div>
@@ -581,7 +567,7 @@ const Icebreaker = () => {
           <button
             type="button"
             onClick={cancelRoulette}
-            className="mt-10 px-8 py-3.5 rounded-full font-bold text-slate-600 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
+            className="mt-10 px-8 py-3.5 rounded-full font-bold text-slate-600 bg-clay-surface shadow-clay-md active:shadow-clay-pressed transition-all"
           >
             ביטול
           </button>
@@ -594,31 +580,30 @@ const Icebreaker = () => {
   if (view === "active_mission" && currentMatch) {
     return (
       <div
-        className="min-h-screen flex flex-col"
-        style={{ background: CLAY_PAGE_BG }}
+        className="min-h-screen flex flex-col bg-clay-gradient"
         dir="rtl"
       >
-        <header className="p-5 flex justify-between items-center z-10 mx-3 mt-[calc(0.75rem+env(safe-area-inset-top))] rounded-[1.8rem] bg-[#f0eee7] shadow-[7px_7px_18px_rgba(0,0,0,0.09),-6px_-6px_16px_rgba(255,255,255,0.9)]">
+        <header className="p-5 flex justify-between items-center z-10 mx-3 mt-[calc(0.75rem+env(safe-area-inset-top))] rounded-[1.8rem] bg-clay-surface shadow-clay-md">
           <button
             onClick={() => setView("hub")}
-            className="p-2.5 rounded-full text-slate-500 bg-[#f0eee7] shadow-[4px_4px_9px_rgba(0,0,0,0.09),-4px_-4px_9px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)] transition-all"
+            className="p-2.5 rounded-full text-clay-muted bg-clay-surface shadow-clay-md active:shadow-clay-pressed transition-all"
           >
             <ChevronLeft size={24} />
           </button>
-          <span className="px-5 py-2 rounded-full text-sm font-bold flex items-center gap-2 text-slate-700 bg-[#f0eee7] shadow-[4px_4px_9px_rgba(0,0,0,0.09),-4px_-4px_9px_rgba(255,255,255,0.9)]">
-            <Sparkles size={15} className="text-amber-500" /> משימה פעילה!
+          <span className="px-5 py-2 rounded-full text-sm font-bold flex items-center gap-2 text-slate-700 bg-clay-surface shadow-clay-md">
+            <Sparkles size={15} className="text-amber-800" /> משימה פעילה!
           </span>
           <div className="w-10" />
         </header>
 
         <div className="flex-1 flex flex-col items-center justify-center text-center p-6 mission-reveal">
-          <p className="text-sm font-bold text-slate-400 mb-4 uppercase tracking-widest">
+          <p className="text-sm font-bold text-clay-muted mb-4 uppercase tracking-widest">
             המטרה שלך:
           </p>
 
           <div
-            className="w-32 h-32 rounded-full overflow-hidden mb-4 mx-auto p-2 bg-[#eeece5]"
-            style={{ boxShadow: clayInsetShadow }}
+            className="w-32 h-32 rounded-full overflow-hidden mb-4 mx-auto p-2 bg-clay-well"
+            style={{ boxShadow: "var(--shadow-clay-inset)" }}
           >
             {currentMatch.partner?.photo_url ? (
               <img
@@ -636,17 +621,17 @@ const Icebreaker = () => {
 
           {/* Mission card */}
           <div
-            className={`p-8 rounded-[2.5rem] w-full max-w-md relative ${clayRaised}`}
+            className={`p-8 rounded-clay-lg w-full max-w-md relative ${CLAY_RAISED}`}
           >
             <div
               className="absolute -top-5 right-6 w-12 h-12 rounded-full flex items-center justify-center text-white"
-              style={clayBtn(primaryColor)}
+              style={clayButtonStyle(primaryColor)}
             >
               <Target size={18} />
             </div>
             <p
               className="text-[10px] font-bold uppercase tracking-widest mb-3 opacity-60"
-              style={{ color: primaryColor }}
+              style={{ color: accentOn(primaryColor) }}
             >
               פקודת מבצע
             </p>
@@ -667,7 +652,7 @@ const Icebreaker = () => {
               onClick={() => proofInputRef.current?.click()}
               disabled={uploading}
               className="w-full font-black py-5 rounded-full text-lg flex justify-center items-center gap-3 active:scale-[0.98] transition-all disabled:opacity-50 text-white"
-              style={clayBtn(primaryColor)}
+              style={clayButtonStyle(primaryColor)}
             >
               {uploading ? (
                 <>
@@ -679,7 +664,7 @@ const Icebreaker = () => {
                 </>
               )}
             </button>
-            <p className="text-slate-400 font-medium text-xs mt-3">
+            <p className="text-clay-muted font-medium text-xs mt-3">
               מצאו אחד את השנייה, בצעו את המשימה וצלמו הוכחה.
             </p>
           </div>
@@ -691,22 +676,21 @@ const Icebreaker = () => {
   // ---- Hub / Wall of Fame ----
   return (
     <div
-      className="min-h-screen font-sans pb-12"
-      style={{ background: CLAY_PAGE_BG }}
+      className="min-h-screen font-sans pb-12 bg-clay-gradient"
       dir="rtl"
     >
       <div className="pt-[calc(3rem+env(safe-area-inset-top))] pb-6 px-6 relative z-10 flex justify-between items-center max-w-md mx-auto w-full">
         <button
           onClick={() => navigate(-1)}
-          className="p-3 rounded-full text-slate-500 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
+          className="p-3 rounded-full text-clay-muted bg-clay-surface shadow-clay-md active:shadow-clay-pressed transition-all"
         >
           <ChevronLeft size={22} />
         </button>
         <h1 className="text-2xl font-black flex items-center gap-2 text-slate-700">
           IceBreaker{" "}
-          <Zap size={18} style={{ fill: primaryColor, color: primaryColor }} />
+          <Zap size={18} style={{ fill: primaryColor, color: accentOn(primaryColor) }} />
         </h1>
-        <div className="w-11 h-11 rounded-[1rem] overflow-hidden bg-[#eeece5] shadow-[inset_2px_2px_5px_rgba(0,0,0,0.12),inset_-2px_-2px_5px_rgba(255,255,255,0.7)]">
+        <div className="w-11 h-11 rounded-[1rem] overflow-hidden bg-clay-well shadow-[inset_2px_2px_5px_rgba(0,0,0,0.12),inset_-2px_-2px_5px_rgba(255,255,255,0.7)]">
           {myProfile?.photo_url ? (
             <img
               src={myProfile.photo_url}
@@ -723,31 +707,31 @@ const Icebreaker = () => {
         {/* Start Button — challenge card with accent bar */}
         <button
           onClick={startRoulette}
-          className={`fade-up-item w-full p-7 rounded-[2.5rem] text-center mb-7 hover:scale-[1.02] active:scale-[0.98] transition-transform group relative overflow-hidden ${clayRaised}`}
+          className={`fade-up-item w-full p-7 rounded-clay-lg text-center mb-7 hover:scale-[1.02] active:scale-[0.98] transition-transform group relative overflow-hidden ${CLAY_RAISED}`}
         >
           <div
             className="absolute top-0 left-0 w-full h-2 rounded-t-[2.5rem]"
             style={{ backgroundColor: primaryColor }}
           />
           <div
-            className="w-16 h-16 rounded-[1.4rem] flex items-center justify-center mx-auto mb-3 text-white"
-            style={clayBtn(primaryColor)}
+            className="w-16 h-16 rounded-clay-field flex items-center justify-center mx-auto mb-3 text-white"
+            style={clayButtonStyle(primaryColor)}
           >
             <Zap className="group-hover:animate-bounce" size={30} />
           </div>
           <h2 className="text-2xl font-black text-slate-700">
             הגרל משימה חדשה
           </h2>
-          <p className="text-slate-400 font-medium mt-1 text-sm">
+          <p className="text-clay-muted font-medium mt-1 text-sm">
             לחצו כדי לקבל אתגר
           </p>
         </button>
 
         {/* Wall of Fame */}
         <h3 className="fade-up-item text-lg font-black text-slate-700 mb-4 flex items-center gap-2">
-          <CheckCircle2 size={20} className="text-emerald-500" /> קיר תהילה
+          <CheckCircle2 size={20} className="text-emerald-800" /> קיר תהילה
           {feed.length > 0 && (
-            <span className="text-slate-400 font-medium text-sm">
+            <span className="text-clay-muted font-medium text-sm">
               ({feed.length} משימות)
             </span>
           )}
@@ -756,11 +740,11 @@ const Icebreaker = () => {
         <div className="space-y-5 pb-8">
           {feed.length === 0 ? (
             <div
-              className={`fade-up-item text-center py-14 rounded-[2rem] ${clayRaised}`}
+              className={`fade-up-item text-center py-14 rounded-[2rem] ${CLAY_RAISED}`}
             >
               <ImagePlus size={40} className="mx-auto mb-4 text-slate-300" />
               <p className="text-slate-600 font-bold">הקיר ריק.</p>
-              <p className="text-slate-400 text-sm mt-1">
+              <p className="text-clay-muted text-sm mt-1">
                 היו הראשונים לבצע משימה!
               </p>
             </div>
@@ -768,19 +752,19 @@ const Icebreaker = () => {
             feed.map((match) => (
               <div
                 key={match.id}
-                className={`fade-up-item rounded-[2rem] overflow-hidden ${clayRaised}`}
+                className={`fade-up-item rounded-[2rem] overflow-hidden ${CLAY_RAISED}`}
               >
                 {/* Mission text — debossed banner */}
                 <div
                   className="p-5 m-2 mb-0 rounded-[1.5rem]"
                   style={{
                     backgroundColor: "#eeece5",
-                    boxShadow: clayInsetShadow,
+                    boxShadow: "var(--shadow-clay-inset)",
                   }}
                 >
                   <p
                     className="text-[10px] font-bold uppercase tracking-widest mb-1 opacity-60"
-                    style={{ color: primaryColor }}
+                    style={{ color: accentOn(primaryColor) }}
                   >
                     משימה שבוצעה:
                   </p>
@@ -794,7 +778,7 @@ const Icebreaker = () => {
                   <div className="aspect-square w-full p-2">
                     <img
                       src={match.photo_url}
-                      className="w-full h-full object-cover rounded-[1.4rem]"
+                      className="w-full h-full object-cover rounded-clay-field"
                       alt="Mission Proof"
                       loading="lazy"
                       style={{
@@ -805,12 +789,12 @@ const Icebreaker = () => {
                 )}
 
                 {/* Footer */}
-                <div className="p-4 flex items-center justify-between text-xs text-slate-400 font-bold">
+                <div className="p-4 flex items-center justify-between text-xs text-clay-muted font-bold">
                   <div className="flex items-center gap-2">
                     <span>בוצע בשטח 🎯</span>
                     <button
                       onClick={() => handleReport(match.id)}
-                      className="w-11 h-11 -my-3 flex items-center justify-center rounded-full text-slate-400 hover:text-rose-400 transition-colors"
+                      className="w-11 h-11 -my-3 flex items-center justify-center rounded-full text-clay-muted hover:text-rose-400 transition-colors"
                       title="דווח"
                       aria-label="דיווח על תוכן פוגעני"
                     >
@@ -831,7 +815,7 @@ const Icebreaker = () => {
 
         <button
           onClick={handleLogout}
-          className="fade-up-item w-full py-5 flex items-center justify-center gap-2 text-slate-300 hover:text-slate-500 transition-colors font-bold text-sm"
+          className="fade-up-item w-full py-5 flex items-center justify-center gap-2 text-clay-muted hover:text-slate-700 transition-colors font-bold text-sm"
         >
           <LogOut size={15} /> פרוש מהמשחק
         </button>

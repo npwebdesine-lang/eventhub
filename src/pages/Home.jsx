@@ -20,6 +20,14 @@ import {
 import { supabase } from "../lib/supabase";
 import { getOrCreateDeviceId } from "../utils/deviceId";
 import { safeGetItem, safeRemoveItem, safeSetItem } from "../lib/safeStorage";
+import {
+  CLAY_CARD,
+  CLAY_INSET,
+  DEFAULT_PRIMARY,
+  clayButtonStyle,
+  clayHeroStyle,
+} from "../lib/clay";
+import { accentOn } from "../lib/colors";
 import { useModalBehavior } from "../components/Modal";
 import gsap from "gsap";
 
@@ -28,42 +36,42 @@ const MODULES_INFO = {
     title: "כל אחד צלם",
     description: "העלו תמונות לאלבום המשותף של האירוע",
     icon: Camera,
-    color: "text-orange-500",
+    color: "text-orange-800",
     bg: "bg-orange-50",
   },
   dating: {
     title: "דייט-ליין",
     description: "הרשת החברתית של האירוע לרווקים ורווקות",
     icon: Heart,
-    color: "text-rose-500",
+    color: "text-rose-700",
     bg: "bg-rose-50",
   },
   icebreaker: {
     title: "שובר קרח",
     description: "משחק משימות חברתי עם אורחים אחרים",
     icon: Zap,
-    color: "text-cyan-500",
+    color: "text-cyan-800",
     bg: "bg-cyan-50",
   },
   rideshare: {
     title: "לוח טרמפים",
     description: "שתפו נסיעות לאחר האירוע",
     icon: Car,
-    color: "text-amber-500",
+    color: "text-amber-800",
     bg: "bg-amber-50",
   },
   seating: {
     title: "סידור הושבה",
     description: "מצאו את השולחן שלכם ואת בני השולחן",
     icon: MapPin,
-    color: "text-emerald-500",
+    color: "text-emerald-800",
     bg: "bg-emerald-50",
   },
   blessings: {
     title: "ספר ברכות",
     description: "כתבו ברכה וצרפו תמונה לבעלי השמחה",
     icon: MessageCircle,
-    color: "text-purple-500",
+    color: "text-purple-700",
     bg: "bg-purple-50",
   },
 };
@@ -80,27 +88,8 @@ const getGreeting = () => {
   return "לילה טוב";
 };
 
-/* ============================================================
-   SOFT-CLAY / NEUMORPHISM DESIGN TOKENS  (Eventick RSVP Clay)
-   Page rests on a warm neutral gradient (#eceadf → #e2ddd0).
-   Raised surfaces (#f0eee7) pop out with a dual shadow: soft
-   dark drop bottom-right + bright highlight top-left.
-   Wells (#eeece5) are carved into the surface with inset shadows.
-   ------------------------------------------------------------ */
-const CLAY_BG = "#eceadf"; // page base — matches design's inner-screen gradient start
-const CLAY_PAGE_BG = "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)"; // full-viewport backdrop
-const CLAY_CHIP_BG = "#e9e6dc"; // small identifier pills (badges, "1A" chip, etc.)
-// Extruded (cards, buttons) — pops OUT of the surface
-const CLAY =
-  "module-card-anim relative rounded-[2.25rem] bg-[#f0eee7] shadow-[8px_8px_20px_rgba(0,0,0,0.09),-8px_-8px_20px_rgba(255,255,255,0.9)] transition-all duration-300";
-// Debossed (wells, inputs, tracks) — carved INTO the surface
-const CLAY_INSET =
-  "bg-[#eeece5] shadow-[inset_5px_5px_10px_rgba(0,0,0,0.07),inset_-5px_-5px_10px_rgba(255,255,255,0.85)]";
-// Soft primary pill button (uses the event's dynamic primary color)
-const clayPrimaryBtn = (primary) => ({
-  backgroundColor: primary,
-  boxShadow: `5px 5px 14px rgba(0,0,0,0.14), -4px -4px 12px rgba(255,255,255,0.7), inset 2px 2px 4px rgba(255,255,255,0.35), inset -2px -2px 4px rgba(0,0,0,0.12)`,
-});
+// כרטיס מודול בדף הבית: כרטיס Clay משותף + אנימציית הכניסה של הדף.
+const CLAY = `module-card-anim relative ${CLAY_CARD} transition-all duration-300`;
 const clayIconDiscShadow =
   "inset 2px 2px 5px rgba(255,255,255,0.4), inset -2px -2px 5px rgba(0,0,0,0.12)";
 
@@ -133,7 +122,7 @@ const PhotoMarqueeCard = ({
     <div className={`${CLAY} flex flex-col overflow-hidden group`}>
       <button
         onClick={(e) => openInfo(e, "photo")}
-        className="absolute top-4 left-4 text-slate-400 hover:text-slate-600 z-20 w-11 h-11 flex items-center justify-center rounded-full bg-[#f0eee7] shadow-[3px_3px_7px_rgba(0,0,0,0.09),-3px_-3px_7px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)] transition-all"
+        className="absolute top-4 left-4 text-clay-muted hover:text-slate-600 z-20 w-11 h-11 flex items-center justify-center rounded-full bg-clay-surface shadow-clay-sm active:shadow-clay-pressed transition-all"
         aria-label="מידע"
       >
         <Info size={18} />
@@ -163,7 +152,7 @@ const PhotoMarqueeCard = ({
                 key={i}
                 src={photo?.image_url || ""}
                 alt=""
-                className="h-full w-28 md:w-32 object-cover rounded-[1.4rem] shrink-0 shadow-[4px_4px_10px_rgba(0,0,0,0.15)]"
+                className="h-full w-28 md:w-32 object-cover rounded-clay-field shrink-0 shadow-[4px_4px_10px_rgba(0,0,0,0.15)]"
                 loading="lazy"
                 style={{ filter: "brightness(0.98) contrast(1.02)" }}
               />
@@ -172,7 +161,7 @@ const PhotoMarqueeCard = ({
         ) : (
           <div className="flex flex-col items-center justify-center h-full">
             <Camera size={36} className="text-slate-300" />
-            <p className="text-xs mt-2 font-bold text-slate-400">
+            <p className="text-xs mt-2 font-bold text-clay-muted">
               אין תמונות עדיין
             </p>
           </div>
@@ -181,16 +170,16 @@ const PhotoMarqueeCard = ({
 
       {/* Bottom */}
       <div className="p-6 text-center">
-        <h3 className="font-black text-lg mb-1" style={{ color: primaryColor }}>
+        <h3 className="font-black text-lg mb-1" style={{ color: accentOn(primaryColor) }}>
           כל אחד צלם
         </h3>
-        <p className="text-slate-500 text-sm mb-5 font-medium">
+        <p className="text-clay-muted text-sm mb-5 font-medium">
           העלו תמונות לאלבום המשותף
         </p>
         <button
           onClick={() => navigate(`/photos?event=${eventId}`)}
           className="w-full font-bold py-3.5 rounded-full text-sm flex items-center justify-center gap-2 active:scale-[0.97] transition-all text-white"
-          style={clayPrimaryBtn(primaryColor)}
+          style={clayButtonStyle(primaryColor)}
         >
           <Camera size={18} /> פתח מצלמה / גלריה
         </button>
@@ -216,7 +205,7 @@ const ActionModuleCard = ({
     >
       <button
         onClick={(e) => openInfo(e, mKey)}
-        className="absolute top-2 right-2 text-slate-400 hover:text-slate-600 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-[#f0eee7] shadow-[2px_2px_6px_rgba(0,0,0,0.08),-2px_-2px_6px_rgba(255,255,255,0.9)] transition-all"
+        className="absolute top-2 right-2 text-clay-muted hover:text-slate-600 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-clay-surface shadow-clay-sm transition-all"
         aria-label="מידע"
       >
         <Info size={16} />
@@ -225,12 +214,12 @@ const ActionModuleCard = ({
       {hasBadge && (
         <span className="absolute top-3 left-3 flex h-4 w-4">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-4 w-4 bg-rose-500 border-2 border-[#f0eee7] shadow-lg" />
+          <span className="relative inline-flex rounded-full h-4 w-4 bg-rose-500 border-2 border-clay-surface shadow-lg" />
         </span>
       )}
 
       <div
-        className={`w-16 h-16 ${info.bg} rounded-[1.4rem] flex items-center justify-center mb-3 mt-2 group-hover:scale-110 transition-transform`}
+        className={`w-16 h-16 ${info.bg} rounded-clay-field flex items-center justify-center mb-3 mt-2 group-hover:scale-110 transition-transform`}
         style={{ boxShadow: clayIconDiscShadow }}
       >
         <info.icon size={26} className={info.color} />
@@ -242,14 +231,14 @@ const ActionModuleCard = ({
       >
         {info.title}
       </h3>
-      <p className="text-slate-500 text-xs leading-relaxed line-clamp-3 mb-4 flex-1 font-medium">
+      <p className="text-clay-muted text-xs leading-relaxed line-clamp-3 mb-4 flex-1 font-medium">
         {info.description}
       </p>
 
       <button
         onClick={onClick}
-        className="w-full font-bold py-3 rounded-full text-xs flex items-center justify-center gap-1.5 active:scale-[0.97] transition-all mt-auto text-slate-600 bg-[#f0eee7] shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)]"
-        style={{ color: primaryColor }}
+        className="w-full font-bold py-3 rounded-full text-xs flex items-center justify-center gap-1.5 active:scale-[0.97] transition-all mt-auto text-slate-600 bg-clay-surface shadow-clay-sm active:shadow-clay-pressed"
+        style={{ color: accentOn(primaryColor) }}
       >
         כניסה <ChevronLeft size={14} />
       </button>
@@ -264,17 +253,17 @@ const RideshareHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
   >
     <button
       onClick={(e) => openInfo(e, "rideshare")}
-      className="absolute top-2 right-2 text-slate-400 hover:text-slate-600 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-[#f0eee7] shadow-[2px_2px_6px_rgba(0,0,0,0.08),-2px_-2px_6px_rgba(255,255,255,0.9)] transition-all"
+      className="absolute top-2 right-2 text-clay-muted hover:text-slate-600 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-clay-surface shadow-clay-sm transition-all"
       aria-label="מידע"
     >
       <Info size={16} />
     </button>
 
     <div
-      className="w-16 h-16 bg-amber-50 rounded-[1.4rem] flex items-center justify-center mb-3 mt-2 group-hover:scale-110 transition-transform"
+      className="w-16 h-16 bg-amber-50 rounded-clay-field flex items-center justify-center mb-3 mt-2 group-hover:scale-110 transition-transform"
       style={{ boxShadow: clayIconDiscShadow }}
     >
-      <Car size={26} className="text-amber-500" />
+      <Car size={26} className="text-amber-800" />
     </div>
 
     <h3
@@ -283,7 +272,7 @@ const RideshareHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
     >
       לוח טרמפים
     </h3>
-    <p className="text-slate-500 text-xs mb-4 leading-relaxed flex-1 line-clamp-3 font-medium">
+    <p className="text-clay-muted text-xs mb-4 leading-relaxed flex-1 line-clamp-3 font-medium">
       שתפו נסיעות לאחר האירוע
     </p>
 
@@ -291,14 +280,14 @@ const RideshareHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
       <button
         onClick={() => navigate(`/rideshare?event=${eventId}&role=driver`)}
         className="w-full font-bold py-3 rounded-full text-xs active:scale-[0.97] transition-all text-white flex items-center justify-center gap-1.5"
-        style={clayPrimaryBtn(primaryColor)}
+        style={clayButtonStyle(primaryColor)}
       >
         <Car size={14} /> אני מציע 🚗
       </button>
       <button
         onClick={() => navigate(`/rideshare?event=${eventId}&role=seeker`)}
-        className="w-full font-bold py-3 rounded-full text-xs active:scale-[0.97] transition-all flex items-center justify-center gap-1.5 bg-[#f0eee7] shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)]"
-        style={{ color: primaryColor }}
+        className="w-full font-bold py-3 rounded-full text-xs active:scale-[0.97] transition-all flex items-center justify-center gap-1.5 bg-clay-surface shadow-clay-sm active:shadow-clay-pressed"
+        style={{ color: accentOn(primaryColor) }}
       >
         <Users size={14} /> אני מחפש 🙋
       </button>
@@ -313,17 +302,17 @@ const BlessingsHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
   >
     <button
       onClick={(e) => openInfo(e, "blessings")}
-      className="absolute top-2 right-2 text-slate-400 hover:text-slate-600 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-[#f0eee7] shadow-[2px_2px_6px_rgba(0,0,0,0.08),-2px_-2px_6px_rgba(255,255,255,0.9)] transition-all"
+      className="absolute top-2 right-2 text-clay-muted hover:text-slate-600 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-clay-surface shadow-clay-sm transition-all"
       aria-label="מידע"
     >
       <Info size={16} />
     </button>
 
     <div
-      className="w-16 h-16 bg-purple-50 rounded-[1.4rem] flex items-center justify-center mb-3 mt-2 group-hover:scale-110 transition-transform"
+      className="w-16 h-16 bg-purple-50 rounded-clay-field flex items-center justify-center mb-3 mt-2 group-hover:scale-110 transition-transform"
       style={{ boxShadow: clayIconDiscShadow }}
     >
-      <MessageCircle size={28} className="text-purple-500" />
+      <MessageCircle size={28} className="text-purple-700" />
     </div>
 
     <h3
@@ -332,14 +321,14 @@ const BlessingsHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
     >
       ספר ברכות
     </h3>
-    <p className="text-slate-500 text-xs mb-5 leading-relaxed font-medium flex-1">
+    <p className="text-clay-muted text-xs mb-5 leading-relaxed font-medium flex-1">
       כתבו ברכה לבעלי השמחה
     </p>
 
     <button
       onClick={() => navigate(`/blessing?event=${eventId}`)}
       className="w-full font-bold py-3 rounded-full text-xs active:scale-[0.97] transition-all text-white flex items-center justify-center gap-1.5"
-      style={clayPrimaryBtn(primaryColor)}
+      style={clayButtonStyle(primaryColor)}
     >
       <MessageCircle size={15} /> הוסף ברכה ✍️
     </button>
@@ -474,13 +463,13 @@ const BlessingsStrip = ({ eventId, primaryColor }) => {
         >
           <span
             className="text-sm font-bold px-4"
-            style={{ color: primaryColor }}
+            style={{ color: accentOn(primaryColor) }}
           >
             {text}
           </span>
           <span
             className="text-sm font-bold px-4"
-            style={{ color: primaryColor }}
+            style={{ color: accentOn(primaryColor) }}
           >
             {text}
           </span>
@@ -781,12 +770,11 @@ const Home = () => {
   if (loading) {
     return (
       <div
-        className="min-h-screen flex flex-col items-center justify-center"
-        style={{ background: CLAY_PAGE_BG }}
+        className="min-h-screen flex flex-col items-center justify-center bg-clay-gradient"
         dir="rtl"
       >
-        <Loader2 className="animate-spin text-slate-400 mb-4" size={48} />
-        <p className="text-slate-400 text-sm font-medium">טוען את האירוע...</p>
+        <Loader2 className="animate-spin text-clay-muted mb-4" size={48} />
+        <p className="text-clay-muted text-sm font-medium">טוען את האירוע...</p>
       </div>
     );
   }
@@ -794,8 +782,7 @@ const Home = () => {
   if (!eventData)
     return (
       <div
-        className="min-h-screen flex items-center justify-center text-slate-500"
-        style={{ background: CLAY_PAGE_BG }}
+        className="min-h-screen flex items-center justify-center text-clay-muted bg-clay-gradient"
         dir="rtl"
       >
         לא נמצא אירוע.
@@ -803,7 +790,7 @@ const Home = () => {
     );
 
   const { name, active_modules, design_config } = eventData;
-  const { primary = "#8fa7b8" } = design_config?.colors || {};
+  const { primary = DEFAULT_PRIMARY } = design_config?.colors || {};
   const guestNameStr = safeGetItem("guest_name");
   const guestInitial = (guestNameStr || "").trim().charAt(0) || "?";
 
@@ -818,23 +805,22 @@ const Home = () => {
   if (!isRegistered) {
     return (
       <div
-        className="min-h-screen flex flex-col items-center justify-center p-6"
-        style={{ background: CLAY_PAGE_BG }}
+        className="min-h-screen flex flex-col items-center justify-center p-6 bg-clay-gradient"
         dir="rtl"
       >
         <div
-          className="p-8 rounded-[2.25rem] w-full max-w-sm text-center bg-[#f0eee7] shadow-[12px_12px_30px_rgba(0,0,0,0.1),-12px_-12px_30px_rgba(255,255,255,0.9)]"
+          className="p-8 rounded-clay w-full max-w-sm text-center bg-clay-surface shadow-clay-lg"
           style={{
             animation: "bounce-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)",
           }}
         >
-          <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5 bg-[#f0eee7] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.1),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]">
-            <PartyPopper style={{ color: primary }} size={32} />
+          <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5 bg-clay-surface shadow-clay-inset-deep">
+            <PartyPopper style={{ color: accentOn(primary) }} size={32} />
           </div>
           <h1 className="text-3xl font-black text-slate-700 mb-1">
             ברוכים הבאים!
           </h1>
-          <p className="text-slate-500 mb-8 font-medium text-sm">
+          <p className="text-clay-muted mb-8 font-medium text-sm">
             ל-<span className="font-bold text-slate-600">{name}</span>
             <br />
             מלאו את שמכם כדי להתחיל בחגיגה
@@ -848,13 +834,13 @@ const Home = () => {
                 if (registrationError) setRegistrationError(null);
               }}
               placeholder="שם מלא (לדוגמה: תקווה משולם)"
-              className={`w-full p-4 rounded-full outline-none text-center text-lg font-bold text-slate-700 placeholder:text-slate-400 ${CLAY_INSET}`}
+              className={`w-full p-4 rounded-full outline-none text-center text-lg font-bold text-slate-700 placeholder:text-clay-muted ${CLAY_INSET}`}
               required
               disabled={isRegistering}
             />
 
             {registrationError && (
-              <div className="flex items-center gap-2 text-rose-600 text-sm font-medium px-4 py-3 rounded-[1rem] bg-[#f0eee7] shadow-[inset_3px_3px_7px_rgba(0,0,0,0.06),inset_-3px_-3px_7px_rgba(255,255,255,0.8)]">
+              <div className="flex items-center gap-2 text-rose-700 text-sm font-medium px-4 py-3 rounded-[1rem] bg-clay-surface shadow-clay-inset">
                 <X size={15} className="shrink-0" />
                 {registrationError}
               </div>
@@ -872,7 +858,7 @@ const Home = () => {
               />
               <label
                 htmlFor="terms"
-                className="text-xs font-medium text-slate-500 leading-tight"
+                className="text-xs font-medium text-clay-muted leading-tight"
               >
                 אני מסכים/ה ל
                 <a
@@ -898,7 +884,7 @@ const Home = () => {
               type="submit"
               disabled={isRegistering}
               className="w-full text-white font-black py-4 rounded-full text-lg active:scale-[0.97] transition-all mt-4 flex items-center justify-center gap-2 disabled:opacity-60 disabled:scale-100"
-              style={clayPrimaryBtn(primary)}
+              style={clayButtonStyle(primary)}
             >
               {isRegistering ? (
                 <>
@@ -912,7 +898,7 @@ const Home = () => {
             <button
               type="button"
               onClick={() => navigate("/")}
-              className="w-full text-slate-400 hover:text-slate-600 font-bold text-sm py-3 min-h-11 transition-colors flex items-center justify-center gap-1 mt-1"
+              className="w-full text-clay-muted hover:text-slate-600 font-bold text-sm py-3 min-h-11 transition-colors flex items-center justify-center gap-1 mt-1"
             >
               <ChevronRight size={16} /> חזור לעמוד הסריקה
             </button>
@@ -925,8 +911,7 @@ const Home = () => {
   // --- Main Event Screen ---
   return (
     <div
-      className="min-h-screen flex flex-col font-sans pb-12"
-      style={{ background: CLAY_PAGE_BG }}
+      className="min-h-screen flex flex-col font-sans pb-12 bg-clay-gradient"
       dir="rtl"
     >
       {/* Header — clay surface, greeting + floating avatar + embossed event card */}
@@ -935,7 +920,7 @@ const Home = () => {
           {/* Greeting row with floating avatar */}
           <div className="flex items-center justify-between gap-3 mb-6">
             <div className="text-right min-w-0">
-              <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mb-1">
+              <p className="text-clay-muted font-bold text-xs uppercase tracking-widest mb-1">
                 {getGreeting()}
               </p>
               <h2 className="text-2xl font-black text-slate-700 truncate">
@@ -944,9 +929,9 @@ const Home = () => {
             </div>
             <button
               onClick={handleChangeName}
-              className="shrink-0 w-14 h-14 rounded-full flex items-center justify-center text-white font-black text-xl bg-[#f0eee7] shadow-[6px_6px_14px_rgba(0,0,0,0.1),-5px_-5px_12px_rgba(255,255,255,0.9)] active:scale-95 transition-transform"
+              className="shrink-0 w-14 h-14 rounded-full flex items-center justify-center font-black text-xl bg-clay-surface shadow-[6px_6px_14px_rgba(0,0,0,0.1),-5px_-5px_12px_rgba(255,255,255,0.9)] active:scale-95 transition-transform"
               style={{
-                backgroundColor: primary,
+                ...clayButtonStyle(primary),
                 boxShadow: `6px 6px 14px rgba(0,0,0,0.12), -5px -5px 12px rgba(255,255,255,0.85), ${clayIconDiscShadow}`,
               }}
               aria-label="החלף משתמש"
@@ -958,17 +943,17 @@ const Home = () => {
 
           {/* Embossed horizontal Event Card with pulsing Live dot */}
           <div
-            className="rounded-[2.5rem] p-6 relative overflow-hidden text-white"
+            className="rounded-clay-lg p-6 relative overflow-hidden"
             style={{
-              background: `linear-gradient(145deg, ${primary}, ${primary}cc)`,
+              ...clayHeroStyle(primary),
               boxShadow: `9px 9px 24px rgba(0,0,0,0.16), -7px -7px 18px rgba(255,255,255,0.55), inset 2px 2px 5px rgba(255,255,255,0.25), inset -2px -2px 5px rgba(0,0,0,0.12)`,
             }}
           >
             <div className="flex items-center justify-between">
-              <div className="inline-flex items-center gap-2 bg-white/20 px-3 py-1.5 rounded-full text-[11px] font-bold">
+              <div className="inline-flex items-center gap-2 bg-[var(--hero-chip)] px-3 py-1.5 rounded-full text-[11px] font-bold">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-current opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-current" />
                 </span>
                 האירוע פעיל
               </div>
@@ -981,7 +966,7 @@ const Home = () => {
               {name}
             </h1>
             {eventData.event_date && (
-              <p className="text-white/80 text-xs font-bold mt-2">
+              <p className="text-xs font-bold mt-2">
                 {new Date(eventData.event_date).toLocaleDateString("he-IL", {
                   weekday: "long",
                   day: "numeric",
@@ -991,13 +976,13 @@ const Home = () => {
               </p>
             )}
             {/* Connected-as strip */}
-            <div className="mt-4 flex items-center justify-between gap-3 bg-white/15 rounded-full px-4 py-2.5 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.12),inset_-2px_-2px_5px_rgba(255,255,255,0.15)]">
-              <span className="text-white/70 text-[11px] font-bold uppercase tracking-wider">
-                מחובר כ: <span className="text-white">{guestNameStr}</span>
+            <div className="mt-4 flex items-center justify-between gap-3 bg-[var(--hero-chip)] rounded-full px-4 py-2.5 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.12),inset_-2px_-2px_5px_rgba(255,255,255,0.15)]">
+              <span className="text-[11px] font-bold uppercase tracking-wider">
+                מחובר כ: <span className="font-black">{guestNameStr}</span>
               </span>
               <button
                 onClick={handleChangeName}
-                className="shrink-0 text-xs bg-white/20 hover:bg-white/30 text-white px-4 min-h-11 rounded-full transition-all font-bold flex items-center gap-1.5 active:scale-95"
+                className="shrink-0 text-xs bg-[var(--hero-chip)] hover:bg-[var(--hero-chip-strong)] px-4 min-h-11 rounded-full transition-all font-bold flex items-center gap-1.5 active:scale-95"
               >
                 <UserX size={14} /> החלף
               </button>
@@ -1020,7 +1005,7 @@ const Home = () => {
             <div className={`${CLAY} p-6 relative overflow-hidden group`}>
               <button
                 onClick={(e) => openInfo(e, "seating")}
-                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-[#f0eee7] shadow-[3px_3px_7px_rgba(0,0,0,0.09),-3px_-3px_7px_rgba(255,255,255,0.9)] transition-all"
+                className="absolute top-4 right-4 text-clay-muted hover:text-slate-600 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-clay-surface shadow-clay-sm transition-all"
                 aria-label="מידע"
               >
                 <Info size={18} />
@@ -1031,22 +1016,22 @@ const Home = () => {
                   <Loader2
                     className="animate-spin"
                     size={32}
-                    style={{ color: primary }}
+                    style={{ color: accentOn(primary) }}
                   />
                 </div>
               ) : myTable.found ? (
                 <div className="flex items-center justify-between gap-5 relative z-10">
                   <div className="flex flex-col items-center">
-                    <div className="w-16 h-16 rounded-full flex items-center justify-center mb-3 bg-[#f0eee7] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.09),inset_-4px_-4px_9px_rgba(255,255,255,0.85)] group-hover:scale-110 transition-transform">
-                      <MapPin size={28} style={{ color: primary }} />
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center mb-3 bg-clay-surface shadow-clay-inset-deep group-hover:scale-110 transition-transform">
+                      <MapPin size={28} style={{ color: accentOn(primary) }} />
                     </div>
-                    <p className="text-slate-500 font-bold text-xs mb-1 uppercase tracking-wider">
+                    <p className="text-clay-muted font-bold text-xs mb-1 uppercase tracking-wider">
                       השולחן שלך
                     </p>
                     <div
                       className="text-7xl font-black leading-none"
                       style={{
-                        color: primary,
+                        color: accentOn(primary),
                         fontFamily: "'Assistant', sans-serif",
                         textShadow: `0 3px 8px rgba(0,0,0,0.12)`,
                       }}
@@ -1057,8 +1042,8 @@ const Home = () => {
 
                   <button
                     onClick={() => fetchTableMates(myTable.number)}
-                    className="flex-1 flex flex-col items-center justify-center gap-2 py-6 rounded-[1.8rem] active:scale-[0.97] transition-all bg-[#f0eee7] shadow-[6px_6px_14px_rgba(0,0,0,0.09),-6px_-6px_14px_rgba(255,255,255,0.9)] active:shadow-[inset_4px_4px_9px_rgba(0,0,0,0.1),inset_-4px_-4px_9px_rgba(255,255,255,0.8)]"
-                    style={{ color: primary }}
+                    className="flex-1 flex flex-col items-center justify-center gap-2 py-6 rounded-[1.8rem] active:scale-[0.97] transition-all bg-clay-surface shadow-clay-md active:shadow-clay-inset-deep"
+                    style={{ color: accentOn(primary) }}
                   >
                     <Users size={28} />
                     <span className="text-xs font-black text-center leading-snug">
@@ -1073,12 +1058,12 @@ const Home = () => {
                   <h3 className="text-xl font-black text-slate-700 mb-1">
                     לא נמצא שולחן
                   </h3>
-                  <p className="text-slate-400 text-sm font-medium mb-5">
+                  <p className="text-clay-muted text-sm font-medium mb-5">
                     לא מצאנו את השם &quot;{guestNameStr}&quot;.
                   </p>
                   <button
                     onClick={handleChangeName}
-                    className="w-full text-slate-600 font-bold py-3.5 px-6 rounded-full transition-all flex justify-center items-center gap-2 bg-[#f0eee7] shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)]"
+                    className="w-full text-slate-600 font-bold py-3.5 px-6 rounded-full transition-all flex justify-center items-center gap-2 bg-clay-surface shadow-clay-sm active:shadow-clay-pressed"
                   >
                     <RefreshCw size={16} /> נסו שם אחר
                   </button>
@@ -1195,7 +1180,7 @@ const Home = () => {
         </div>
 
         {/* Footer */}
-        <p className="text-center text-xs text-slate-400/60 font-medium mt-6 pb-2">
+        <p className="text-center text-xs text-clay-muted font-medium mt-6 pb-2">
           מופעל ע&quot;י Eventick
         </p>
       </div>
@@ -1210,12 +1195,12 @@ const Home = () => {
           aria-label={infoModal.title}
         >
           <div
-            className="rounded-[2.5rem] p-8 w-full max-w-sm text-center relative animate-in zoom-in-95 max-h-full overflow-y-auto bg-[#f0eee7] shadow-[14px_14px_34px_rgba(0,0,0,0.18),-10px_-10px_26px_rgba(255,255,255,0.9)]"
+            className="rounded-clay-lg p-8 w-full max-w-sm text-center relative animate-in zoom-in-95 max-h-full overflow-y-auto bg-clay-surface shadow-clay-lg"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setInfoModal(null)}
-              className="absolute top-4 right-4 text-slate-400 w-11 h-11 flex items-center justify-center rounded-full bg-[#f0eee7] shadow-[3px_3px_7px_rgba(0,0,0,0.09),-3px_-3px_7px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)] transition-all"
+              className="absolute top-4 right-4 text-clay-muted w-11 h-11 flex items-center justify-center rounded-full bg-clay-surface shadow-clay-sm active:shadow-clay-pressed transition-all"
               aria-label="סגור"
             >
               <X size={20} />
@@ -1229,13 +1214,13 @@ const Home = () => {
             <h3 className="text-2xl font-black text-slate-700 mb-3">
               {infoModal.title}
             </h3>
-            <p className="text-slate-500 font-medium leading-relaxed mb-8 text-sm">
+            <p className="text-clay-muted font-medium leading-relaxed mb-8 text-sm">
               {infoModal.description}
             </p>
             <button
               onClick={() => setInfoModal(null)}
               className="w-full text-white font-bold py-4 rounded-full transition-all active:scale-[0.97]"
-              style={clayPrimaryBtn(primary)}
+              style={clayButtonStyle(primary)}
             >
               הבנתי, תודה!
             </button>
@@ -1253,23 +1238,23 @@ const Home = () => {
           aria-label="השותפים לשולחן"
         >
           <div
-            className="rounded-[2.5rem] p-8 w-full max-w-sm text-center relative animate-in zoom-in-95 max-h-full flex flex-col bg-[#f0eee7] shadow-[14px_14px_34px_rgba(0,0,0,0.18),-10px_-10px_26px_rgba(255,255,255,0.9)]"
+            className="rounded-clay-lg p-8 w-full max-w-sm text-center relative animate-in zoom-in-95 max-h-full flex flex-col bg-clay-surface shadow-clay-lg"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setShowMatesModal(false)}
-              className="absolute top-4 right-4 text-slate-400 w-11 h-11 flex items-center justify-center rounded-full bg-[#f0eee7] shadow-[3px_3px_7px_rgba(0,0,0,0.09),-3px_-3px_7px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)] transition-all z-10"
+              className="absolute top-4 right-4 text-clay-muted w-11 h-11 flex items-center justify-center rounded-full bg-clay-surface shadow-clay-sm active:shadow-clay-pressed transition-all z-10"
               aria-label="סגור"
             >
               <X size={20} />
             </button>
-            <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 bg-[#f0eee7] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.1),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]">
-              <Users size={36} style={{ color: primary }} />
+            <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 bg-clay-surface shadow-clay-inset-deep">
+              <Users size={36} style={{ color: accentOn(primary) }} />
             </div>
             <h3 className="text-2xl font-black text-slate-700 mb-1">
               השותפים לשולחן
             </h3>
-            <p className="text-slate-400 font-bold mb-6 text-sm">
+            <p className="text-clay-muted font-bold mb-6 text-sm">
               שולחן מספר {myTable?.number}
             </p>
             <div
@@ -1280,7 +1265,7 @@ const Home = () => {
                   <Loader2
                     className="animate-spin"
                     size={28}
-                    style={{ color: primary }}
+                    style={{ color: accentOn(primary) }}
                   />
                 </div>
               ) : tableMates.length > 0 ? (
@@ -1299,7 +1284,7 @@ const Home = () => {
                   ))}
                 </ul>
               ) : (
-                <p className="text-slate-400 text-center py-4 font-medium leading-relaxed text-sm">
+                <p className="text-clay-muted text-center py-4 font-medium leading-relaxed text-sm">
                   נראה שאת/ה לבד בשולחן הזה כרגע.
                   <br />
                   אולי זה זמן טוב להכיר אנשים חדשים 😉
@@ -1309,7 +1294,7 @@ const Home = () => {
             <button
               onClick={() => setShowMatesModal(false)}
               className="w-full mt-4 text-white font-bold py-4 rounded-full transition-all active:scale-[0.97]"
-              style={clayPrimaryBtn(primary)}
+              style={clayButtonStyle(primary)}
             >
               סגור
             </button>

@@ -22,28 +22,17 @@ import {
   MapPin,
 } from "lucide-react";
 import gsap from "gsap";
-import { getLuminance } from "../lib/colors";
+import { accentOn } from "../lib/colors";
 import { useToast } from "../components/Toast";
 import { useModalBehavior } from "../components/Modal";
+import {
+  CLAY_FIELD,
+  CLAY_RAISED,
+  DEFAULT_PRIMARY,
+  clayButtonStyle,
+  clayHeroStyle,
+} from "../lib/clay";
 
-/* ============================================================
-   SOFT-CLAY / NEUMORPHISM DESIGN TOKENS  (Eventick RSVP Clay)
-   Page rests on a warm neutral gradient (#eceadf → #e2ddd0).
-   Raised surfaces (#f0eee7) pop out with a dual shadow; wells
-   (#eeece5 / #e4e0d5) are carved in with inset shadows.
-   ------------------------------------------------------------ */
-const CLAY_BG = "#eceadf";
-const CLAY_PAGE_BG = "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)";
-const CLAY =
-  "bg-[#f0eee7] shadow-[8px_8px_20px_rgba(0,0,0,0.09),-8px_-8px_20px_rgba(255,255,255,0.9)]";
-const CLAY_INSET =
-  "bg-[#eeece5] shadow-[inset_5px_5px_10px_rgba(0,0,0,0.07),inset_-5px_-5px_10px_rgba(255,255,255,0.85)]";
-const clayBtn = (color) => ({
-  backgroundColor: color,
-  boxShadow: `5px 5px 14px rgba(0,0,0,0.14), -4px -4px 12px rgba(255,255,255,0.7), inset 2px 2px 4px rgba(255,255,255,0.35), inset -2px -2px 4px rgba(0,0,0,0.12)`,
-});
-const clayFieldCls =
-  "w-full p-4 rounded-[1.4rem] outline-none font-bold text-slate-700 placeholder:text-slate-400 bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.07),inset_-4px_-4px_9px_rgba(255,255,255,0.85)] focus:shadow-[inset_5px_5px_11px_rgba(0,0,0,0.09),inset_-5px_-5px_11px_rgba(255,255,255,0.9)] transition-all";
 
 // שלב ייעודי ל"קישור קסם" (?guest_id=). 1-4 נשארים הזרימה העצמאית הקיימת.
 const RSVP_STEP_GUEST = 0;
@@ -84,18 +73,18 @@ const LocationLine = ({ location, primaryColor, size = "md", className = "" }) =
       title={text}
     >
       <span
-        className={`grid place-items-center rounded-full shrink-0 bg-[#eeece5] shadow-[inset_2px_2px_5px_rgba(0,0,0,0.08),inset_-2px_-2px_5px_rgba(255,255,255,0.85)] ${
+        className={`grid place-items-center rounded-full shrink-0 bg-clay-well shadow-[inset_2px_2px_5px_rgba(0,0,0,0.08),inset_-2px_-2px_5px_rgba(255,255,255,0.85)] ${
           isSmall ? "w-6 h-6" : "w-7 h-7"
         }`}
       >
         <MapPin
           size={isSmall ? 12 : 14}
-          style={{ color: primaryColor }}
+          style={{ color: accentOn(primaryColor) }}
           aria-hidden="true"
         />
       </span>
       <span
-        className={`font-medium text-slate-500 ${isSmall ? "text-sm" : "text-base"}`}
+        className={`font-medium text-clay-muted ${isSmall ? "text-sm" : "text-base"}`}
       >
         {text}
       </span>
@@ -131,9 +120,9 @@ const DietaryPicker = ({
           } ${
             active
               ? "text-white active:scale-95"
-              : "text-slate-500 bg-[#eeece5] shadow-[inset_3px_3px_7px_rgba(0,0,0,0.07),inset_-3px_-3px_7px_rgba(255,255,255,0.85)]"
+              : "text-clay-muted bg-clay-well shadow-clay-inset"
           }`}
-          style={active ? clayBtn(primaryColor) : undefined}
+          style={active ? clayButtonStyle(primaryColor) : undefined}
         >
           <span aria-hidden="true">{option.emoji}</span>
           {option.label}
@@ -168,7 +157,7 @@ const ActionButtons = ({
             setRsvpStep(initialRsvpStep);
           }}
           className="w-full flex items-center justify-center gap-3 text-white font-black py-4 rounded-full text-lg active:scale-[0.97] transition-transform"
-          style={clayBtn(primaryColor)}
+          style={clayButtonStyle(primaryColor)}
         >
           <CheckCircle2 size={24} /> אישור הגעה (RSVP)
         </button>
@@ -179,12 +168,12 @@ const ActionButtons = ({
             href={`https://waze.com/ul?q=${encodeURIComponent(location)}&navigate=yes`}
             target="_blank"
             rel="noopener noreferrer"
-            className={`flex-1 flex items-center justify-center gap-2 font-bold py-4 rounded-full text-sm transition-all active:scale-95 text-[#5b6169] ${CLAY} active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)]`}
+            className={`flex-1 flex items-center justify-center gap-2 font-bold py-4 rounded-full text-sm transition-all active:scale-95 text-clay-ink ${CLAY_RAISED} active:shadow-clay-pressed`}
             title={`ניווט אל: ${location}`}
           >
             <span
               className="w-8 h-8 rounded-full flex items-center justify-center text-white shrink-0"
-              style={clayBtn("#8fa7b8")}
+              style={clayButtonStyle(DEFAULT_PRIMARY)}
             >
               <Navigation size={15} />
             </span>
@@ -194,11 +183,11 @@ const ActionButtons = ({
         {active_modules?.rideshare && (
           <button
             onClick={() => navigate(`/rideshare?event=${id}`)}
-            className={`flex-1 flex items-center justify-center gap-2 font-bold py-4 rounded-full text-sm transition-all active:scale-95 text-[#5b6169] ${CLAY} active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)]`}
+            className={`flex-1 flex items-center justify-center gap-2 font-bold py-4 rounded-full text-sm transition-all active:scale-95 text-clay-ink ${CLAY_RAISED} active:shadow-clay-pressed`}
           >
             <span
               className="w-8 h-8 rounded-full flex items-center justify-center text-white shrink-0"
-              style={clayBtn("#cf9a8c")}
+              style={clayButtonStyle("#cf9a8c")}
             >
               <Car size={15} />
             </span>
@@ -687,17 +676,15 @@ const Invite = () => {
   if (loading)
     return (
       <div
-        className="min-h-screen flex items-center justify-center"
-        style={{ background: CLAY_PAGE_BG }}
+        className="min-h-screen flex items-center justify-center bg-clay-gradient"
       >
-        <Loader2 className="animate-spin text-slate-400" size={48} />
+        <Loader2 className="animate-spin text-clay-muted" size={48} />
       </div>
     );
   if (!eventData)
     return (
       <div
-        className="min-h-screen flex items-center justify-center text-slate-500 text-xl font-bold"
-        style={{ background: CLAY_PAGE_BG }}
+        className="min-h-screen flex items-center justify-center text-clay-muted text-xl font-bold bg-clay-gradient"
       >
         ההזמנה לא נמצאה :(
       </div>
@@ -705,7 +692,7 @@ const Invite = () => {
 
   const { name, event_date, location, design_config, active_modules } =
     eventData;
-  const primaryColor = design_config?.colors?.primary || "#8fa7b8";
+  const primaryColor = design_config?.colors?.primary || DEFAULT_PRIMARY;
   const template = design_config?.invite_template || "modern";
   const inviteImage = design_config?.invite_image;
 
@@ -719,8 +706,7 @@ const Invite = () => {
     if (template === "elegant") {
       return (
         <div
-          className="min-h-screen flex flex-col items-center p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] text-center relative overflow-hidden"
-          style={{ background: CLAY_PAGE_BG }}
+          className="min-h-screen flex flex-col items-center p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] text-center relative overflow-hidden bg-clay-gradient"
           dir="rtl"
         >
           {/* אנימציית רקע - חלקיקים מרחפים */}
@@ -743,11 +729,11 @@ const Invite = () => {
           <div className="w-full max-w-md mx-auto pt-8 pb-20 relative z-10">
             <h1
               className="fade-up-item text-4xl md:text-5xl font-serif font-bold mb-2"
-              style={{ color: primaryColor }}
+              style={{ color: accentOn(primaryColor) }}
             >
               {name}
             </h1>
-            <p className="fade-up-item text-slate-400 font-medium uppercase tracking-widest text-sm mb-10">
+            <p className="fade-up-item text-clay-muted font-medium uppercase tracking-widest text-sm mb-10">
               מתרגשים להזמין אתכם
             </p>
             <div className="fade-up-item relative w-64 h-64 mx-auto mb-12">
@@ -762,11 +748,11 @@ const Invite = () => {
               {inviteImage ? (
                 <img
                   src={inviteImage}
-                  className="w-full h-full object-cover rounded-full p-1 relative z-10 bg-[#ece9df] shadow-[9px_9px_20px_rgba(0,0,0,0.1),-9px_-9px_20px_rgba(255,255,255,0.9)]"
+                  className="w-full h-full object-cover rounded-full p-1 relative z-10 bg-clay-page shadow-clay"
                   alt="Event Cover"
                 />
               ) : (
-                <div className="w-full h-full rounded-full flex items-center justify-center p-1 relative z-10 bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.09),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]">
+                <div className="w-full h-full rounded-full flex items-center justify-center p-1 relative z-10 bg-clay-well shadow-clay-inset-deep">
                   <CalendarHeart size={48} className="text-slate-300" />
                 </div>
               )}
@@ -779,11 +765,11 @@ const Invite = () => {
                 <div className="flex flex-col items-center">
                   <span
                     className="text-3xl font-bold"
-                    style={{ color: primaryColor }}
+                    style={{ color: accentOn(primaryColor) }}
                   >
                     {timeLeft.seconds.toString().padStart(2, "0")}
                   </span>
-                  <span className="text-xs font-bold text-slate-400">
+                  <span className="text-xs font-bold text-clay-muted">
                     שניות
                   </span>
                 </div>
@@ -791,43 +777,43 @@ const Invite = () => {
                 <div className="flex flex-col items-center">
                   <span
                     className="text-3xl font-bold"
-                    style={{ color: primaryColor }}
+                    style={{ color: accentOn(primaryColor) }}
                   >
                     {timeLeft.minutes.toString().padStart(2, "0")}
                   </span>
-                  <span className="text-xs font-bold text-slate-400">דקות</span>
+                  <span className="text-xs font-bold text-clay-muted">דקות</span>
                 </div>
                 <div className="h-8 w-[1px] bg-slate-200"></div>
                 <div className="flex flex-col items-center">
                   <span
                     className="text-3xl font-bold"
-                    style={{ color: primaryColor }}
+                    style={{ color: accentOn(primaryColor) }}
                   >
                     {timeLeft.hours.toString().padStart(2, "0")}
                   </span>
-                  <span className="text-xs font-bold text-slate-400">שעות</span>
+                  <span className="text-xs font-bold text-clay-muted">שעות</span>
                 </div>
                 <div className="h-8 w-[1px] bg-slate-200"></div>
                 <div className="flex flex-col items-center">
                   <span
                     className="text-3xl font-bold"
-                    style={{ color: primaryColor }}
+                    style={{ color: accentOn(primaryColor) }}
                   >
                     {timeLeft.days.toString().padStart(2, "0")}
                   </span>
-                  <span className="text-xs font-bold text-slate-400">ימים</span>
+                  <span className="text-xs font-bold text-clay-muted">ימים</span>
                 </div>
               </div>
             ) : (
               <h2
                 className="fade-up-item text-3xl font-bold mb-10"
-                style={{ color: primaryColor }}
+                style={{ color: accentOn(primaryColor) }}
               >
                 היום זה קורה!
               </h2>
             )}
             <p
-              className={`fade-up-item text-slate-500 font-medium ${
+              className={`fade-up-item text-clay-muted font-medium ${
                 location ? "mb-2" : "mb-8"
               }`}
             >
@@ -857,8 +843,7 @@ const Invite = () => {
     if (template === "corporate") {
       return (
         <div
-          className="min-h-screen flex flex-col items-center p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] text-center relative overflow-hidden"
-          style={{ background: CLAY_PAGE_BG }}
+          className="min-h-screen flex flex-col items-center p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] text-center relative overflow-hidden bg-clay-gradient"
           dir="rtl"
         >
           <div
@@ -875,22 +860,22 @@ const Invite = () => {
                   alt="Company Logo"
                 />
               ) : (
-                <div className="w-16 h-16 rounded-[1.4rem] flex items-center justify-center bg-[#eeece5] shadow-[inset_3px_3px_7px_rgba(0,0,0,0.09),inset_-3px_-3px_7px_rgba(255,255,255,0.85)]">
-                  <Briefcase className="text-slate-400" size={32} />
+                <div className="w-16 h-16 rounded-clay-field flex items-center justify-center bg-clay-well shadow-clay-inset-deep">
+                  <Briefcase className="text-clay-muted" size={32} />
                 </div>
               )}
             </div>
             <div
-              className={`fade-up-item rounded-t-[2.25rem] pt-8 pb-16 px-6 ${CLAY}`}
+              className={`fade-up-item rounded-t-[2.25rem] pt-8 pb-16 px-6 ${CLAY_RAISED}`}
               style={{ borderTop: `4px solid ${primaryColor}` }}
             >
-              <p className="text-slate-400 text-sm font-bold uppercase tracking-widest mb-2">
+              <p className="text-clay-muted text-sm font-bold uppercase tracking-widest mb-2">
                 Countdown Until
               </p>
               <h1 className="text-3xl font-black text-slate-800 mb-2">
                 {name}
               </h1>
-              <p className="text-slate-500 font-medium text-sm flex justify-center items-center gap-2">
+              <p className="text-clay-muted font-medium text-sm flex justify-center items-center gap-2">
                 <Clock size={16} />{" "}
                 {new Date(event_date).toLocaleDateString("he-IL")}
               </p>
@@ -902,9 +887,9 @@ const Invite = () => {
               />
             </div>
             <div
-              className="fade-up-item rounded-[2rem] -mt-8 mx-4 p-6 relative z-20 text-white"
+              className="fade-up-item rounded-[2rem] -mt-8 mx-4 p-6 relative z-20"
               style={{
-                background: `linear-gradient(145deg, ${primaryColor}, ${primaryColor}cc)`,
+                ...clayHeroStyle(primaryColor),
                 boxShadow:
                   "9px 9px 24px rgba(0,0,0,0.16), -7px -7px 18px rgba(255,255,255,0.55), inset 2px 2px 5px rgba(255,255,255,0.25), inset -2px -2px 5px rgba(0,0,0,0.12)",
               }}
@@ -915,7 +900,7 @@ const Invite = () => {
                     <span className="text-4xl font-black tracking-tight">
                       {timeLeft.days.toString().padStart(2, "0")}
                     </span>
-                    <span className="text-[10px] font-bold uppercase opacity-80 mt-1">
+                    <span className="text-[10px] font-bold uppercase mt-1">
                       Days
                     </span>
                   </div>
@@ -924,7 +909,7 @@ const Invite = () => {
                     <span className="text-4xl font-black tracking-tight">
                       {timeLeft.hours.toString().padStart(2, "0")}
                     </span>
-                    <span className="text-[10px] font-bold uppercase opacity-80 mt-1">
+                    <span className="text-[10px] font-bold uppercase mt-1">
                       Hours
                     </span>
                   </div>
@@ -933,7 +918,7 @@ const Invite = () => {
                     <span className="text-4xl font-black tracking-tight">
                       {timeLeft.minutes.toString().padStart(2, "0")}
                     </span>
-                    <span className="text-[10px] font-bold uppercase opacity-80 mt-1">
+                    <span className="text-[10px] font-bold uppercase mt-1">
                       Min
                     </span>
                   </div>
@@ -942,7 +927,7 @@ const Invite = () => {
                     <span className="text-4xl font-black tracking-tight">
                       {timeLeft.seconds.toString().padStart(2, "0")}
                     </span>
-                    <span className="text-[10px] font-bold uppercase opacity-80 mt-1">
+                    <span className="text-[10px] font-bold uppercase mt-1">
                       Sec
                     </span>
                   </div>
@@ -954,7 +939,7 @@ const Invite = () => {
               )}
             </div>
             <div
-              className={`fade-up-item mt-8 p-6 rounded-[2.25rem] relative z-30 ${CLAY}`}
+              className={`fade-up-item mt-8 p-6 rounded-clay relative z-30 ${CLAY_RAISED}`}
             >
               <ActionButtons
                 theme="light"
@@ -975,14 +960,12 @@ const Invite = () => {
 
     // --- תבנית מודרנית / מסיבה ---
     // המשטח החימר קבוע ובהיר; הצבע הדינמי של האירוע נשמר לאלמנטים
-    const isLightBg = getLuminance(CLAY_BG) > 150;
     const headerTextColor = "text-slate-700";
-    const subTextColor = "text-slate-500";
+    const subTextColor = "text-clay-muted";
 
     return (
       <div
-        className="min-h-screen flex flex-col items-center justify-center p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] relative overflow-hidden text-center"
-        style={{ background: CLAY_PAGE_BG }}
+        className="min-h-screen flex flex-col items-center justify-center p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] relative overflow-hidden text-center bg-clay-gradient"
         dir="rtl"
       >
         {/* Blobs חיים וזזים - משתמשים בצבע ה-Primary (עדינים על משטח החימר) */}
@@ -998,7 +981,7 @@ const Invite = () => {
         ></div>
 
         <div className="relative z-10 w-full max-w-lg mx-auto pb-20">
-          <div className="fade-up-item mx-auto w-[132px] h-[132px] rounded-full flex items-center justify-center mb-8 bg-[#ece9df] shadow-[9px_9px_20px_rgba(0,0,0,0.1),-9px_-9px_20px_rgba(255,255,255,0.9)]">
+          <div className="fade-up-item mx-auto w-[132px] h-[132px] rounded-full flex items-center justify-center mb-8 bg-clay-page shadow-clay">
             {inviteImage ? (
               <img
                 src={inviteImage}
@@ -1007,10 +990,8 @@ const Invite = () => {
               />
             ) : (
               <div
-                className="w-[104px] h-[104px] rounded-full flex items-center justify-center text-white shadow-[inset_4px_4px_9px_rgba(0,0,0,0.12),inset_-4px_-4px_9px_rgba(255,255,255,0.35)]"
-                style={{
-                  background: `linear-gradient(145deg, ${primaryColor}, ${primaryColor}cc)`,
-                }}
+                className="w-[104px] h-[104px] rounded-full flex items-center justify-center shadow-[inset_4px_4px_9px_rgba(0,0,0,0.12),inset_-4px_-4px_9px_rgba(255,255,255,0.35)]"
+                style={clayHeroStyle(primaryColor)}
               >
                 <PartyPopper size={40} />
               </div>
@@ -1019,7 +1000,7 @@ const Invite = () => {
 
           <div
             className={`fade-up-item mb-2 font-bold tracking-widest uppercase text-sm`}
-            style={{ color: primaryColor }}
+            style={{ color: accentOn(primaryColor) }}
           >
             Save The Date
           </div>
@@ -1049,51 +1030,51 @@ const Invite = () => {
             >
               <div className="flex flex-col items-center">
                 <div
-                  className="w-16 h-16 md:w-20 md:h-20 rounded-[24px] flex items-center justify-center text-2xl md:text-3xl font-black bg-[#e4e0d5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.09),inset_-4px_-4px_9px_rgba(255,255,255,0.8)]"
-                  style={{ color: primaryColor }}
+                  className="w-16 h-16 md:w-20 md:h-20 rounded-[24px] flex items-center justify-center text-2xl md:text-3xl font-black bg-clay-well-deep shadow-clay-inset-deep"
+                  style={{ color: accentOn(primaryColor) }}
                 >
                   {timeLeft.seconds.toString().padStart(2, "0")}
                 </div>
-                <span className="text-xs font-bold mt-3 text-[#9a9484]">
+                <span className="text-xs font-bold mt-3 text-clay-muted">
                   שניות
                 </span>
               </div>
               <div className="flex flex-col items-center">
                 <div
-                  className="w-16 h-16 md:w-20 md:h-20 rounded-[24px] flex items-center justify-center text-2xl md:text-3xl font-black bg-[#e4e0d5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.09),inset_-4px_-4px_9px_rgba(255,255,255,0.8)]"
-                  style={{ color: primaryColor }}
+                  className="w-16 h-16 md:w-20 md:h-20 rounded-[24px] flex items-center justify-center text-2xl md:text-3xl font-black bg-clay-well-deep shadow-clay-inset-deep"
+                  style={{ color: accentOn(primaryColor) }}
                 >
                   {timeLeft.minutes.toString().padStart(2, "0")}
                 </div>
-                <span className="text-xs font-bold mt-3 text-[#9a9484]">
+                <span className="text-xs font-bold mt-3 text-clay-muted">
                   דקות
                 </span>
               </div>
               <div className="flex flex-col items-center">
                 <div
-                  className="w-16 h-16 md:w-20 md:h-20 rounded-[24px] flex items-center justify-center text-2xl md:text-3xl font-black bg-[#e4e0d5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.09),inset_-4px_-4px_9px_rgba(255,255,255,0.8)]"
-                  style={{ color: primaryColor }}
+                  className="w-16 h-16 md:w-20 md:h-20 rounded-[24px] flex items-center justify-center text-2xl md:text-3xl font-black bg-clay-well-deep shadow-clay-inset-deep"
+                  style={{ color: accentOn(primaryColor) }}
                 >
                   {timeLeft.hours.toString().padStart(2, "0")}
                 </div>
-                <span className="text-xs font-bold mt-3 text-[#9a9484]">
+                <span className="text-xs font-bold mt-3 text-clay-muted">
                   שעות
                 </span>
               </div>
               <div className="flex flex-col items-center">
                 <div
-                  className="w-16 h-16 md:w-20 md:h-20 rounded-[24px] flex items-center justify-center text-2xl md:text-3xl font-black bg-[#e4e0d5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.09),inset_-4px_-4px_9px_rgba(255,255,255,0.8)]"
-                  style={{ color: primaryColor }}
+                  className="w-16 h-16 md:w-20 md:h-20 rounded-[24px] flex items-center justify-center text-2xl md:text-3xl font-black bg-clay-well-deep shadow-clay-inset-deep"
+                  style={{ color: accentOn(primaryColor) }}
                 >
                   {timeLeft.days.toString().padStart(2, "0")}
                 </div>
-                <span className="text-xs font-bold mt-3 text-[#9a9484]">
+                <span className="text-xs font-bold mt-3 text-clay-muted">
                   ימים
                 </span>
               </div>
             </div>
           ) : (
-            <div className={`fade-up-item mb-12 p-6 rounded-[2.25rem] ${CLAY}`}>
+            <div className={`fade-up-item mb-12 p-6 rounded-clay ${CLAY_RAISED}`}>
               <Sparkles
                 className="mx-auto mb-3 text-yellow-400 animate-pulse"
                 size={48}
@@ -1106,7 +1087,7 @@ const Invite = () => {
           )}
 
           <ActionButtons
-            theme={isLightBg ? "light" : "dark"}
+            theme="light"
             active_modules={active_modules}
             id={id}
             location={location}
@@ -1138,7 +1119,7 @@ const Invite = () => {
           }}
         >
           <div
-            className="bg-[#e8e4da] w-full max-w-lg md:rounded-[2.5rem] rounded-t-[38px] p-6 md:p-8 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-[0_-14px_40px_rgba(0,0,0,0.16)] relative max-h-full overflow-y-auto hide-scrollbar"
+            className="bg-clay-sheet w-full max-w-lg md:rounded-clay-lg rounded-t-[38px] p-6 md:p-8 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-[0_-14px_40px_rgba(0,0,0,0.16)] relative max-h-full overflow-y-auto hide-scrollbar"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Grab handle */}
@@ -1146,7 +1127,7 @@ const Invite = () => {
             {rsvpStep !== 4 && (
               <button
                 onClick={() => setShowRsvp(false)}
-                className="absolute top-5 right-5 w-11 h-11 flex items-center justify-center rounded-full text-slate-500 z-10 bg-[#e9e6dc] shadow-[3px_3px_7px_rgba(0,0,0,0.08),-3px_-3px_7px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)] transition-all"
+                className="absolute top-5 right-5 w-11 h-11 flex items-center justify-center rounded-full text-clay-muted z-10 bg-clay-chip shadow-clay-sm active:shadow-clay-pressed transition-all"
                 aria-label="סגור"
               >
                 <X size={20} />
@@ -1155,17 +1136,17 @@ const Invite = () => {
 
             {rsvpStep === RSVP_STEP_GUEST && magicGuest && (
               <div className="step-anim pt-4">
-                <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.09),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]">
+                <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-clay-well shadow-clay-inset-deep">
                   {magicGuest.status === "canceled" ? (
-                    <X size={32} className="text-slate-400" />
+                    <X size={32} className="text-clay-muted" />
                   ) : (
-                    <CheckCircle2 size={32} style={{ color: primaryColor }} />
+                    <CheckCircle2 size={32} style={{ color: accentOn(primaryColor) }} />
                   )}
                 </div>
                 <h2 className="text-2xl font-black text-slate-700 mb-1 text-center">
                   היי {magicGuest.guest_name},
                 </h2>
-                <p className="text-slate-500 font-medium text-center mb-6 text-sm">
+                <p className="text-clay-muted font-medium text-center mb-6 text-sm">
                   {magicGuest.status === "confirmed"
                     ? "אישרנו את הגעתך! 🎉"
                     : magicGuest.status === "canceled"
@@ -1190,9 +1171,9 @@ const Invite = () => {
                         className={`flex-1 font-bold py-4 rounded-full transition-all disabled:opacity-50 ${
                           active
                             ? "text-white active:scale-[0.97]"
-                            : "text-slate-600 bg-[#e9e6dc] shadow-[5px_5px_12px_rgba(0,0,0,0.08),-5px_-5px_12px_rgba(255,255,255,0.9)]"
+                            : "text-slate-600 bg-clay-chip shadow-clay-md"
                         }`}
-                        style={active ? clayBtn(primaryColor) : undefined}
+                        style={active ? clayButtonStyle(primaryColor) : undefined}
                       >
                         {option.label}
                       </button>
@@ -1203,8 +1184,8 @@ const Invite = () => {
                 {magicGuest.status === "confirmed" && (
                   <>
                     {/* ההעדפה שלך — השורה שהקישור שייך לה */}
-                    <div className="rounded-[1.4rem] p-4 mb-4 bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.07),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]">
-                      <p className="text-xs font-bold text-slate-400 mb-3">
+                    <div className="rounded-clay-field p-4 mb-4 bg-clay-well shadow-clay-inset">
+                      <p className="text-xs font-bold text-clay-muted mb-3">
                         העדפת התזונה שלך
                       </p>
                       <DietaryPicker
@@ -1217,8 +1198,8 @@ const Invite = () => {
                     </div>
 
                     {/* כל מי שמגיע איתך הוא שורה נפרדת עם העדפה משלו */}
-                    <div className="rounded-[1.4rem] p-4 mb-4 bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.07),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]">
-                      <p className="text-xs font-bold text-slate-400 mb-3">
+                    <div className="rounded-clay-field p-4 mb-4 bg-clay-well shadow-clay-inset">
+                      <p className="text-xs font-bold text-clay-muted mb-3">
                         מי מגיע איתך? ({magicCompanions.length})
                       </p>
 
@@ -1226,7 +1207,7 @@ const Invite = () => {
                         {magicCompanions.map((companion) => (
                           <div
                             key={companion.id}
-                            className="rounded-[1.2rem] bg-[#f0eee7] p-3 shadow-[4px_4px_10px_rgba(0,0,0,0.06),-4px_-4px_10px_rgba(255,255,255,0.9)]"
+                            className="rounded-[1.2rem] bg-clay-surface p-3 shadow-[4px_4px_10px_rgba(0,0,0,0.06),-4px_-4px_10px_rgba(255,255,255,0.9)]"
                           >
                             <div className="flex items-center justify-between gap-2">
                               <span className="font-bold text-slate-700">
@@ -1237,7 +1218,7 @@ const Invite = () => {
                                 onClick={() => removeCompanion(companion.id)}
                                 disabled={companionBusy}
                                 aria-label={`הסרת ${companion.guest_name}`}
-                                className="w-11 h-11 -m-1.5 shrink-0 flex items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-500 disabled:opacity-50"
+                                className="w-11 h-11 -m-1.5 shrink-0 flex items-center justify-center rounded-full text-clay-muted transition-colors hover:bg-rose-50 hover:text-rose-700 disabled:opacity-50"
                               >
                                 <X size={16} />
                               </button>
@@ -1257,14 +1238,14 @@ const Invite = () => {
                         ))}
                       </div>
 
-                      <div className="mt-3 rounded-[1.2rem] bg-[#f0eee7] p-3 shadow-[inset_3px_3px_7px_rgba(0,0,0,0.06),inset_-3px_-3px_7px_rgba(255,255,255,0.9)]">
+                      <div className="mt-3 rounded-[1.2rem] bg-clay-surface p-3 shadow-clay-inset">
                         <input
                           type="text"
                           value={newCompanionName}
                           onChange={(e) => setNewCompanionName(e.target.value)}
                           maxLength={100}
                           placeholder="שם האורח הנוסף"
-                          className={`${clayFieldCls} bg-[#eeece5] mb-2`}
+                          className={`${CLAY_FIELD} bg-clay-well mb-2`}
                         />
                         <DietaryPicker
                           value={newCompanionDietary}
@@ -1278,7 +1259,7 @@ const Invite = () => {
                           onClick={addCompanion}
                           disabled={companionBusy || !newCompanionName.trim()}
                           className="mt-3 w-full rounded-full py-3 font-bold text-white transition-all active:scale-[0.97] disabled:opacity-40"
-                          style={clayBtn(primaryColor)}
+                          style={clayButtonStyle(primaryColor)}
                         >
                           {companionBusy ? "מוסיף..." : "+ הוספת אורח"}
                         </button>
@@ -1296,12 +1277,12 @@ const Invite = () => {
                       maxLength={500}
                       rows={2}
                       placeholder="הערות (אלרגיות, הסעה...)"
-                      className={`${clayFieldCls} resize-none mb-2`}
+                      className={`${CLAY_FIELD} resize-none mb-2`}
                     />
                   </>
                 )}
 
-                <p className="h-5 text-center text-xs font-bold text-slate-400">
+                <p className="h-5 text-center text-xs font-bold text-clay-muted">
                   {magicSaving ? "שומר..." : magicSaved ? "נשמר ✓" : ""}
                 </p>
               </div>
@@ -1309,13 +1290,13 @@ const Invite = () => {
 
             {rsvpStep === 1 && (
               <div className="step-anim pt-4">
-                <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.09),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]">
-                  <Users size={32} style={{ color: primaryColor }} />
+                <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-clay-well shadow-clay-inset-deep">
+                  <Users size={32} style={{ color: accentOn(primaryColor) }} />
                 </div>
                 <h2 className="text-2xl font-black text-slate-700 mb-2 text-center">
                   אישור הגעה
                 </h2>
-                <p className="text-slate-500 font-medium text-center mb-8 text-sm">
+                <p className="text-clay-muted font-medium text-center mb-8 text-sm">
                   כמה תגיעו סך הכל? (כולל אותך)
                 </p>
 
@@ -1323,7 +1304,7 @@ const Invite = () => {
                   <button
                     type="button"
                     onClick={() => setGuestCount(Math.max(1, guestCount - 1))}
-                    className="w-14 h-14 rounded-full text-slate-600 font-black text-2xl flex items-center justify-center transition-all bg-[#e9e6dc] shadow-[5px_5px_12px_rgba(0,0,0,0.08),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)]"
+                    className="w-14 h-14 rounded-full text-slate-600 font-black text-2xl flex items-center justify-center transition-all bg-clay-chip shadow-clay-md active:shadow-clay-pressed"
                   >
                     -
                   </button>
@@ -1333,7 +1314,7 @@ const Invite = () => {
                   <button
                     type="button"
                     onClick={() => setGuestCount(Math.min(10, guestCount + 1))}
-                    className="w-14 h-14 rounded-full text-slate-600 font-black text-2xl flex items-center justify-center transition-all bg-[#e9e6dc] shadow-[5px_5px_12px_rgba(0,0,0,0.08),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)]"
+                    className="w-14 h-14 rounded-full text-slate-600 font-black text-2xl flex items-center justify-center transition-all bg-clay-chip shadow-clay-md active:shadow-clay-pressed"
                   >
                     +
                   </button>
@@ -1342,7 +1323,7 @@ const Invite = () => {
                 <button
                   onClick={handleCountNext}
                   className="w-full text-white font-bold py-4 rounded-full flex justify-center items-center gap-2 active:scale-[0.97] transition-all"
-                  style={clayBtn(primaryColor)}
+                  style={clayButtonStyle(primaryColor)}
                 >
                   המשך <ChevronLeft size={20} />
                 </button>
@@ -1357,7 +1338,7 @@ const Invite = () => {
                 <button
                   type="button"
                   onClick={() => setRsvpStep(1)}
-                  className="flex items-center gap-1 min-h-11 px-1 text-slate-400 hover:text-slate-600 font-bold mb-4 text-sm transition-colors"
+                  className="flex items-center gap-1 min-h-11 px-1 text-clay-muted hover:text-slate-600 font-bold mb-4 text-sm transition-colors"
                 >
                   <ChevronRight size={16} /> חזור
                 </button>
@@ -1367,7 +1348,7 @@ const Invite = () => {
 
                 <div className="space-y-4 mb-8">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-400 pl-2">
+                    <label className="text-xs font-bold text-clay-muted pl-2">
                       טלפון נציג / שולח
                     </label>
                     <input
@@ -1377,22 +1358,22 @@ const Invite = () => {
                       dir="ltr"
                       value={submitterPhone}
                       onChange={(e) => setSubmitterPhone(e.target.value)}
-                      className={`${clayFieldCls} text-left`}
+                      className={`${CLAY_FIELD} text-left`}
                     />
                   </div>
 
-                  <div className="pt-2 border-t border-[#dcd7ca]">
-                    <label className="text-xs font-bold text-slate-400 pl-2 block mb-3">
+                  <div className="pt-2 border-t border-clay-line">
+                    <label className="text-xs font-bold text-clay-muted pl-2 block mb-3">
                       שמות האורחים והעדפת תזונה לכל אחד
                     </label>
                     <div className="space-y-4">
                       {guestNames.map((name, index) => (
                         <div
                           key={index}
-                          className="rounded-[1.4rem] bg-[#eeece5] p-3 shadow-[inset_4px_4px_9px_rgba(0,0,0,0.07),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]"
+                          className="rounded-clay-field bg-clay-well p-3 shadow-clay-inset"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 font-bold text-sm shrink-0 bg-[#f0eee7] shadow-[3px_3px_7px_rgba(0,0,0,0.08),-3px_-3px_7px_rgba(255,255,255,0.9)]">
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-clay-muted font-bold text-sm shrink-0 bg-clay-surface shadow-clay-sm">
                               {index + 1}
                             </div>
                             <input
@@ -1405,7 +1386,7 @@ const Invite = () => {
                               onChange={(e) =>
                                 handleNameChange(index, e.target.value)
                               }
-                              className={`${clayFieldCls} bg-[#f0eee7]`}
+                              className={`${CLAY_FIELD} bg-clay-surface`}
                             />
                           </div>
                           {/* בורר ייעודי לאדם הזה — כל שורה נשמרת עם ההעדפה שלה */}
@@ -1429,7 +1410,7 @@ const Invite = () => {
                   type="submit"
                   disabled={isSubmitting}
                   className="w-full text-white font-bold py-4 rounded-full flex justify-center items-center gap-2 active:scale-[0.97] transition-all disabled:opacity-50"
-                  style={clayBtn(primaryColor)}
+                  style={clayButtonStyle(primaryColor)}
                 >
                   {isSubmitting ? (
                     <Loader2 className="animate-spin" size={24} />
@@ -1444,8 +1425,8 @@ const Invite = () => {
 
             {rsvpStep === 3 && (
               <div className="step-anim pt-4 text-center">
-                <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.09),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]">
-                  <AlertTriangle size={40} className="text-amber-500" />
+                <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 bg-clay-well shadow-clay-inset-deep">
+                  <AlertTriangle size={40} className="text-amber-800" />
                 </div>
                 <h2 className="text-2xl font-black text-slate-700 mb-2">
                   שימו לב!
@@ -1453,7 +1434,7 @@ const Invite = () => {
                 <p className="text-slate-600 text-sm font-medium mb-6 leading-snug">
                   המערכת זיהתה שחלק מהשמות שהזנתם כבר אישרו הגעה בעבר:
                 </p>
-                <div className="rounded-[1.4rem] p-4 mb-8 text-right space-y-2 bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.07),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]">
+                <div className="rounded-clay-field p-4 mb-8 text-right space-y-2 bg-clay-well shadow-clay-inset">
                   {duplicateWarnings.map((dup, idx) => (
                     <p
                       key={idx}
@@ -1467,7 +1448,7 @@ const Invite = () => {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setRsvpStep(2)}
-                    className="flex-1 text-slate-600 font-bold py-4 rounded-full transition-all bg-[#e9e6dc] shadow-[5px_5px_12px_rgba(0,0,0,0.08),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)]"
+                    className="flex-1 text-slate-600 font-bold py-4 rounded-full transition-all bg-clay-chip shadow-clay-md active:shadow-clay-pressed"
                   >
                     חזור לתיקון
                   </button>
@@ -1475,7 +1456,7 @@ const Invite = () => {
                     onClick={executeSubmit}
                     disabled={isSubmitting}
                     className="flex-1 text-white font-bold py-4 rounded-full transition-all active:scale-[0.97] flex justify-center items-center"
-                    style={clayBtn(primaryColor)}
+                    style={clayButtonStyle(primaryColor)}
                   >
                     {isSubmitting ? (
                       <Loader2 className="animate-spin" size={20} />
@@ -1489,13 +1470,13 @@ const Invite = () => {
 
             {rsvpStep === 4 && (
               <div className="step-anim py-12 text-center">
-                <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.09),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]">
+                <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 bg-clay-well shadow-clay-inset-deep">
                   <CheckCircle2 size={48} className="text-[#7d9a86]" />
                 </div>
                 <h2 className="text-3xl font-black text-slate-700 mb-2">
                   איזה כיף!
                 </h2>
-                <p className="text-slate-500 font-medium text-lg">
+                <p className="text-clay-muted font-medium text-lg">
                   אישור ההגעה נקלט בהצלחה.
                   <br />
                   נתראה באירוע!

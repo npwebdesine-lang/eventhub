@@ -15,6 +15,8 @@ import {
 import gsap from "gsap";
 import { useModalBehavior } from "../components/Modal";
 import { appendUnique, olderThan, orderNewestFirst } from "../lib/pagination";
+import { DEFAULT_PRIMARY, clayButtonStyle, clayHeroStyle } from "../lib/clay";
+import { accentOn } from "../lib/colors";
 
 const PAGE_SIZE = 24;
 
@@ -231,13 +233,10 @@ const Album = () => {
   if (loading)
     return (
       <div
-        className="min-h-screen flex flex-col items-center justify-center"
-        style={{
-          background: "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)",
-        }}
+        className="min-h-screen flex flex-col items-center justify-center bg-clay-gradient"
       >
         <div className="relative">
-          <Loader2 className="animate-spin text-slate-400 mb-6" size={56} />
+          <Loader2 className="animate-spin text-clay-muted mb-6" size={56} />
           <div
             className="absolute inset-0 rounded-full animate-pulse opacity-20 bg-slate-400"
             style={{ width: "72px", height: "72px", left: "-8px", top: "-8px" }}
@@ -251,10 +250,7 @@ const Album = () => {
   if (!eventData)
     return (
       <div
-        className="min-h-screen flex items-center justify-center text-slate-700 text-2xl font-black"
-        style={{
-          background: "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)",
-        }}
+        className="min-h-screen flex items-center justify-center text-slate-700 text-2xl font-black bg-clay-gradient"
       >
         האירוע לא נמצא 💔
       </div>
@@ -270,14 +266,11 @@ const Album = () => {
   };
 
   // משיכת צבע המיתוג מהאירוע (המשטח קבוע בסגנון חימר)
-  const primaryColor = eventData.design_config?.colors?.primary || "#8fa7b8";
+  const primaryColor = eventData.design_config?.colors?.primary || DEFAULT_PRIMARY;
 
   return (
     <div
-      className="min-h-screen overflow-x-hidden relative font-sans"
-      style={{
-        background: "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)",
-      }}
+      className="min-h-screen overflow-x-hidden relative font-sans bg-clay-gradient"
       dir="rtl"
     >
       {/* עיטורים מרחפים ברקע */}
@@ -300,13 +293,13 @@ const Album = () => {
         <Heart
           ref={(el) => (decorationsRef.current[3] = el)}
           className="absolute top-32 left-10 opacity-20"
-          style={{ color: primaryColor }}
+          style={{ color: accentOn(primaryColor) }}
           size={64}
         />
         <Sparkles
           ref={(el) => (decorationsRef.current[4] = el)}
           className="absolute bottom-1/3 right-10 opacity-20"
-          style={{ color: primaryColor }}
+          style={{ color: accentOn(primaryColor) }}
           size={48}
         />
       </div>
@@ -316,7 +309,7 @@ const Album = () => {
         ref={headerRef}
         className="rounded-b-[2.5rem] pt-[calc(5rem+env(safe-area-inset-top))] pb-28 px-6 relative z-10 flex flex-col items-center text-center overflow-hidden"
         style={{
-          background: `linear-gradient(145deg, ${primaryColor} 0%, ${primaryColor}cc 100%)`,
+          ...clayHeroStyle(primaryColor),
           boxShadow:
             "9px 9px 24px rgba(0,0,0,0.16), inset 2px 2px 5px rgba(255,255,255,0.25), inset -2px -2px 5px rgba(0,0,0,0.12)",
         }}
@@ -327,13 +320,13 @@ const Album = () => {
 
         <div className="relative z-10">
           <div className="w-20 h-20 rounded-full flex items-center justify-center mb-6 bg-white/20 shadow-[inset_2px_2px_5px_rgba(255,255,255,0.35),inset_-2px_-2px_5px_rgba(0,0,0,0.12)] hover:scale-110 transition-transform mx-auto">
-            <ImageIcon className="text-white" size={32} />
+            <ImageIcon size={32} />
           </div>
-          <p className="text-white/70 font-bold text-xs uppercase tracking-widest mb-2">
+          <p className="font-bold text-xs uppercase tracking-widest mb-2">
             האלבום הדיגיטלי של
           </p>
           <h1
-            className="text-4xl md:text-5xl font-black text-white leading-tight drop-shadow-lg"
+            className="text-4xl md:text-5xl font-black leading-tight drop-shadow-lg"
             style={{ fontFamily: "'Assistant', sans-serif" }}
           >
             {eventData.name}
@@ -342,15 +335,15 @@ const Album = () => {
 
         {/* טאבים עם אנימציות חלקות */}
         {eventData.active_modules?.blessings && (
-          <div className="flex bg-white/15 p-2 rounded-full mt-10 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.14),inset_-2px_-2px_5px_rgba(255,255,255,0.15)] gap-2">
+          <div className="flex bg-[var(--hero-chip)] p-2 rounded-full mt-10 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.14),inset_-2px_-2px_5px_rgba(255,255,255,0.15)] gap-2">
             <button
               onClick={() => setActiveTab("photos")}
               className={`flex items-center gap-2 px-7 py-3 rounded-full font-bold text-sm transition-all duration-300 button-pulse ${
                 activeTab === "photos"
                   ? "bg-white shadow-[4px_4px_10px_rgba(0,0,0,0.14)] scale-105"
-                  : "text-white/70 hover:text-white"
+                  : "hover:bg-[var(--hero-chip)]"
               }`}
-              style={activeTab === "photos" ? { color: primaryColor } : {}}
+              style={activeTab === "photos" ? { color: accentOn(primaryColor) } : {}}
             >
               <ImageIcon size={18} /> תמונות
             </button>
@@ -359,9 +352,9 @@ const Album = () => {
               className={`flex items-center gap-2 px-7 py-3 rounded-full font-bold text-sm transition-all duration-300 button-pulse ${
                 activeTab === "blessings"
                   ? "bg-white shadow-[4px_4px_10px_rgba(0,0,0,0.14)] scale-105"
-                  : "text-white/70 hover:text-white"
+                  : "hover:bg-[var(--hero-chip)]"
               }`}
-              style={activeTab === "blessings" ? { color: primaryColor } : {}}
+              style={activeTab === "blessings" ? { color: accentOn(primaryColor) } : {}}
             >
               <MessageCircle size={18} /> ברכות
             </button>
@@ -373,16 +366,16 @@ const Album = () => {
         {/* תצוגת תמונות */}
         {activeTab === "photos" &&
           (photos.length === 0 && !loadFailed.photos ? (
-            <div className="text-center py-20 bg-[#f0eee7] rounded-[2.25rem] shadow-[8px_8px_20px_rgba(0,0,0,0.09),-8px_-8px_20px_rgba(255,255,255,0.9)] max-w-lg mx-auto">
+            <div className="text-center py-20 bg-clay-surface rounded-clay shadow-clay max-w-lg mx-auto">
               <ImageIcon
                 size={48}
                 className="mx-auto mb-4 opacity-20"
-                style={{ color: primaryColor }}
+                style={{ color: accentOn(primaryColor) }}
               />
               <p className="text-2xl font-black text-slate-800">
                 האלבום עדיין ריק.
               </p>
-              <p className="font-medium mt-2 text-slate-500 text-sm">
+              <p className="font-medium mt-2 text-clay-muted text-sm">
                 היו הראשונים להוסיף רגעים מיוחדים!
               </p>
             </div>
@@ -395,12 +388,12 @@ const Album = () => {
                 <div
                   key={photo.id}
                   onClick={() => setSelectedIndex(index)}
-                  className="media-card relative break-inside-avoid rounded-[24px] overflow-hidden cursor-pointer group p-[7px] bg-[#f0eee7] shadow-[6px_6px_16px_rgba(0,0,0,0.1),-5px_-5px_14px_rgba(255,255,255,0.9)] transform-gpu card-hover"
+                  className="media-card relative break-inside-avoid rounded-[24px] overflow-hidden cursor-pointer group p-[7px] bg-clay-surface shadow-clay-md transform-gpu card-hover"
                 >
                   <img
                     src={photo.image_url}
                     alt={`Photo by ${photo.guest_name}`}
-                    className="w-full h-auto object-cover transition-all duration-700 group-hover:scale-[1.03] bg-[#eeece5] rounded-[18px] shadow-[inset_2px_2px_6px_rgba(0,0,0,0.2)]"
+                    className="w-full h-auto object-cover transition-all duration-700 group-hover:scale-[1.03] bg-clay-well rounded-[18px] shadow-[inset_2px_2px_6px_rgba(0,0,0,0.2)]"
                     loading="lazy"
                     decoding="async"
                   />
@@ -410,7 +403,7 @@ const Album = () => {
                         <Heart
                           size={12}
                           className="fill-rose-500"
-                          style={{ color: primaryColor }}
+                          style={{ color: accentOn(primaryColor) }}
                         />{" "}
                         צולם ע"י
                       </p>
@@ -430,16 +423,16 @@ const Album = () => {
         {/* תצוגת ברכות */}
         {activeTab === "blessings" &&
           (blessings.length === 0 && !loadFailed.blessings ? (
-            <div className="text-center py-20 bg-[#f0eee7] rounded-[2.25rem] shadow-[8px_8px_20px_rgba(0,0,0,0.09),-8px_-8px_20px_rgba(255,255,255,0.9)] max-w-lg mx-auto">
+            <div className="text-center py-20 bg-clay-surface rounded-clay shadow-clay max-w-lg mx-auto">
               <MessageCircle
                 size={48}
                 className="mx-auto mb-4 opacity-20"
-                style={{ color: primaryColor }}
+                style={{ color: accentOn(primaryColor) }}
               />
               <p className="text-2xl font-black text-slate-800">
                 אין ברכות עדיין.
               </p>
-              <p className="font-medium mt-2 text-slate-500 text-sm">
+              <p className="font-medium mt-2 text-clay-muted text-sm">
                 שתפו את הקישור כדי שהאורחים יתחילו לברך!
               </p>
             </div>
@@ -448,17 +441,17 @@ const Album = () => {
               {blessings.map((blessing) => (
                 <div
                   key={blessing.id}
-                  className="media-card relative break-inside-avoid rounded-[2.25rem] overflow-hidden p-7 flex flex-col h-full transform-gpu card-hover bg-[#f0eee7] shadow-[8px_8px_20px_rgba(0,0,0,0.09),-8px_-8px_20px_rgba(255,255,255,0.9)]"
+                  className="media-card relative break-inside-avoid rounded-clay overflow-hidden p-7 flex flex-col h-full transform-gpu card-hover bg-clay-surface shadow-clay"
                 >
                   {/* Background quote decoration */}
                   <Quote
                     size={42}
                     className="absolute top-4 right-4 opacity-10"
-                    style={{ color: primaryColor }}
+                    style={{ color: accentOn(primaryColor) }}
                   />
 
                   {blessing.image_url && (
-                    <div className="w-full h-52 mb-6 rounded-[1.4rem] overflow-hidden bg-[#eeece5] shadow-[inset_3px_3px_8px_rgba(0,0,0,0.1),inset_-3px_-3px_8px_rgba(255,255,255,0.8)] p-[5px]">
+                    <div className="w-full h-52 mb-6 rounded-clay-field overflow-hidden bg-clay-well shadow-clay-inset-deep p-[5px]">
                       <img
                         src={blessing.image_url}
                         alt="Selfie"
@@ -475,14 +468,14 @@ const Album = () => {
                     </p>
                   </div>
 
-                  <div className="mt-8 pt-6 border-t border-[#dcd7ca]">
-                    <p className="text-slate-500 text-[11px] font-bold uppercase tracking-widest mb-2">
+                  <div className="mt-8 pt-6 border-t border-clay-line">
+                    <p className="text-clay-muted text-[11px] font-bold uppercase tracking-widest mb-2">
                       באהבה מ:
                     </p>
                     <p
                       className="text-lg font-black"
                       style={{
-                        color: primaryColor,
+                        color: accentOn(primaryColor),
                         fontFamily: "'Assistant', sans-serif",
                       }}
                     >
@@ -499,7 +492,7 @@ const Album = () => {
           (activeTab === "blessings" && blessingsHasMore)) &&
           (loadFailed[activeTab] ? (
             <div className="flex flex-col items-center gap-3 py-10">
-              <p className="text-slate-500 font-bold text-sm">
+              <p className="text-clay-muted font-bold text-sm">
                 לא הצלחנו לטעון את התוכן
               </p>
               <button
@@ -507,8 +500,8 @@ const Album = () => {
                 onClick={() =>
                   setLoadFailed((prev) => ({ ...prev, [activeTab]: false }))
                 }
-                className="text-white font-bold py-3 px-6 rounded-full text-sm active:scale-[0.97] transition-all"
-                style={{ backgroundColor: primaryColor }}
+                className="font-bold py-3 px-6 rounded-full text-sm active:scale-[0.97] transition-all"
+                style={clayButtonStyle(primaryColor)}
               >
                 נסו שוב
               </button>
@@ -516,7 +509,7 @@ const Album = () => {
           ) : (
             <div ref={sentinelRef} className="flex justify-center py-10">
               {loadingMore && (
-                <Loader2 className="animate-spin text-slate-400" size={28} />
+                <Loader2 className="animate-spin text-clay-muted" size={28} />
               )}
             </div>
           ))}

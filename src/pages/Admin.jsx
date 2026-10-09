@@ -1015,25 +1015,25 @@ const Admin = () => {
 
   if (authLoading)
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#eceadf]">
-        <Loader2 className="animate-spin text-indigo-600" size={48} />
+      <div className="min-h-screen flex items-center justify-center bg-clay-page">
+        <Loader2 className="animate-spin text-clay-ink" size={48} />
       </div>
     );
   if (!session) {
     return (
       <div
-        className="min-h-screen bg-[#e2ddd0] flex items-center justify-center p-4"
+        className="min-h-screen bg-clay-page-end flex items-center justify-center p-4"
         dir="rtl"
       >
         <form
           onSubmit={handleLogin}
-          className="bg-[#f0eee7] p-10 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-[#dcd7ca]"
+          className="bg-clay-surface p-10 rounded-clay-lg shadow-clay-lg w-full max-w-md"
         >
           <div className="text-center mb-8">
             <h1 className="text-3xl font-black text-slate-800">
               Event Manager
             </h1>
-            <p className="text-slate-500 mt-2">ניהול מערכת האירועים שלך</p>
+            <p className="text-clay-muted mt-2">ניהול מערכת האירועים שלך</p>
           </div>
           <div className="space-y-4">
             <input
@@ -1041,7 +1041,7 @@ const Admin = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="אימייל"
-              className="w-full p-4 bg-[#eeece5] border border-[#dcd7ca] rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+              className="w-full p-4 bg-clay-well shadow-clay-inset rounded-2xl outline-none focus:ring-2 focus:ring-clay-ink/40 transition-all"
               dir="ltr"
               required
             />
@@ -1050,18 +1050,18 @@ const Admin = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="סיסמה"
-              className="w-full p-4 bg-[#eeece5] border border-[#dcd7ca] rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+              className="w-full p-4 bg-clay-well shadow-clay-inset rounded-2xl outline-none focus:ring-2 focus:ring-clay-ink/40 transition-all"
               dir="ltr"
               required
             />
             {loginError && (
-              <p className="text-rose-500 text-sm font-bold text-center mt-2 animate-in fade-in">
+              <p className="text-rose-700 text-sm font-bold text-center mt-2 animate-in fade-in">
                 {loginError}
               </p>
             )}
             <button
               type="submit"
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all mt-2"
+              className="w-full bg-clay-ink hover:bg-clay-ink-hover text-white shadow-clay-btn font-bold py-4 rounded-full transition-all mt-2"
             >
               התחבר למערכת
             </button>
@@ -1072,26 +1072,26 @@ const Admin = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#eceadf] p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] md:p-8" dir="rtl">
+    <div className="min-h-screen bg-clay-page p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] md:p-8" dir="rtl">
       {!selectedEvent && (
         <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in">
-          <div className="flex flex-col md:flex-row justify-between items-center bg-[#f0eee7] p-8 rounded-[2rem] shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] border border-[#dcd7ca] gap-6">
+          <div className="flex flex-col md:flex-row justify-between items-center bg-clay-surface p-8 rounded-[2rem] shadow-clay-sm gap-6">
             <div>
               <h1 className="text-4xl font-black text-slate-900">לוח בקרה</h1>
-              <p className="text-slate-500 font-medium text-lg mt-1">
+              <p className="text-clay-muted font-medium text-lg mt-1">
                 מערכת ה-SaaS שלך לניהול חוויות
               </p>
             </div>
             <div className="flex gap-4 w-full md:w-auto">
               <button
                 onClick={handleCreateNew}
-                className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-2xl flex items-center justify-center gap-2 font-bold transition-all shadow-lg shadow-indigo-100"
+                className="flex-1 md:flex-none bg-clay-ink hover:bg-clay-ink-hover text-white shadow-clay-btn px-8 py-4 rounded-full flex items-center justify-center gap-2 font-bold transition-all"
               >
                 <Plus size={22} /> אירוע חדש
               </button>
               <button
                 onClick={() => supabase.auth.signOut()}
-                className="bg-[#e9e6dc] p-4 rounded-2xl text-slate-600 hover:bg-slate-200 transition-colors"
+                className="bg-clay-chip p-4 rounded-2xl text-slate-600 hover:bg-slate-200 transition-colors"
                 title="התנתק"
               >
                 <LogOut size={22} />
@@ -1102,35 +1102,35 @@ const Admin = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {dataLoading ? (
               <Loader2
-                className="animate-spin text-indigo-600 mx-auto col-span-full"
+                className="animate-spin text-clay-ink mx-auto col-span-full"
                 size={48}
               />
             ) : (
               events.map((event) => (
                 <div
                   key={event.id}
-                  className="bg-[#f0eee7] p-8 rounded-[2rem] shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] border border-[#dcd7ca] flex flex-col group hover:border-indigo-300 hover:shadow-xl transition-all relative overflow-hidden"
+                  className="bg-clay-surface p-8 rounded-[2rem] shadow-clay-sm flex flex-col group hover:shadow-clay-lg transition-all relative overflow-hidden"
                 >
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-clay-well rounded-bl-full -z-10 transition-transform group-hover:scale-110"></div>
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="bg-indigo-100 p-4 rounded-2xl text-indigo-600">
+                    <div className="bg-clay-well shadow-clay-inset p-4 rounded-2xl text-clay-ink">
                       <Calendar size={28} />
                     </div>
                     <div>
                       <h3 className="font-black text-2xl text-slate-800 line-clamp-1">
                         {event.name}
                       </h3>
-                      <p className="text-slate-500 font-medium">
+                      <p className="text-clay-muted font-medium">
                         {new Date(event.event_date).toLocaleDateString("he-IL")}
                       </p>
                     </div>
                   </div>
                   {event.short_code && (
-                    <div className="bg-[#eeece5] border border-[#e4e0d5] rounded-xl p-3 mb-4 text-center">
-                      <span className="text-xs text-slate-400 font-bold block mb-1">
+                    <div className="bg-clay-well border border-clay-well-deep rounded-xl p-3 mb-4 text-center">
+                      <span className="text-xs text-clay-muted font-bold block mb-1">
                         קוד לאורחים:
                       </span>
-                      <span className="font-mono text-xl font-black text-indigo-600 tracking-widest">
+                      <span className="font-mono text-xl font-black text-clay-ink tracking-widest">
                         {event.short_code}
                       </span>
                     </div>
@@ -1139,13 +1139,13 @@ const Admin = () => {
                   <div className="grid grid-cols-2 gap-2 mt-auto">
                     <button
                       onClick={() => handleManageEvent(event)}
-                      className="col-span-2 text-white py-3 rounded-full font-bold bg-[#5b6169] hover:bg-[#4a5259] shadow-[5px_5px_14px_rgba(0,0,0,0.14),-4px_-4px_12px_rgba(255,255,255,0.7),inset_2px_2px_4px_rgba(255,255,255,0.2),inset_-2px_-2px_4px_rgba(0,0,0,0.15)] transition-all flex justify-center items-center gap-2"
+                      className="col-span-2 text-white py-3 rounded-full font-bold bg-clay-ink hover:bg-clay-ink-hover shadow-clay-btn transition-all flex justify-center items-center gap-2"
                     >
                       <Settings size={18} /> ניהול אירוע
                     </button>
                     <button
                       onClick={() => copyEventLink(event.id)}
-                      className={`min-h-11 py-2 rounded-xl transition-all border flex justify-center items-center gap-2 text-sm font-bold ${copiedEventId === event.id ? "bg-emerald-50 border-emerald-200 text-emerald-600" : "bg-[#f0eee7] border-[#dcd7ca] text-slate-600 hover:border-indigo-600 hover:text-indigo-600"}`}
+                      className={`min-h-11 py-2 rounded-xl transition-all border flex justify-center items-center gap-2 text-sm font-bold ${copiedEventId === event.id ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-clay-surface border-clay-line text-slate-600 hover:border-clay-ink hover:text-clay-ink"}`}
                       title="העתק קישור לאפליקציה"
                     >
                       {copiedEventId === event.id ? (
@@ -1157,7 +1157,7 @@ const Admin = () => {
                     </button>
                     <button
                       onClick={() => copyInviteLink(event.id)}
-                      className={`min-h-11 py-2 rounded-xl transition-all border flex justify-center items-center gap-2 text-sm font-bold ${copiedInviteId === event.id ? "bg-emerald-50 border-emerald-200 text-emerald-600" : "bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100"}`}
+                      className={`min-h-11 py-2 rounded-xl transition-all border flex justify-center items-center gap-2 text-sm font-bold ${copiedInviteId === event.id ? "bg-emerald-50 border-emerald-200 text-emerald-800" : "bg-clay-chip border-clay-line text-slate-700 hover:border-clay-ink hover:text-clay-ink"}`}
                       title="העתק קישור לדף ההזמנה"
                     >
                       {copiedInviteId === event.id ? (
@@ -1179,20 +1179,20 @@ const Admin = () => {
         <div className="max-w-5xl mx-auto animate-in slide-in-from-bottom-8 duration-500">
           <button
             onClick={() => setSelectedEvent(null)}
-            className="flex items-center gap-2 min-h-11 text-slate-500 hover:text-slate-900 font-bold mb-4 transition-colors"
+            className="flex items-center gap-2 min-h-11 text-clay-muted hover:text-slate-900 font-bold mb-4 transition-colors"
           >
             <ChevronRight size={20} /> חזרה לכל האירועים
           </button>
 
-          <div className="bg-[#f0eee7] rounded-[2.5rem] shadow-xl border border-[#dcd7ca] overflow-hidden mb-8">
-            <div className="p-8 md:p-10 border-b border-[#e4e0d5] bg-[#eeece5] flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="bg-clay-surface rounded-clay-lg shadow-clay overflow-hidden mb-8">
+            <div className="p-8 md:p-10 border-b border-clay-well-deep bg-clay-well flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
               <div>
                 <h2 className="text-3xl font-black text-slate-900">
                   {selectedEvent.isNew
                     ? "יצירת אירוע חדש"
                     : `ניהול: ${formData.name}`}
                 </h2>
-                <p className="text-slate-500 mt-2">
+                <p className="text-clay-muted mt-2">
                   הגדרות כלליות, עיצוב ומודולים
                 </p>
               </div>
@@ -1201,7 +1201,7 @@ const Admin = () => {
                   <button
                     onClick={handleDelete}
                     disabled={saving}
-                    className="p-4 bg-rose-50 text-rose-600 rounded-2xl hover:bg-rose-100 transition-all border border-rose-100"
+                    className="p-4 bg-rose-50 text-rose-700 rounded-2xl hover:bg-rose-100 transition-all border border-rose-100"
                     title="מחק אירוע לחלוטין"
                   >
                     <Trash2 size={22} />
@@ -1210,7 +1210,7 @@ const Admin = () => {
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex-1 md:flex-none bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black flex justify-center items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200"
+                  className="flex-1 md:flex-none bg-clay-ink hover:bg-clay-ink-hover text-white shadow-clay-btn px-8 py-4 rounded-full font-black flex justify-center items-center gap-2 transition-all"
                 >
                   {saving ? (
                     <Loader2 className="animate-spin" />
@@ -1225,12 +1225,12 @@ const Admin = () => {
 
             {!selectedEvent.isNew && (
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-8 md:p-10 pb-0">
-                <div className="bg-blue-50/50 border border-blue-100 p-4 rounded-2xl flex items-center gap-4 hover:shadow-md transition-shadow">
+                <div className="bg-clay-surface shadow-clay-sm p-4 rounded-2xl flex items-center gap-4 hover:shadow-clay-md transition-shadow">
                   <div className="bg-blue-500 text-white p-3 rounded-xl">
                     <Users size={20} />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-blue-600/70">
+                    <p className="text-xs font-bold text-clay-muted">
                       אישורי הגעה
                     </p>
                     <p className="text-2xl font-black text-blue-700">
@@ -1238,12 +1238,12 @@ const Admin = () => {
                     </p>
                   </div>
                 </div>
-                <div className="bg-orange-50/50 border border-orange-100 p-4 rounded-2xl flex items-center gap-4 hover:shadow-md transition-shadow">
+                <div className="bg-clay-surface shadow-clay-sm p-4 rounded-2xl flex items-center gap-4 hover:shadow-clay-md transition-shadow">
                   <div className="bg-orange-500 text-white p-3 rounded-xl">
                     <ImageIcon size={20} />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-orange-600/70">
+                    <p className="text-xs font-bold text-clay-muted">
                       תמונות באלבום
                     </p>
                     <p className="text-2xl font-black text-orange-700">
@@ -1251,12 +1251,12 @@ const Admin = () => {
                     </p>
                   </div>
                 </div>
-                <div className="bg-purple-50/50 border border-purple-100 p-4 rounded-2xl flex items-center gap-4 hover:shadow-md transition-shadow">
+                <div className="bg-clay-surface shadow-clay-sm p-4 rounded-2xl flex items-center gap-4 hover:shadow-clay-md transition-shadow">
                   <div className="bg-purple-500 text-white p-3 rounded-xl">
                     <MessageCircle size={20} />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-purple-600/70">
+                    <p className="text-xs font-bold text-clay-muted">
                       ברכות באלבום
                     </p>
                     <p className="text-2xl font-black text-purple-700">
@@ -1264,12 +1264,12 @@ const Admin = () => {
                     </p>
                   </div>
                 </div>
-                <div className="bg-rose-50/50 border border-rose-100 p-4 rounded-2xl flex items-center gap-4 hover:shadow-md transition-shadow">
+                <div className="bg-clay-surface shadow-clay-sm p-4 rounded-2xl flex items-center gap-4 hover:shadow-clay-md transition-shadow">
                   <div className="bg-rose-500 text-white p-3 rounded-xl">
                     <Heart size={20} />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-rose-600/70">
+                    <p className="text-xs font-bold text-clay-muted">
                       משתמשי דייטליין
                     </p>
                     <p className="text-2xl font-black text-rose-700">
@@ -1277,12 +1277,12 @@ const Admin = () => {
                     </p>
                   </div>
                 </div>
-                <div className="bg-[#eeece5]/60 p-4 rounded-2xl flex items-center gap-4 hover:shadow-md transition-shadow">
+                <div className="bg-clay-surface shadow-clay-sm p-4 rounded-2xl flex items-center gap-4 hover:shadow-clay-md transition-shadow">
                   <div className="bg-slate-700 text-white p-3 rounded-xl">
                     <ShieldAlert size={20} />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-slate-500">
+                    <p className="text-xs font-bold text-clay-muted">
                       דיווחים פתוחים
                     </p>
                     <p className="text-2xl font-black text-slate-700">
@@ -1309,7 +1309,7 @@ const Admin = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
-                    className="w-full p-4 bg-[#eeece5] border border-[#dcd7ca] rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full p-4 bg-clay-well shadow-clay-inset rounded-2xl focus:ring-2 focus:ring-clay-ink/40 outline-none"
                   />
                 </div>
                 <div className="space-y-2">
@@ -1322,7 +1322,7 @@ const Admin = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, event_date: e.target.value })
                     }
-                    className="w-full p-4 bg-[#eeece5] border border-[#dcd7ca] rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full p-4 bg-clay-well shadow-clay-inset rounded-2xl focus:ring-2 focus:ring-clay-ink/40 outline-none"
                   />
                 </div>
 
@@ -1337,15 +1337,15 @@ const Admin = () => {
                       setFormData({ ...formData, location: e.target.value })
                     }
                     placeholder="לדוגמה: אולמי שושנים, תל אביב"
-                    className="w-full p-4 bg-[#eeece5] border border-[#dcd7ca] rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                    className="w-full p-4 bg-clay-well shadow-clay-inset rounded-2xl focus:ring-2 focus:ring-clay-ink/40 outline-none text-sm"
                   />
                 </div>
 
-                <div className="space-y-2 bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100">
-                  <label className="text-sm font-bold text-indigo-900 block">
+                <div className="space-y-2 bg-clay-well shadow-clay-inset p-4 rounded-2xl">
+                  <label className="text-sm font-bold text-slate-800 block">
                     קוד כניסה לאורחים (אופציונלי)
                   </label>
-                  <p className="text-xs text-indigo-700/70 mb-3">
+                  <p className="text-xs text-clay-muted mb-3">
                     יאפשר לאורחים להיכנס לאפליקציה על ידי הקלדת קוד במקום סריקת
                     QR.
                   </p>
@@ -1357,7 +1357,7 @@ const Admin = () => {
                         setFormData({ ...formData, short_code: e.target.value })
                       }
                       placeholder="למשל: DANI26 או 123456"
-                      className="w-full p-4 bg-[#f0eee7] border border-indigo-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm font-black tracking-widest text-center uppercase"
+                      className="w-full p-4 bg-clay-surface shadow-clay-inset rounded-xl focus:ring-2 focus:ring-clay-ink/40 outline-none text-sm font-black tracking-widest text-center uppercase"
                       dir="ltr"
                       maxLength={10}
                     />
@@ -1371,7 +1371,7 @@ const Admin = () => {
                           ).toString(),
                         })
                       }
-                      className="bg-indigo-600 text-white px-4 rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)]"
+                      className="bg-clay-ink hover:bg-clay-ink-hover text-white shadow-clay-btn px-4 rounded-xl font-bold transition-colors"
                     >
                       הגרל
                     </button>
@@ -1385,7 +1385,7 @@ const Admin = () => {
                     </label>
                     <div className="flex items-center gap-3">
                       <div
-                        className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-[#dcd7ca] shrink-0 shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] transition-colors"
+                        className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-clay-line shrink-0 shadow-clay-sm transition-colors"
                         style={{
                           backgroundColor:
                             formData.design_config.colors.primary,
@@ -1432,7 +1432,7 @@ const Admin = () => {
                           })
                         }
                         placeholder="למשל: #3b82f6 / rgb()"
-                        className="w-full p-3 bg-[#eeece5] border border-[#dcd7ca] rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-left text-sm"
+                        className="w-full p-3 bg-clay-well shadow-clay-inset rounded-xl outline-none focus:ring-2 focus:ring-clay-ink/40 font-mono text-left text-sm"
                         dir="ltr"
                       />
                     </div>
@@ -1444,7 +1444,7 @@ const Admin = () => {
                     </label>
                     <div className="flex items-center gap-3">
                       <div
-                        className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-[#dcd7ca] shrink-0 shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] transition-colors"
+                        className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-clay-line shrink-0 shadow-clay-sm transition-colors"
                         style={{
                           backgroundColor:
                             formData.design_config.colors.background,
@@ -1491,15 +1491,15 @@ const Admin = () => {
                           })
                         }
                         placeholder="למשל: #020617 / rgb()"
-                        className="w-full p-3 bg-[#eeece5] border border-[#dcd7ca] rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-left text-sm"
+                        className="w-full p-3 bg-clay-well shadow-clay-inset rounded-xl outline-none focus:ring-2 focus:ring-clay-ink/40 font-mono text-left text-sm"
                         dir="ltr"
                       />
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t border-[#e4e0d5]">
+                  <div className="pt-4 border-t border-clay-well-deep">
                     <label className="text-sm font-bold text-slate-700 flex items-center gap-2 mb-3">
-                      <Palette size={16} className="text-indigo-500" /> ערכות
+                      <Palette size={16} className="text-clay-ink" /> ערכות
                       צבעים מוכנות
                     </label>
                     <div className="grid grid-cols-2 gap-2">
@@ -1508,9 +1508,9 @@ const Admin = () => {
                           key={preset.name}
                           type="button"
                           onClick={() => applyColorPreset(preset)}
-                          className="flex items-center gap-2 p-2.5 rounded-xl border border-[#dcd7ca] hover:border-indigo-400 hover:bg-indigo-50/50 transition-all bg-[#f0eee7] text-right group"
+                          className="flex items-center gap-2 p-2.5 rounded-xl shadow-clay-sm hover:shadow-clay-md hover:bg-clay-chip transition-all bg-clay-surface text-right group"
                         >
-                          <div className="w-8 h-8 rounded-full flex overflow-hidden border border-[#dcd7ca] shrink-0 group-hover:scale-105 transition-transform shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)]">
+                          <div className="w-8 h-8 rounded-full flex overflow-hidden shrink-0 group-hover:scale-105 transition-transform shadow-clay-sm">
                             <div
                               className="w-1/2 h-full"
                               style={{ backgroundColor: preset.primary }}
@@ -1529,7 +1529,7 @@ const Admin = () => {
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-[#e4e0d5] space-y-4">
+                <div className="pt-4 border-t border-clay-well-deep space-y-4">
                   <label className="text-sm font-bold text-slate-700 block">
                     עיצוב ההזמנה הדיגיטלית
                   </label>
@@ -1544,7 +1544,7 @@ const Admin = () => {
                         },
                       })
                     }
-                    className="w-full p-4 bg-[#eeece5] border border-[#dcd7ca] rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-slate-700"
+                    className="w-full p-4 bg-clay-well shadow-clay-inset rounded-2xl focus:ring-2 focus:ring-clay-ink/40 outline-none font-medium text-slate-700"
                   >
                     <option value="modern">
                       מודרני / מסיבה (טקסט מוגדל ורקע צבעוני)
@@ -1559,12 +1559,12 @@ const Admin = () => {
 
                   {(formData.design_config.invite_template === "elegant" ||
                     formData.design_config.invite_template === "corporate") && (
-                    <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100">
-                      <label className="text-sm font-bold text-indigo-800 block mb-2">
+                    <div className="bg-clay-well shadow-clay-inset p-4 rounded-2xl">
+                      <label className="text-sm font-bold text-slate-800 block mb-2">
                         תמונה / לוגו להזמנה
                       </label>
                       <div className="flex items-center gap-3">
-                        <label className="flex-1 cursor-pointer bg-[#f0eee7] border border-indigo-200 hover:bg-indigo-50 text-indigo-600 font-bold py-3 px-4 rounded-xl transition-colors flex justify-center items-center gap-2">
+                        <label className="flex-1 cursor-pointer bg-clay-surface shadow-clay-sm hover:bg-clay-chip text-slate-700 font-bold py-3 px-4 rounded-xl transition-colors flex justify-center items-center gap-2">
                           {uploadingAsset ? (
                             <Loader2 className="animate-spin" size={18} />
                           ) : (
@@ -1582,7 +1582,7 @@ const Admin = () => {
                         </label>
                       </div>
                       {formData.design_config.invite_image && (
-                        <div className="mt-3 relative w-full h-32 bg-[#e9e6dc] rounded-xl overflow-hidden border border-[#dcd7ca]">
+                        <div className="mt-3 relative w-full h-32 bg-clay-chip rounded-xl overflow-hidden shadow-clay-inset">
                           <img
                             src={formData.design_config.invite_image}
                             alt="Cover"
@@ -1611,10 +1611,10 @@ const Admin = () => {
                 </div>
 
                 {!selectedEvent.isNew && (
-                  <div className="pt-4 border-t border-[#e4e0d5] space-y-3">
+                  <div className="pt-4 border-t border-clay-well-deep space-y-3">
                     <button
                       onClick={() => setIsQrModalOpen(true)}
-                      className="w-full text-white py-4 rounded-full font-bold flex items-center justify-center gap-2 bg-[#5b6169] hover:bg-[#4a5259] shadow-[5px_5px_14px_rgba(0,0,0,0.14),-4px_-4px_12px_rgba(255,255,255,0.7),inset_2px_2px_4px_rgba(255,255,255,0.2),inset_-2px_-2px_4px_rgba(0,0,0,0.15)] transition-all"
+                      className="w-full text-white py-4 rounded-full font-bold flex items-center justify-center gap-2 bg-clay-ink hover:bg-clay-ink-hover shadow-clay-btn transition-all"
                     >
                       <QrCode size={20} /> הפק שילוט QR לאירוע
                     </button>
@@ -1622,11 +1622,11 @@ const Admin = () => {
                     {/* כפתור מרכז הדיווחים */}
                     <button
                       onClick={openReportsManager}
-                      className="w-full bg-rose-50 text-rose-600 border border-rose-200 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-rose-100 transition-all relative"
+                      className="w-full bg-rose-50 text-rose-700 border border-rose-200 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-rose-100 transition-all relative"
                     >
                       <ShieldAlert size={20} /> מרכז דיווחים (UGC)
                       {eventStats.reports > 0 && (
-                        <span className="absolute top-0 right-0 -mt-2 -mr-2 bg-rose-500 text-white text-xs px-2 py-1 rounded-full shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] animate-pulse">
+                        <span className="absolute top-0 right-0 -mt-2 -mr-2 bg-rose-700 text-white text-xs px-2 py-1 rounded-full shadow-clay-sm animate-pulse">
                           {eventStats.reports} חדשים
                         </span>
                       )}
@@ -1643,12 +1643,12 @@ const Admin = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* מודול אישורי הגעה */}
                   <div
-                    className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.rsvp ? "border-blue-500 bg-blue-50/30" : "border-[#e4e0d5] opacity-60 grayscale"}`}
+                    className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.rsvp ? "border-blue-500 bg-blue-50/30" : "border-clay-well-deep opacity-60 grayscale"}`}
                   >
                     <div className="flex justify-between items-start mb-6">
                       <div className="flex items-center gap-3">
                         <div
-                          className={`p-3 rounded-xl ${formData.active_modules.rsvp ? "bg-blue-500 text-white" : "bg-slate-200 text-slate-500"}`}
+                          className={`p-3 rounded-xl ${formData.active_modules.rsvp ? "bg-blue-500 text-white" : "bg-slate-200 text-clay-muted"}`}
                         >
                           <CheckCircle2 size={24} />
                         </div>
@@ -1656,7 +1656,7 @@ const Admin = () => {
                           <h4 className="font-black text-lg text-slate-800">
                             אישורי הגעה (RSVP)
                           </h4>
-                          <span className="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">
+                          <span className="text-xs font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
                             מערכת קצה לקצה
                           </span>
                         </div>
@@ -1676,11 +1676,11 @@ const Admin = () => {
                             })
                           }
                         />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-[#f0eee7] after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-clay-surface after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
                       </label>
                     </div>
                     {formData.active_modules.rsvp && !selectedEvent.isNew && (
-                      <div className="p-4 bg-[#f0eee7] rounded-xl border border-blue-100 text-center animate-in fade-in space-y-3">
+                      <div className="p-4 bg-clay-surface rounded-xl border border-blue-100 text-center animate-in fade-in space-y-3">
                         <p className="text-sm text-slate-600 font-medium mb-3">
                           כפתור לאישור הגעה יופיע כעת בדף ההזמנה הדיגיטלית.
                         </p>
@@ -1688,7 +1688,7 @@ const Admin = () => {
                             נרשמים מדף ההזמנה. ניהול ה-RSVP הנפרד הוסר. */}
                         <button
                           onClick={() => setIsGuestListOpen(true)}
-                          className="w-full py-3 bg-[#f0eee7] border border-emerald-200 text-emerald-600 font-bold rounded-xl hover:bg-emerald-50 transition-colors flex justify-center items-center gap-2 shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)]"
+                          className="w-full py-3 bg-clay-surface border border-emerald-200 text-emerald-800 font-bold rounded-xl hover:bg-emerald-50 transition-colors flex justify-center items-center gap-2 shadow-clay-sm"
                         >
                           <Users size={18} /> ניהול מוזמנים ואישורי הגעה
                         </button>
@@ -1698,12 +1698,12 @@ const Admin = () => {
 
                   {/* מודול ברכות - חדש */}
                   <div
-                    className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.blessings ? "border-purple-500 bg-purple-50/30" : "border-[#e4e0d5] opacity-60 grayscale"}`}
+                    className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.blessings ? "border-purple-500 bg-purple-50/30" : "border-clay-well-deep opacity-60 grayscale"}`}
                   >
                     <div className="flex justify-between items-start mb-6">
                       <div className="flex items-center gap-3">
                         <div
-                          className={`p-3 rounded-xl ${formData.active_modules.blessings ? "bg-purple-500 text-white" : "bg-slate-200 text-slate-500"}`}
+                          className={`p-3 rounded-xl ${formData.active_modules.blessings ? "bg-purple-500 text-white" : "bg-slate-200 text-clay-muted"}`}
                         >
                           <MessageCircle size={24} />
                         </div>
@@ -1711,7 +1711,7 @@ const Admin = () => {
                           <h4 className="font-black text-lg text-slate-800">
                             ספר ברכות דיגיטלי
                           </h4>
-                          <span className="text-xs font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full">
+                          <span className="text-xs font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">
                             כולל העלאת תמונות
                           </span>
                         </div>
@@ -1731,7 +1731,7 @@ const Admin = () => {
                             })
                           }
                         />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-[#f0eee7] after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-clay-surface after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
                       </label>
                     </div>
                     {formData.active_modules.blessings &&
@@ -1739,7 +1739,7 @@ const Admin = () => {
                         <div className="animate-in fade-in">
                           <button
                             onClick={openBlessingsManager}
-                            className="w-full py-3 bg-[#f0eee7] border border-purple-200 text-purple-600 font-bold rounded-xl hover:bg-purple-50 transition-colors flex justify-center items-center gap-2 shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)]"
+                            className="w-full py-3 bg-clay-surface border border-purple-200 text-purple-700 font-bold rounded-xl hover:bg-purple-50 transition-colors flex justify-center items-center gap-2 shadow-clay-sm"
                           >
                             <Settings size={18} /> ניהול הברכות
                           </button>
@@ -1749,12 +1749,12 @@ const Admin = () => {
 
                   {/* מודול כל אחד צלם */}
                   <div
-                    className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.photo ? "border-orange-500 bg-orange-50/30" : "border-[#e4e0d5] opacity-60 grayscale"}`}
+                    className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.photo ? "border-orange-500 bg-orange-50/30" : "border-clay-well-deep opacity-60 grayscale"}`}
                   >
                     <div className="flex justify-between items-start mb-6">
                       <div className="flex items-center gap-3">
                         <div
-                          className={`p-3 rounded-xl ${formData.active_modules.photo ? "bg-orange-500 text-white" : "bg-slate-200 text-slate-500"}`}
+                          className={`p-3 rounded-xl ${formData.active_modules.photo ? "bg-orange-500 text-white" : "bg-slate-200 text-clay-muted"}`}
                         >
                           <Camera size={24} />
                         </div>
@@ -1777,14 +1777,14 @@ const Admin = () => {
                             })
                           }
                         />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-[#f0eee7] after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-clay-surface after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
                       </label>
                     </div>
                     {formData.active_modules.photo && !selectedEvent.isNew && (
                       <div className="space-y-3 animate-in fade-in">
                         <button
                           onClick={openGallery}
-                          className="w-full py-3 bg-[#f0eee7] border border-orange-200 text-orange-600 font-bold rounded-xl hover:bg-orange-50 transition-colors flex justify-center items-center gap-2"
+                          className="w-full py-3 bg-clay-surface border border-orange-200 text-orange-800 font-bold rounded-xl hover:bg-orange-50 transition-colors flex justify-center items-center gap-2"
                         >
                           <ImageIcon size={18} /> ניהול תמונות (הורדת ZIP)
                         </button>
@@ -1792,7 +1792,7 @@ const Admin = () => {
                           onClick={() =>
                             window.open(`/album/${selectedEvent.id}`, "_blank")
                           }
-                          className="w-full py-3 bg-gradient-to-r from-orange-400 to-orange-500 text-white font-black rounded-xl hover:from-orange-500 hover:to-orange-600 transition-all flex justify-center items-center gap-2 shadow-lg shadow-orange-500/30"
+                          className="w-full py-3 bg-orange-700 hover:bg-orange-800 text-white font-black rounded-xl shadow-clay-btn transition-all flex justify-center items-center gap-2"
                         >
                           <Sparkles size={18} /> צפייה באלבום הדיגיטלי
                         </button>
@@ -1802,12 +1802,12 @@ const Admin = () => {
 
                   {/* מודול סידור הושבה */}
                   <div
-                    className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.seating ? "border-emerald-500 bg-emerald-50/30" : "border-[#e4e0d5] opacity-60 grayscale"}`}
+                    className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.seating ? "border-emerald-500 bg-emerald-50/30" : "border-clay-well-deep opacity-60 grayscale"}`}
                   >
                     <div className="flex justify-between items-start mb-6">
                       <div className="flex items-center gap-3">
                         <div
-                          className={`p-3 rounded-xl ${formData.active_modules.seating ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-500"}`}
+                          className={`p-3 rounded-xl ${formData.active_modules.seating ? "bg-emerald-500 text-white" : "bg-slate-200 text-clay-muted"}`}
                         >
                           <Users size={24} />
                         </div>
@@ -1830,7 +1830,7 @@ const Admin = () => {
                             })
                           }
                         />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-[#f0eee7] after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-clay-surface after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                       </label>
                     </div>
                     {formData.active_modules.seating &&
@@ -1838,7 +1838,7 @@ const Admin = () => {
                         <div className="space-y-3 animate-in fade-in">
                           <button
                             onClick={openSeatingManager}
-                            className="w-full py-3 bg-[#f0eee7] border border-emerald-200 text-emerald-600 font-bold rounded-xl hover:bg-emerald-50 transition-colors flex justify-center items-center gap-2"
+                            className="w-full py-3 bg-clay-surface border border-emerald-200 text-emerald-800 font-bold rounded-xl hover:bg-emerald-50 transition-colors flex justify-center items-center gap-2"
                           >
                             <Settings size={18} /> ניהול רשימת הושבה
                           </button>
@@ -1848,12 +1848,12 @@ const Admin = () => {
 
                   {/* מודול דייטליין */}
                   <div
-                    className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.dating ? "border-rose-500 bg-rose-50/30" : "border-[#e4e0d5] opacity-60 grayscale"}`}
+                    className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.dating ? "border-rose-500 bg-rose-50/30" : "border-clay-well-deep opacity-60 grayscale"}`}
                   >
                     <div className="flex justify-between items-start mb-6">
                       <div className="flex items-center gap-3">
                         <div
-                          className={`p-3 rounded-xl ${formData.active_modules.dating ? "bg-rose-500 text-white" : "bg-slate-200 text-slate-500"}`}
+                          className={`p-3 rounded-xl ${formData.active_modules.dating ? "bg-rose-500 text-white" : "bg-slate-200 text-clay-muted"}`}
                         >
                           <Heart size={24} />
                         </div>
@@ -1878,14 +1878,14 @@ const Admin = () => {
                             })
                           }
                         />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-[#f0eee7] after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-clay-surface after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
                       </label>
                     </div>
                     {formData.active_modules.dating && !selectedEvent.isNew && (
                       <div className="animate-in fade-in">
                         <button
                           onClick={openDatingManager}
-                          className="w-full py-3 bg-[#f0eee7] border border-rose-200 text-rose-600 font-bold rounded-xl hover:bg-rose-50 transition-colors flex justify-center items-center gap-2 shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)]"
+                          className="w-full py-3 bg-clay-surface border border-rose-200 text-rose-700 font-bold rounded-xl hover:bg-rose-50 transition-colors flex justify-center items-center gap-2 shadow-clay-sm"
                         >
                           <Users size={18} /> ניהול משתמשי דייטליין
                         </button>
@@ -1895,12 +1895,12 @@ const Admin = () => {
 
                   {/* מודול אייסברייקר */}
                   <div
-                    className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.icebreaker ? "border-cyan-500 bg-cyan-50/30" : "border-[#e4e0d5] opacity-60 grayscale"}`}
+                    className={`border-2 rounded-3xl p-6 transition-all md:col-span-2 ${formData.active_modules.icebreaker ? "border-cyan-500 bg-cyan-50/30" : "border-clay-well-deep opacity-60 grayscale"}`}
                   >
                     <div className="flex justify-between items-start mb-6">
                       <div className="flex items-center gap-3">
                         <div
-                          className={`p-3 rounded-xl ${formData.active_modules.icebreaker ? "bg-cyan-500 text-white" : "bg-slate-200 text-slate-500"}`}
+                          className={`p-3 rounded-xl ${formData.active_modules.icebreaker ? "bg-cyan-500 text-white" : "bg-slate-200 text-clay-muted"}`}
                         >
                           <Zap size={24} />
                         </div>
@@ -1925,7 +1925,7 @@ const Admin = () => {
                             })
                           }
                         />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-[#f0eee7] after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div>
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-clay-surface after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div>
                       </label>
                     </div>
                     {formData.active_modules.icebreaker &&
@@ -1933,13 +1933,13 @@ const Admin = () => {
                         <div className="flex flex-col md:flex-row gap-3 animate-in fade-in">
                           <button
                             onClick={openIcebreakerManager}
-                            className="flex-1 py-3 bg-[#f0eee7] border border-cyan-200 text-cyan-600 font-bold rounded-xl hover:bg-cyan-50 transition-colors flex justify-center items-center gap-2 shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)]"
+                            className="flex-1 py-3 bg-clay-surface border border-cyan-200 text-cyan-800 font-bold rounded-xl hover:bg-cyan-50 transition-colors flex justify-center items-center gap-2 shadow-clay-sm"
                           >
                             <Target size={18} /> בנק המשימות
                           </button>
                           <button
                             onClick={openIcebreakerUserManager}
-                            className="flex-1 py-3 bg-[#f0eee7] border border-cyan-200 text-cyan-600 font-bold rounded-xl hover:bg-cyan-50 transition-colors flex justify-center items-center gap-2 shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)]"
+                            className="flex-1 py-3 bg-clay-surface border border-cyan-200 text-cyan-800 font-bold rounded-xl hover:bg-cyan-50 transition-colors flex justify-center items-center gap-2 shadow-clay-sm"
                           >
                             <Users size={18} /> משתמשים
                           </button>
@@ -1949,12 +1949,12 @@ const Admin = () => {
 
                   {/* מודול טרמפים */}
                   <div
-                    className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.rideshare ? "border-amber-500 bg-amber-50/30" : "border-[#e4e0d5] opacity-60 grayscale"}`}
+                    className={`border-2 rounded-3xl p-6 transition-all ${formData.active_modules.rideshare ? "border-amber-500 bg-amber-50/30" : "border-clay-well-deep opacity-60 grayscale"}`}
                   >
                     <div className="flex justify-between items-start mb-6">
                       <div className="flex items-center gap-3">
                         <div
-                          className={`p-3 rounded-xl ${formData.active_modules.rideshare ? "bg-amber-500 text-white" : "bg-slate-200 text-slate-500"}`}
+                          className={`p-3 rounded-xl ${formData.active_modules.rideshare ? "bg-amber-500 text-white" : "bg-slate-200 text-clay-muted"}`}
                         >
                           <Car size={24} />
                         </div>
@@ -1979,7 +1979,7 @@ const Admin = () => {
                             })
                           }
                         />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-[#f0eee7] after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-clay-surface after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
                       </label>
                     </div>
                     {formData.active_modules.rideshare &&
@@ -1987,7 +1987,7 @@ const Admin = () => {
                         <div className="animate-in fade-in">
                           <button
                             onClick={openRideshareManager}
-                            className="w-full py-3 bg-[#f0eee7] border border-amber-200 text-amber-600 font-bold rounded-xl hover:bg-amber-50 transition-colors flex justify-center items-center gap-2 shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)]"
+                            className="w-full py-3 bg-clay-surface border border-amber-200 text-amber-800 font-bold rounded-xl hover:bg-amber-50 transition-colors flex justify-center items-center gap-2 shadow-clay-sm"
                           >
                             <Car size={18} /> ניהול לוח טרמפים
                           </button>
@@ -2003,31 +2003,31 @@ const Admin = () => {
 
       {/* --- פופ-אפ מרכז הדיווחים --- */}
       {isReportsModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] z-[200]">
-          <div className="bg-[#f0eee7] w-full max-w-2xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-full">
-            <div className="p-6 md:p-8 border-b border-[#e4e0d5] flex justify-between items-center bg-rose-50/50 shrink-0">
+        <div className="fixed inset-0 bg-clay-scrim flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] z-[200]">
+          <div className="bg-clay-surface w-full max-w-2xl rounded-clay-lg shadow-clay-modal flex flex-col overflow-hidden animate-in zoom-in-95 max-h-full">
+            <div className="p-6 md:p-8 border-b border-clay-well-deep flex justify-between items-center bg-rose-50/50 shrink-0">
               <div>
                 <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
-                  <ShieldAlert className="text-rose-500" /> מרכז דיווחים
+                  <ShieldAlert className="text-rose-700" /> מרכז דיווחים
                 </h2>
-                <p className="text-rose-600 font-bold mt-1">
+                <p className="text-rose-700 font-bold mt-1">
                   ממתינים לטיפול: {reportsList.length}
                 </p>
               </div>
               <button
                 onClick={() => setIsReportsModalOpen(false)}
-                className="w-11 h-11 shrink-0 flex items-center justify-center hover:bg-rose-100 text-rose-600 rounded-full transition-colors"
+                className="w-11 h-11 shrink-0 flex items-center justify-center hover:bg-rose-100 text-rose-700 rounded-full transition-colors"
               >
                 <X size={24} />
               </button>
             </div>
-            <div className="flex-1 bg-[#eeece5] p-6 md:p-8 overflow-y-auto">
+            <div className="flex-1 bg-clay-well p-6 md:p-8 overflow-y-auto">
               {reportsLoading ? (
                 <div className="flex justify-center py-20">
-                  <Loader2 className="animate-spin text-rose-500" size={48} />
+                  <Loader2 className="animate-spin text-rose-700" size={48} />
                 </div>
               ) : reportsList.length === 0 ? (
-                <div className="text-center py-20 text-slate-400">
+                <div className="text-center py-20 text-clay-muted">
                   <CheckCircle2 size={48} className="mx-auto mb-3 opacity-20" />
                   <p className="font-medium text-lg">
                     איזה שקט... אין דיווחים לטיפול.
@@ -2038,11 +2038,11 @@ const Admin = () => {
                   {reportsList.map((report) => (
                     <div
                       key={report.id}
-                      className="bg-[#f0eee7] p-5 rounded-2xl border border-[#dcd7ca] shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] flex flex-col gap-3"
+                      className="bg-clay-surface p-5 rounded-2xl shadow-clay-sm flex flex-col gap-3"
                     >
                       <div className="flex justify-between items-start">
                         <div>
-                          <span className="text-xs font-bold px-2 py-1 rounded bg-[#e9e6dc] text-slate-600 uppercase tracking-widest mb-2 inline-block">
+                          <span className="text-xs font-bold px-2 py-1 rounded bg-clay-chip text-slate-600 uppercase tracking-widest mb-2 inline-block">
                             סוג: {report.item_type}
                           </span>
                           <p className="text-sm font-medium text-slate-600">
@@ -2051,7 +2051,7 @@ const Admin = () => {
                               {report.reported_item_id}
                             </span>
                           </p>
-                          <p className="text-xs text-slate-400 mt-1">
+                          <p className="text-xs text-clay-muted mt-1">
                             דווח בתאריך:{" "}
                             {new Date(report.created_at).toLocaleDateString(
                               "he-IL",
@@ -2062,7 +2062,7 @@ const Admin = () => {
                           </p>
                         </div>
                       </div>
-                      <div className="flex gap-2 mt-2 pt-3 border-t border-[#eeece5]">
+                      <div className="flex gap-2 mt-2 pt-3 border-t border-clay-well">
                         <button
                           onClick={() =>
                             handleResolveReport(
@@ -2072,7 +2072,7 @@ const Admin = () => {
                               report.reported_item_id,
                             )
                           }
-                          className="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 rounded-xl text-sm transition-colors"
+                          className="flex-1 bg-rose-700 hover:bg-rose-800 text-white font-bold py-3 rounded-xl text-sm transition-colors"
                         >
                           מחק תוכן פוגעני
                         </button>
@@ -2080,7 +2080,7 @@ const Admin = () => {
                           onClick={() =>
                             handleResolveReport(report.id, "dismiss")
                           }
-                          className="flex-1 bg-[#e9e6dc] hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl text-sm transition-colors"
+                          className="flex-1 bg-clay-chip hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl text-sm transition-colors"
                         >
                           סגור כדיווח שווא
                         </button>
@@ -2096,32 +2096,32 @@ const Admin = () => {
 
       {/* --- פופ-אפ ניהול ברכות (חדש) --- */}
       {isBlessingsManagerOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] z-[200]">
-          <div className="bg-[#f0eee7] w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-full">
-            <div className="p-6 md:p-8 border-b border-[#e4e0d5] flex justify-between items-center bg-purple-50/50 shrink-0">
+        <div className="fixed inset-0 bg-clay-scrim flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] z-[200]">
+          <div className="bg-clay-surface w-full max-w-4xl rounded-clay-lg shadow-clay-modal flex flex-col overflow-hidden animate-in zoom-in-95 max-h-full">
+            <div className="p-6 md:p-8 border-b border-clay-well-deep flex justify-between items-center bg-purple-50/50 shrink-0">
               <div>
                 <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
-                  <MessageCircle className="text-purple-600" /> ספר ברכות
+                  <MessageCircle className="text-purple-700" /> ספר ברכות
                 </h2>
-                <p className="text-purple-600 font-bold mt-1">
+                <p className="text-purple-700 font-bold mt-1">
                   סה"כ ברכות נשלחו: {blessingsList.length}
                 </p>
               </div>
               <button
                 onClick={() => setIsBlessingsManagerOpen(false)}
-                className="w-11 h-11 shrink-0 flex items-center justify-center hover:bg-purple-100 text-purple-600 rounded-full transition-colors"
+                className="w-11 h-11 shrink-0 flex items-center justify-center hover:bg-purple-100 text-purple-700 rounded-full transition-colors"
               >
                 <X size={24} />
               </button>
             </div>
 
-            <div className="flex-1 bg-[#eeece5] p-6 md:p-8 overflow-y-auto">
+            <div className="flex-1 bg-clay-well p-6 md:p-8 overflow-y-auto">
               {blessingsLoading ? (
                 <div className="flex justify-center py-20">
-                  <Loader2 className="animate-spin text-purple-500" size={48} />
+                  <Loader2 className="animate-spin text-purple-700" size={48} />
                 </div>
               ) : blessingsList.length === 0 ? (
-                <div className="text-center py-20 text-slate-400">
+                <div className="text-center py-20 text-clay-muted">
                   <CheckCircle2 size={48} className="mx-auto mb-3 opacity-20" />
                   <p className="font-medium text-lg">עדיין אין ברכות בספר...</p>
                 </div>
@@ -2130,7 +2130,7 @@ const Admin = () => {
                   {blessingsList.map((blessing) => (
                     <div
                       key={blessing.id}
-                      className={`bg-[#f0eee7] p-5 rounded-2xl border flex flex-col shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] transition-all ${editingBlessingId === blessing.id ? "border-purple-300 ring-2 ring-purple-100" : "border-[#dcd7ca] hover:border-purple-200"}`}
+                      className={`bg-clay-surface p-5 rounded-2xl border flex flex-col shadow-clay-sm transition-all ${editingBlessingId === blessing.id ? "border-purple-300 ring-2 ring-purple-100" : "border-clay-line hover:border-purple-200"}`}
                     >
                       {editingBlessingId === blessing.id ? (
                         <div className="space-y-3 w-full">
@@ -2140,7 +2140,7 @@ const Admin = () => {
                             onChange={(e) =>
                               setEditBlessingName(e.target.value)
                             }
-                            className="w-full p-3 bg-[#eeece5] border border-[#dcd7ca] rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-purple-500"
+                            className="w-full p-3 bg-clay-well shadow-clay-inset rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-purple-500"
                             placeholder="שם השולח"
                           />
                           <textarea
@@ -2148,13 +2148,13 @@ const Admin = () => {
                             onChange={(e) =>
                               setEditBlessingMessage(e.target.value)
                             }
-                            className="w-full p-3 bg-[#eeece5] border border-[#dcd7ca] rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500 h-24 resize-none"
+                            className="w-full p-3 bg-clay-well shadow-clay-inset rounded-xl text-sm outline-none focus:ring-2 focus:ring-purple-500 h-24 resize-none"
                             placeholder="תוכן הברכה"
                           />
                           <div className="flex justify-end gap-2 pt-2">
                             <button
                               onClick={() => setEditingBlessingId(null)}
-                              className="px-4 min-h-11 text-slate-500 hover:bg-[#e9e6dc] rounded-xl transition-colors font-bold text-sm"
+                              className="px-4 min-h-11 text-clay-muted hover:bg-clay-chip rounded-xl transition-colors font-bold text-sm"
                             >
                               ביטול
                             </button>
@@ -2172,10 +2172,10 @@ const Admin = () => {
                             <h4 className="font-bold text-slate-800 text-lg flex items-center gap-2">
                               {blessing.guest_name}
                             </h4>
-                            <div className="flex items-center gap-1 bg-[#eeece5] rounded-lg p-1">
+                            <div className="flex items-center gap-1 bg-clay-well rounded-lg p-1">
                               <button
                                 onClick={() => startEditingBlessing(blessing)}
-                                className="w-11 h-11 flex items-center justify-center text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
+                                className="w-11 h-11 flex items-center justify-center text-clay-muted hover:text-purple-700 hover:bg-purple-50 rounded-md transition-colors"
                                 title="ערוך ברכה"
                               >
                                 <Edit2 size={16} />
@@ -2187,7 +2187,7 @@ const Admin = () => {
                                     blessing.guest_name,
                                   )
                                 }
-                                className="w-11 h-11 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
+                                className="w-11 h-11 flex items-center justify-center text-clay-muted hover:text-rose-700 hover:bg-rose-50 rounded-md transition-colors"
                                 title="מחק ברכה"
                               >
                                 <Trash2 size={16} />
@@ -2198,18 +2198,18 @@ const Admin = () => {
                             {blessing.message}
                           </p>
                           {blessing.image_url && (
-                            <div className="mt-auto pt-4 border-t border-[#e4e0d5]">
-                              <div className="flex items-center gap-2 text-xs font-bold text-slate-400 mb-2">
+                            <div className="mt-auto pt-4 border-t border-clay-well-deep">
+                              <div className="flex items-center gap-2 text-xs font-bold text-clay-muted mb-2">
                                 <ImageIcon size={14} /> תמונה מצורפת:
                               </div>
                               <img
                                 src={blessing.image_url}
                                 alt="Selfie"
-                                className="w-full h-32 object-cover rounded-xl border border-[#e4e0d5]"
+                                className="w-full h-32 object-cover rounded-xl border border-clay-well-deep"
                               />
                             </div>
                           )}
-                          <div className="mt-auto pt-3 text-[10px] text-slate-400 font-mono">
+                          <div className="mt-auto pt-3 text-[10px] text-clay-muted font-mono">
                             נשלח:{" "}
                             {new Date(blessing.created_at).toLocaleString(
                               "he-IL",
@@ -2228,32 +2228,32 @@ const Admin = () => {
 
       {/* --- ניהול טרמפים --- */}
       {isRideshareManagerOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] z-[200]">
-          <div className="bg-[#f0eee7] w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-full">
-            <div className="p-6 md:p-8 border-b border-[#e4e0d5] flex justify-between items-center bg-amber-50/50 shrink-0">
+        <div className="fixed inset-0 bg-clay-scrim flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] z-[200]">
+          <div className="bg-clay-surface w-full max-w-4xl rounded-clay-lg shadow-clay-modal flex flex-col overflow-hidden animate-in zoom-in-95 max-h-full">
+            <div className="p-6 md:p-8 border-b border-clay-well-deep flex justify-between items-center bg-amber-50/50 shrink-0">
               <div>
                 <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
-                  <Car className="text-amber-500" /> ניהול טרמפים
+                  <Car className="text-amber-800" /> ניהול טרמפים
                 </h2>
-                <p className="text-amber-600 font-bold mt-1">
+                <p className="text-amber-800 font-bold mt-1">
                   סה"כ מודעות: {rideshareList.length}
                 </p>
               </div>
               <button
                 onClick={() => setIsRideshareManagerOpen(false)}
-                className="w-11 h-11 shrink-0 flex items-center justify-center hover:bg-amber-100 text-amber-600 rounded-full transition-colors"
+                className="w-11 h-11 shrink-0 flex items-center justify-center hover:bg-amber-100 text-amber-800 rounded-full transition-colors"
               >
                 <X size={24} />
               </button>
             </div>
 
-            <div className="flex-1 bg-[#eeece5] p-6 md:p-8 overflow-y-auto">
+            <div className="flex-1 bg-clay-well p-6 md:p-8 overflow-y-auto">
               {rideshareLoading ? (
                 <div className="flex justify-center py-20">
-                  <Loader2 className="animate-spin text-amber-500" size={48} />
+                  <Loader2 className="animate-spin text-amber-800" size={48} />
                 </div>
               ) : rideshareList.length === 0 ? (
-                <div className="text-center py-20 text-slate-400">
+                <div className="text-center py-20 text-clay-muted">
                   <CheckCircle2 size={48} className="mx-auto mb-3 opacity-20" />
                   <p className="font-medium text-lg">אין מודעות טרמפים בלוח</p>
                 </div>
@@ -2262,7 +2262,7 @@ const Admin = () => {
                   {rideshareList.map((ride) => (
                     <div
                       key={ride.id}
-                      className="bg-[#f0eee7] p-4 rounded-2xl border border-[#dcd7ca] flex flex-col md:flex-row items-start md:items-center justify-between shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] hover:border-amber-200 transition-colors gap-4"
+                      className="bg-clay-surface p-4 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between shadow-clay-sm hover:border-amber-200 transition-colors gap-4"
                     >
                       <div className="flex-1 w-full">
                         <div className="flex items-center gap-3 mb-2">
@@ -2288,7 +2288,7 @@ const Admin = () => {
                         <div className="text-sm text-slate-600 space-y-1">
                           <p className="font-semibold">{ride.phone}</p>
                           {ride.direction && (
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-clay-muted">
                               {ride.direction === "there"
                                 ? "הלוך בלבד"
                                 : ride.direction === "back"
@@ -2297,7 +2297,7 @@ const Admin = () => {
                             </p>
                           )}
                           {ride.from_location && (
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-clay-muted">
                               הלוך:{" "}
                               <span className="font-semibold">
                                 {ride.from_location}
@@ -2305,7 +2305,7 @@ const Admin = () => {
                             </p>
                           )}
                           {ride.to_location && (
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-clay-muted">
                               חזור:{" "}
                               <span className="font-semibold">
                                 {ride.to_location}
@@ -2318,7 +2318,7 @@ const Admin = () => {
                         onClick={() =>
                           handleDeleteRideshare(ride.id, ride.guest_name)
                         }
-                        className="px-4 min-h-11 bg-rose-100 hover:bg-rose-200 text-rose-600 font-bold rounded-xl transition-colors flex items-center gap-2 text-sm shrink-0"
+                        className="px-4 min-h-11 bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold rounded-xl transition-colors flex items-center gap-2 text-sm shrink-0"
                       >
                         <Trash2 size={16} /> מחק
                       </button>
@@ -2343,7 +2343,7 @@ const Admin = () => {
 
       {isGalleryOpen && (
         <div className="fixed inset-0 z-[200] bg-slate-900/90 flex flex-col animate-in fade-in duration-300">
-          <div className="p-6 md:p-8 pt-[calc(1.5rem+env(safe-area-inset-top))] md:pt-[calc(2rem+env(safe-area-inset-top))] flex justify-between items-center bg-[#f0eee7]">
+          <div className="p-6 md:p-8 pt-[calc(1.5rem+env(safe-area-inset-top))] md:pt-[calc(2rem+env(safe-area-inset-top))] flex justify-between items-center bg-clay-surface">
             <div>
               <h2 className="text-3xl font-black text-slate-800">
                 גלריית האירוע
@@ -2351,7 +2351,7 @@ const Admin = () => {
             </div>
             <button
               onClick={() => setIsGalleryOpen(false)}
-              className="bg-[#e9e6dc] text-slate-600 p-3 rounded-xl"
+              className="bg-clay-chip text-slate-600 p-3 rounded-xl"
             >
               <X size={24} />
             </button>
@@ -2381,40 +2381,40 @@ const Admin = () => {
         </div>
       )}
       {isSeatingModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] z-[200]">
-          <div className="bg-[#f0eee7] w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-full">
-            <div className="p-8 border-b border-[#e4e0d5] flex justify-between items-center bg-emerald-50/50 shrink-0">
+        <div className="fixed inset-0 bg-clay-scrim flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] z-[200]">
+          <div className="bg-clay-surface w-full max-w-4xl rounded-clay-lg shadow-clay-modal flex flex-col overflow-hidden animate-in zoom-in-95 max-h-full">
+            <div className="p-8 border-b border-clay-well-deep flex justify-between items-center bg-emerald-50/50 shrink-0">
               <div>
                 <h2 className="text-2xl font-black text-slate-800">
                   ניהול הושבה
                 </h2>
-                <p className="text-emerald-600 font-bold mt-1">
+                <p className="text-emerald-800 font-bold mt-1">
                   סה"כ במערכת: {savedGuestsCount} אורחים
                 </p>
               </div>
               <button
                 onClick={() => setIsSeatingModalOpen(false)}
-                className="w-11 h-11 shrink-0 flex items-center justify-center hover:bg-emerald-100 text-emerald-600 rounded-full transition-colors"
+                className="w-11 h-11 shrink-0 flex items-center justify-center hover:bg-emerald-100 text-emerald-800 rounded-full transition-colors"
               >
                 <X size={28} />
               </button>
             </div>
             {seatingPreview ? (
               /* --- שלב התצוגה המקדימה: מחליף את אזור ההעלאה עד אישור/ביטול --- */
-              <div className="flex flex-1 flex-col overflow-hidden bg-[#f0eee7]">
-                <div className="shrink-0 border-b border-[#e4e0d5] p-6 md:px-8">
+              <div className="flex flex-1 flex-col overflow-hidden bg-clay-surface">
+                <div className="shrink-0 border-b border-clay-well-deep p-6 md:px-8">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <h3 className="text-lg font-black text-slate-800">
                         תצוגה מקדימה — {seatingFileName}
                       </h3>
-                      <p className="mt-1 text-sm font-bold text-slate-500">
+                      <p className="mt-1 text-sm font-bold text-clay-muted">
                         {seatingPreview.rows.filter(isValidSeatingRow).length}{" "}
                         שורות תקינות
                         {seatingPreview.rows.length -
                           seatingPreview.rows.filter(isValidSeatingRow).length >
                           0 && (
-                          <span className="text-rose-600">
+                          <span className="text-rose-700">
                             {" "}
                             ·{" "}
                             {seatingPreview.rows.length -
@@ -2425,7 +2425,7 @@ const Admin = () => {
                         )}
                       </p>
                       {!seatingPreview.headerDetected && (
-                        <p className="mt-1 text-xs font-bold text-amber-600">
+                        <p className="mt-1 text-xs font-bold text-amber-800">
                           לא זוהו כותרות — העמודה הראשונה נקראה כשם והשנייה
                           כמספר שולחן
                         </p>
@@ -2435,14 +2435,14 @@ const Admin = () => {
                       <button
                         onClick={resetSeatingImport}
                         disabled={seatingImporting}
-                        className="rounded-2xl bg-[#f0eee7] px-5 py-3 font-bold text-slate-600 shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] transition-all active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1)] disabled:opacity-50"
+                        className="rounded-2xl bg-clay-surface px-5 py-3 font-bold text-slate-600 shadow-clay-sm transition-all active:shadow-clay-pressed disabled:opacity-50"
                       >
                         ביטול
                       </button>
                       <button
                         onClick={confirmSeatingImport}
                         disabled={seatingImporting}
-                        className="flex items-center gap-2 rounded-2xl bg-emerald-500 px-5 py-3 font-black text-white transition-colors hover:bg-emerald-600 disabled:opacity-50"
+                        className="flex items-center gap-2 rounded-2xl bg-emerald-700 px-5 py-3 font-black text-white transition-colors hover:bg-emerald-800 disabled:opacity-50"
                       >
                         {seatingImporting ? (
                           <Loader2 size={18} className="animate-spin" />
@@ -2455,10 +2455,10 @@ const Admin = () => {
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto bg-[#eeece5] p-6 md:p-8">
+                <div className="flex-1 overflow-y-auto bg-clay-well p-6 md:p-8">
                   <table className="w-full border-separate border-spacing-y-2 text-right">
                     <thead>
-                      <tr className="text-xs font-bold text-slate-400">
+                      <tr className="text-xs font-bold text-clay-muted">
                         <th className="px-3 pb-1">#</th>
                         <th className="px-3 pb-1">שם האורח</th>
                         <th className="px-3 pb-1">מספר שולחן</th>
@@ -2471,18 +2471,18 @@ const Admin = () => {
                         return (
                           <tr
                             key={row.rowNumber}
-                            className={invalid ? "bg-rose-50" : "bg-[#f0eee7]"}
+                            className={invalid ? "bg-rose-50" : "bg-clay-surface"}
                           >
-                            <td className="rounded-r-2xl px-3 py-2.5 text-xs font-bold text-slate-400">
+                            <td className="rounded-r-2xl px-3 py-2.5 text-xs font-bold text-clay-muted">
                               {row.rowNumber}
                             </td>
                             <td
-                              className={`px-3 py-2.5 font-bold ${row.issues.includes("missing_name") ? "text-rose-500" : "text-slate-700"}`}
+                              className={`px-3 py-2.5 font-bold ${row.issues.includes("missing_name") ? "text-rose-700" : "text-slate-700"}`}
                             >
                               {row.name ? row.name : "— חסר שם —"}
                             </td>
                             <td
-                              className={`px-3 py-2.5 font-bold ${row.issues.includes("missing_table") ? "text-rose-500" : "text-slate-700"}`}
+                              className={`px-3 py-2.5 font-bold ${row.issues.includes("missing_table") ? "text-rose-700" : "text-slate-700"}`}
                             >
                               {row.tableNumber
                                 ? row.tableNumber
@@ -2490,9 +2490,9 @@ const Admin = () => {
                             </td>
                             <td className="rounded-l-2xl px-3 py-2.5 text-xs font-bold">
                               {invalid ? (
-                                <span className="text-rose-600">ידולג</span>
+                                <span className="text-rose-700">ידולג</span>
                               ) : (
-                                <span className="text-emerald-600">תקין</span>
+                                <span className="text-emerald-800">תקין</span>
                               )}
                             </td>
                           </tr>
@@ -2504,7 +2504,7 @@ const Admin = () => {
               </div>
             ) : (
               <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
-                <div className="w-full md:w-1/2 p-8 border-l border-[#e4e0d5] flex flex-col bg-[#f0eee7] shrink-0">
+                <div className="w-full md:w-1/2 p-8 border-l border-clay-well-deep flex flex-col bg-clay-surface shrink-0">
                   {/* אזור גרירה — נטען דינמית, ולכן אין עלות עד שגוררים קובץ */}
                   <div
                     onDragOver={(e) => {
@@ -2529,17 +2529,17 @@ const Admin = () => {
                     className={`mb-4 cursor-pointer rounded-2xl border-2 border-dashed p-6 text-center transition-all ${
                       seatingDragOver
                         ? "border-emerald-500 bg-emerald-50"
-                        : "border-[#dcd7ca] bg-[#eeece5] hover:border-emerald-300"
+                        : "border-clay-line bg-clay-well hover:border-emerald-300"
                     }`}
                   >
                     {seatingParsing ? (
                       <Loader2
-                        className="mx-auto animate-spin text-emerald-500"
+                        className="mx-auto animate-spin text-emerald-800"
                         size={28}
                       />
                     ) : (
                       <UploadCloud
-                        className="mx-auto text-slate-400"
+                        className="mx-auto text-clay-muted"
                         size={28}
                       />
                     )}
@@ -2548,7 +2548,7 @@ const Admin = () => {
                         ? "קורא את הקובץ..."
                         : "גררו לכאן קובץ Excel או CSV"}
                     </p>
-                    <p className="mt-1 text-xs font-medium text-slate-400">
+                    <p className="mt-1 text-xs font-medium text-clay-muted">
                       או לחצו לבחירה · xlsx, csv · גם ייצוא מ-Google Sheets
                     </p>
                   </div>
@@ -2564,32 +2564,32 @@ const Admin = () => {
                   />
 
                   <div className="mb-3 flex items-center gap-3">
-                    <div className="h-px flex-1 bg-[#dcd7ca]" />
-                    <span className="text-xs font-bold text-slate-400">
+                    <div className="h-px flex-1 bg-clay-line" />
+                    <span className="text-xs font-bold text-clay-muted">
                       או הדבקה ידנית
                     </span>
-                    <div className="h-px flex-1 bg-[#dcd7ca]" />
+                    <div className="h-px flex-1 bg-clay-line" />
                   </div>
 
                   <textarea
                     value={seatingText}
                     onChange={(e) => setSeatingText(e.target.value)}
                     placeholder="ישראל ישראלי 12&#10;שרה כהן - 5"
-                    className="w-full flex-1 p-4 bg-[#eeece5] border border-[#dcd7ca] rounded-2xl min-h-[140px]"
+                    className="w-full flex-1 p-4 bg-clay-well shadow-clay-inset rounded-2xl min-h-[140px]"
                   />
                   <button
                     onClick={handleSaveSeating}
-                    className="w-full mt-4 bg-emerald-500 text-white font-black py-4 rounded-2xl hover:bg-emerald-600"
+                    className="w-full mt-4 bg-emerald-700 text-white font-black py-4 rounded-2xl hover:bg-emerald-800"
                   >
                     פענח והוסף לרשימה
                   </button>
                 </div>
-                <div className="w-full md:w-1/2 bg-[#eeece5] p-8 overflow-y-auto">
+                <div className="w-full md:w-1/2 bg-clay-well p-8 overflow-y-auto">
                   <div className="space-y-3">
                     {seatingGuests.map((guest) => (
                       <div
                         key={guest.id}
-                        className="bg-[#f0eee7] p-3 rounded-2xl flex justify-between"
+                        className="bg-clay-surface p-3 rounded-2xl flex justify-between"
                       >
                         <div className="flex items-center gap-3">
                           <div className="bg-emerald-100 text-emerald-700 w-10 h-10 flex items-center justify-center rounded-xl">
@@ -2603,7 +2603,7 @@ const Admin = () => {
                           onClick={() =>
                             handleDeleteGuest(guest.id, guest.guest_name)
                           }
-                          className="w-11 h-11 shrink-0 flex items-center justify-center rounded-full text-rose-500 hover:bg-rose-50"
+                          className="w-11 h-11 shrink-0 flex items-center justify-center rounded-full text-rose-700 hover:bg-rose-50"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -2617,14 +2617,14 @@ const Admin = () => {
         </div>
       )}
       {isQrModalOpen && selectedEvent && (
-        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] z-[200]">
-          <div className="bg-[#f0eee7] w-full max-w-md rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 max-h-full">
-            <div className="p-6 flex justify-between items-center bg-[#eeece5] shrink-0">
+        <div className="fixed inset-0 bg-clay-scrim flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] z-[200]">
+          <div className="bg-clay-surface w-full max-w-md rounded-clay-lg shadow-clay-modal flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 max-h-full">
+            <div className="p-6 flex justify-between items-center bg-clay-well shrink-0">
               <h2 className="text-2xl font-black text-slate-800">QR מעוצב</h2>
               <button
                 onClick={() => setIsQrModalOpen(false)}
                 aria-label="סגור"
-                className="w-11 h-11 shrink-0 flex items-center justify-center rounded-full hover:bg-[#e4e0d5] transition-colors"
+                className="w-11 h-11 shrink-0 flex items-center justify-center rounded-full hover:bg-clay-well-deep transition-colors"
               >
                 <X size={24} />
               </button>
@@ -2642,32 +2642,32 @@ const Admin = () => {
         </div>
       )}
       {isDatingManagerOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] z-[200]">
-          <div className="bg-[#f0eee7] w-full max-w-5xl rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-full">
-            <div className="p-6 md:p-8 border-b border-[#e4e0d5] flex justify-between items-center bg-rose-50/50 shrink-0">
+        <div className="fixed inset-0 bg-clay-scrim flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] z-[200]">
+          <div className="bg-clay-surface w-full max-w-5xl rounded-clay-lg shadow-clay-modal flex flex-col overflow-hidden animate-in zoom-in-95 max-h-full">
+            <div className="p-6 md:p-8 border-b border-clay-well-deep flex justify-between items-center bg-rose-50/50 shrink-0">
               <div>
                 <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
-                  <Heart className="text-rose-500" /> ניהול דייטליין (פרופילים)
+                  <Heart className="text-rose-700" /> ניהול דייטליין (פרופילים)
                 </h2>
-                <p className="text-rose-600 font-bold mt-1">
+                <p className="text-rose-700 font-bold mt-1">
                   סה"כ פרופילים: {datingProfiles.length}
                 </p>
               </div>
               <button
                 onClick={() => setIsDatingManagerOpen(false)}
-                className="w-11 h-11 shrink-0 flex items-center justify-center hover:bg-rose-100 text-rose-600 rounded-full transition-colors"
+                className="w-11 h-11 shrink-0 flex items-center justify-center hover:bg-rose-100 text-rose-700 rounded-full transition-colors"
               >
                 <X size={24} />
               </button>
             </div>
 
-            <div className="flex-1 bg-[#eeece5] p-6 md:p-8 overflow-y-auto">
+            <div className="flex-1 bg-clay-well p-6 md:p-8 overflow-y-auto">
               {datingLoading ? (
                 <div className="flex justify-center py-20">
-                  <Loader2 className="animate-spin text-rose-500" size={48} />
+                  <Loader2 className="animate-spin text-rose-700" size={48} />
                 </div>
               ) : datingProfiles.length === 0 ? (
-                <div className="text-center py-20 text-slate-400">
+                <div className="text-center py-20 text-clay-muted">
                   <Heart size={48} className="mx-auto mb-3 opacity-20" />
                   <p className="font-medium text-lg">אין פרופילים בדייטליין</p>
                 </div>
@@ -2676,7 +2676,7 @@ const Admin = () => {
                   {datingProfiles.map((profile) => (
                     <div
                       key={profile.id}
-                      className="bg-[#f0eee7] rounded-[1.5rem] overflow-hidden shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] border border-[#e4e0d5] hover:border-rose-200 hover:shadow-md transition-all flex flex-col"
+                      className="bg-clay-surface rounded-[1.5rem] overflow-hidden shadow-clay-sm border border-clay-well-deep hover:border-rose-200 hover:shadow-clay-md transition-all flex flex-col"
                     >
                       {/* Profile Image */}
                       <div className="w-full h-40 bg-gradient-to-br from-rose-100 to-pink-100 flex items-center justify-center overflow-hidden">
@@ -2702,7 +2702,7 @@ const Admin = () => {
                               {profile.name}
                             </h3>
                             {profile.age && (
-                              <p className="text-sm text-slate-500 font-semibold">
+                              <p className="text-sm text-clay-muted font-semibold">
                                 {profile.age} שנים
                               </p>
                             )}
@@ -2714,13 +2714,13 @@ const Admin = () => {
                           <div className="text-xs text-slate-600 mb-3 space-y-1">
                             {profile.connection && (
                               <p className="font-semibold">
-                                <span className="text-slate-400">קשר:</span>{" "}
+                                <span className="text-clay-muted">קשר:</span>{" "}
                                 {profile.connection}
                               </p>
                             )}
                             {profile.location && (
                               <p className="font-semibold">
-                                <span className="text-slate-400">מיקום:</span>{" "}
+                                <span className="text-clay-muted">מיקום:</span>{" "}
                                 {profile.location}
                               </p>
                             )}
@@ -2748,7 +2748,7 @@ const Admin = () => {
                           onClick={() =>
                             handleDeleteDatingProfile(profile.id, profile.name)
                           }
-                          className="w-full mt-auto bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
+                          className="w-full mt-auto bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
                         >
                           <Trash2 size={16} /> מחק פרופיל
                         </button>
@@ -2762,8 +2762,8 @@ const Admin = () => {
         </div>
       )}
       {isIcebreakerUserManagerOpen && (
-        <div className="fixed inset-0 z-[200] bg-slate-900/80 flex flex-col animate-in fade-in duration-300">
-          <div className="p-6 md:p-8 pt-[calc(1.5rem+env(safe-area-inset-top))] md:pt-[calc(2rem+env(safe-area-inset-top))] flex justify-between items-center bg-[#f0eee7] shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] z-10">
+        <div className="fixed inset-0 z-[200] bg-clay-page flex flex-col animate-in fade-in duration-300">
+          <div className="p-6 md:p-8 pt-[calc(1.5rem+env(safe-area-inset-top))] md:pt-[calc(2rem+env(safe-area-inset-top))] flex justify-between items-center bg-clay-surface shadow-clay-sm z-10">
             <div>
               <h2 className="text-3xl font-black text-slate-800">
                 משתמשי IceBreaker
@@ -2771,7 +2771,7 @@ const Admin = () => {
             </div>
             <button
               onClick={() => setIsIcebreakerUserManagerOpen(false)}
-              className="bg-[#e9e6dc] p-3 rounded-xl"
+              className="bg-clay-chip p-3 rounded-xl"
             >
               <X size={24} />
             </button>
@@ -2781,14 +2781,14 @@ const Admin = () => {
               {icebreakerProfiles.map((profile) => (
                 <div
                   key={profile.id}
-                  className="bg-[#f0eee7] rounded-[2rem] p-5 shadow-xl flex items-center gap-4"
+                  className="bg-clay-surface rounded-[2rem] p-5 shadow-clay flex items-center gap-4"
                 >
                   <h3 className="font-black">{profile.name}</h3>
                   <button
                     onClick={() =>
                       handleDeleteIcebreakerProfile(profile.id, profile.name)
                     }
-                    className="w-11 h-11 shrink-0 flex items-center justify-center rounded-full text-rose-500 hover:bg-rose-50"
+                    className="w-11 h-11 shrink-0 flex items-center justify-center rounded-full text-rose-700 hover:bg-rose-50"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -2799,8 +2799,8 @@ const Admin = () => {
         </div>
       )}
       {isIcebreakerModalOpen && (
-        <div className="fixed inset-0 z-[200] bg-slate-900/80 flex flex-col animate-in fade-in duration-300">
-          <div className="p-6 md:p-8 pt-[calc(1.5rem+env(safe-area-inset-top))] md:pt-[calc(2rem+env(safe-area-inset-top))] flex justify-between items-center bg-[#f0eee7] shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] z-10">
+        <div className="fixed inset-0 z-[200] bg-clay-page flex flex-col animate-in fade-in duration-300">
+          <div className="p-6 md:p-8 pt-[calc(1.5rem+env(safe-area-inset-top))] md:pt-[calc(2rem+env(safe-area-inset-top))] flex justify-between items-center bg-clay-surface shadow-clay-sm z-10">
             <div>
               <h2 className="text-3xl font-black text-slate-800">
                 בנק המשימות
@@ -2808,23 +2808,23 @@ const Admin = () => {
             </div>
             <button
               onClick={() => setIsIcebreakerModalOpen(false)}
-              className="bg-[#e9e6dc] p-3 rounded-xl"
+              className="bg-clay-chip p-3 rounded-xl"
             >
               <X size={24} />
             </button>
           </div>
           <div className="flex-1 overflow-y-auto p-6 md:p-10 pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:pb-[calc(2.5rem+env(safe-area-inset-bottom))] max-w-4xl mx-auto w-full">
-            <div className="bg-[#f0eee7] p-6 rounded-3xl mb-6 flex">
+            <div className="bg-clay-surface p-6 rounded-3xl mb-6 flex">
               <input
                 type="text"
                 value={newMissionText}
                 onChange={(e) => setNewMissionText(e.target.value)}
                 placeholder="הוסף משימה..."
-                className="w-full flex-1 p-4 bg-[#eeece5] rounded-xl"
+                className="w-full flex-1 p-4 bg-clay-well rounded-xl"
               />
               <button
                 onClick={handleAddMission}
-                className="bg-cyan-500 text-white font-black px-6 py-4 rounded-xl"
+                className="bg-cyan-700 text-white font-black px-6 py-4 rounded-xl"
               >
                 הוסף
               </button>
@@ -2833,12 +2833,12 @@ const Admin = () => {
               {icebreakerMissions.map((mission) => (
                 <div
                   key={mission.id}
-                  className="bg-[#f0eee7] p-5 rounded-2xl flex justify-between"
+                  className="bg-clay-surface p-5 rounded-2xl flex justify-between"
                 >
                   <p className="font-medium">{mission.content}</p>
                   <button
                     onClick={() => handleDeleteMission(mission.id)}
-                    className="w-11 h-11 shrink-0 flex items-center justify-center rounded-full text-rose-500 hover:bg-rose-50"
+                    className="w-11 h-11 shrink-0 flex items-center justify-center rounded-full text-rose-700 hover:bg-rose-50"
                   >
                     <Trash2 size={20} />
                   </button>

@@ -25,8 +25,8 @@ const BlessingModule = React.lazy(() => import("./modules/BlessingModule"));
 
 // קומפוננטת טעינה גלובלית שתוצג בזמן שהעמודים נטענים
 const GlobalLoader = () => (
-  <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center">
-    <Loader2 className="animate-spin text-white mb-4" size={48} />
+  <div className="min-h-screen bg-clay-gradient flex flex-col items-center justify-center">
+    <Loader2 className="animate-spin text-clay-muted mb-4" size={48} />
   </div>
 );
 

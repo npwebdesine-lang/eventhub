@@ -17,19 +17,9 @@ import {
   UploadCloud,
   AlertCircle,
 } from "lucide-react";
+import { CLAY_FIELD, DEFAULT_PRIMARY, clayButtonStyle } from "../lib/clay";
+import { accentOn } from "../lib/colors";
 
-/* ============================================================
-   SOFT-CLAY / NEUMORPHISM DESIGN TOKENS  (shared across modules)
-   ------------------------------------------------------------ */
-const CLAY_BG = "#eceadf";
-const CLAY_PAGE_BG = "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)";
-const clayBtn = (color) => ({
-  backgroundColor: color,
-  boxShadow: `5px 5px 14px rgba(0,0,0,0.14), -4px -4px 12px rgba(255,255,255,0.7), inset 2px 2px 4px rgba(255,255,255,0.35), inset -2px -2px 4px rgba(0,0,0,0.12)`,
-});
-// Debossed field (input / textarea) carved into the clay surface
-const clayFieldCls =
-  "w-full p-4 rounded-[1.4rem] outline-none font-bold text-slate-700 placeholder:text-slate-400 bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.07),inset_-4px_-4px_9px_rgba(255,255,255,0.85)] focus:shadow-[inset_5px_5px_11px_rgba(0,0,0,0.09),inset_-5px_-5px_11px_rgba(255,255,255,0.9)] transition-all";
 
 const BlessingModule = () => {
   const navigate = useNavigate();
@@ -186,21 +176,19 @@ const BlessingModule = () => {
   if (loadingEvent) {
     return (
       <div
-        className="min-h-screen flex flex-col items-center justify-center"
-        style={{ background: CLAY_PAGE_BG }}
+        className="min-h-screen flex flex-col items-center justify-center bg-clay-gradient"
         dir="rtl"
       >
-        <Loader2 className="animate-spin text-slate-400" size={56} />
+        <Loader2 className="animate-spin text-clay-muted" size={56} />
       </div>
     );
   }
 
-  const primaryColor = eventData?.design_config?.colors?.primary || "#8b5cf6";
+  const primaryColor = eventData?.design_config?.colors?.primary || DEFAULT_PRIMARY;
 
   return (
     <div
-      className="min-h-screen flex flex-col font-sans pb-16"
-      style={{ background: CLAY_PAGE_BG }}
+      className="min-h-screen flex flex-col font-sans pb-16 bg-clay-gradient"
       dir="rtl"
     >
       {/* Header — clay surface */}
@@ -212,7 +200,7 @@ const BlessingModule = () => {
           <div className="flex items-center gap-3">
             <div
               className="w-12 h-12 rounded-full flex items-center justify-center text-white shrink-0"
-              style={clayBtn(primaryColor)}
+              style={clayButtonStyle(primaryColor)}
             >
               <MessageCircle size={24} />
             </div>
@@ -223,14 +211,14 @@ const BlessingModule = () => {
               >
                 ספר ברכות
               </h1>
-              <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-0.5">
+              <p className="text-clay-muted font-bold text-xs uppercase tracking-widest mt-0.5">
                 כתבו ברכה לבעלי השמחה
               </p>
             </div>
           </div>
           <button
             onClick={() => navigate(`/event/${eventId}`)}
-            className="shrink-0 p-3 rounded-full text-slate-500 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
+            className="shrink-0 p-3 rounded-full text-clay-muted bg-clay-surface shadow-clay-md active:shadow-clay-pressed transition-all"
             aria-label="חזרה לאירוע"
           >
             <ChevronRight size={24} />
@@ -242,7 +230,7 @@ const BlessingModule = () => {
       <div className="px-5 relative z-20 w-full max-w-md mx-auto flex-1 flex flex-col gap-6">
         <div
           ref={cardRef}
-          className="rounded-[2.5rem] p-8 text-center bg-[#f0eee7] shadow-[12px_12px_30px_rgba(0,0,0,0.1),-12px_-12px_30px_rgba(255,255,255,0.9)]"
+          className="rounded-clay-lg p-8 text-center bg-clay-surface shadow-clay-lg"
           style={{
             animation: "bounce-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)",
           }}
@@ -254,8 +242,8 @@ const BlessingModule = () => {
                 animation: "bounce-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)",
               }}
             >
-              <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 bg-[#f0eee7] shadow-[inset_5px_5px_11px_rgba(0,0,0,0.1),inset_-5px_-5px_11px_rgba(255,255,255,0.85)]">
-                <CheckCircle2 size={48} style={{ color: primaryColor }} />
+              <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 bg-clay-surface shadow-clay-inset-deep">
+                <CheckCircle2 size={48} style={{ color: accentOn(primaryColor) }} />
               </div>
               <h3
                 className="text-3xl font-black text-slate-700 mb-3"
@@ -270,14 +258,14 @@ const BlessingModule = () => {
 
               <button
                 onClick={() => setStatus(null)}
-                className="w-full py-4 mb-3 text-slate-600 font-bold rounded-full transition-all active:scale-[0.98] bg-[#f0eee7] shadow-[6px_6px_14px_rgba(0,0,0,0.09),-6px_-6px_14px_rgba(255,255,255,0.9)] active:shadow-[inset_4px_4px_9px_rgba(0,0,0,0.1),inset_-4px_-4px_9px_rgba(255,255,255,0.8)]"
+                className="w-full py-4 mb-3 text-slate-600 font-bold rounded-full transition-all active:scale-[0.98] bg-clay-surface shadow-clay-md active:shadow-clay-inset-deep"
               >
                 כתבו ברכה נוספת
               </button>
               <button
                 onClick={() => navigate(`/event/${eventId}`)}
                 className="w-full py-4 text-white font-black rounded-full transition-all active:scale-95"
-                style={clayBtn(primaryColor)}
+                style={clayButtonStyle(primaryColor)}
               >
                 חזרה לאירוע
               </button>
@@ -291,7 +279,7 @@ const BlessingModule = () => {
                 >
                   כתבו משהו מהלב
                 </h2>
-                <p className="text-slate-500 text-sm font-medium mt-2">
+                <p className="text-clay-muted text-sm font-medium mt-2">
                   הברכה והתמונה יצורפו לאלבום הדיגיטלי של האירוע
                 </p>
               </div>
@@ -301,7 +289,7 @@ const BlessingModule = () => {
                   <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none z-10">
                     <User
                       size={18}
-                      style={{ color: primaryColor, opacity: 0.7 }}
+                      style={{ color: accentOn(primaryColor), opacity: 0.7 }}
                     />
                   </div>
                   <input
@@ -309,7 +297,7 @@ const BlessingModule = () => {
                     required
                     value={guestName}
                     onChange={(e) => setGuestName(e.target.value)}
-                    className={`${clayFieldCls} pr-12`}
+                    className={`${CLAY_FIELD} pr-12`}
                     placeholder="איך תרצו להופיע באלבום?"
                   />
                 </div>
@@ -320,7 +308,7 @@ const BlessingModule = () => {
                     rows="5"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    className={`${clayFieldCls} resize-none font-medium`}
+                    className={`${CLAY_FIELD} resize-none font-medium`}
                     placeholder="כתבו כאן את הברכה שלכם..."
                   />
                 </div>
@@ -338,11 +326,11 @@ const BlessingModule = () => {
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="w-full py-8 rounded-[1.6rem] flex flex-col items-center justify-center gap-3 transition-all group bg-[#eeece5] shadow-[inset_5px_5px_10px_rgba(0,0,0,0.07),inset_-5px_-5px_10px_rgba(255,255,255,0.85)]"
+                      className="w-full py-8 rounded-[1.6rem] flex flex-col items-center justify-center gap-3 transition-all group bg-clay-well shadow-clay-inset"
                     >
                       <div
                         className="p-4 rounded-full group-hover:scale-110 transition-transform text-white"
-                        style={clayBtn(primaryColor)}
+                        style={clayButtonStyle(primaryColor)}
                       >
                         <UploadCloud size={28} />
                       </div>
@@ -350,13 +338,13 @@ const BlessingModule = () => {
                         <span className="text-sm font-bold block text-slate-700">
                           צרפו תמונת סלפי
                         </span>
-                        <span className="text-xs text-slate-500 font-medium">
+                        <span className="text-xs text-clay-muted font-medium">
                           (רשות, אבל מוסיף המון! 📸)
                         </span>
                       </div>
                     </button>
                   ) : (
-                    <div className="relative rounded-[1.6rem] overflow-hidden h-56 group p-2 bg-[#f0eee7] shadow-[6px_6px_16px_rgba(0,0,0,0.1),-5px_-5px_14px_rgba(255,255,255,0.9)]">
+                    <div className="relative rounded-[1.6rem] overflow-hidden h-56 group p-2 bg-clay-surface shadow-clay-md">
                       <img
                         src={imagePreview}
                         alt="Preview"
@@ -369,7 +357,7 @@ const BlessingModule = () => {
                         type="button"
                         onClick={removeImage}
                         aria-label="הסרת התמונה"
-                        className="absolute top-4 left-4 w-11 h-11 flex items-center justify-center bg-[#f0eee7] text-rose-500 rounded-full active:scale-95 transition-all shadow-[5px_5px_12px_rgba(0,0,0,0.2)]"
+                        className="absolute top-4 left-4 w-11 h-11 flex items-center justify-center bg-clay-surface text-rose-700 rounded-full active:scale-95 transition-all shadow-[5px_5px_12px_rgba(0,0,0,0.2)]"
                       >
                         <X size={22} />
                       </button>
@@ -378,7 +366,7 @@ const BlessingModule = () => {
                 </div>
 
                 {status === "error" && (
-                  <div className="text-rose-600 text-sm text-center font-bold py-4 rounded-[1.2rem] flex items-center justify-center gap-2 bg-[#f0eee7] shadow-[inset_3px_3px_7px_rgba(0,0,0,0.07),inset_-3px_-3px_7px_rgba(255,255,255,0.8)]">
+                  <div className="text-rose-700 text-sm text-center font-bold py-4 rounded-[1.2rem] flex items-center justify-center gap-2 bg-clay-surface shadow-clay-inset">
                     <AlertCircle size={18} />
                     אופס, משהו השתבש בשליחה. אנא נסו שוב.
                   </div>
@@ -398,7 +386,7 @@ const BlessingModule = () => {
                           boxShadow:
                             "inset 4px 4px 9px rgba(0,0,0,0.07), inset -4px -4px 9px rgba(255,255,255,0.85)",
                         }
-                      : { ...clayBtn(primaryColor), color: "#fff" }
+                      : clayButtonStyle(primaryColor)
                   }
                 >
                   {isSubmitting ? (

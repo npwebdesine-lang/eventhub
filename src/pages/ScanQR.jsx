@@ -4,7 +4,8 @@ import { Scanner } from "@yudiel/react-qr-scanner";
 import { QrCode, Sparkles, Keyboard, Loader2, PartyPopper } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import gsap from "gsap";
-import { getLuminance } from "../lib/colors";
+import { buttonPalette } from "../lib/colors";
+import { CLAY_INK_BUTTON, DEFAULT_PRIMARY } from "../lib/clay";
 import { useToast } from "../components/Toast";
 
 const ScanQR = () => {
@@ -87,7 +88,7 @@ const ScanQR = () => {
           id: data.id,
           name: data.name,
           route: targetRoute,
-          colors: data.design_config?.colors || { primary: "#3b82f6" },
+          colors: data.design_config?.colors || { primary: DEFAULT_PRIMARY },
         });
       } else {
         showToast("הקוד שגוי או שהאירוע לא קיים. נסו שוב.", "error");
@@ -109,31 +110,30 @@ const ScanQR = () => {
 
   if (successEvent) {
     const primaryColor = successEvent.colors.primary;
-    const isLightPrimary = getLuminance(primaryColor) > 150;
-    const textColor = isLightPrimary ? "text-slate-900" : "text-white";
-    const subTextColor = isLightPrimary ? "text-slate-700" : "text-white/80";
+    // רקע וטקסט שעוברים 4.5:1 — גם כשצבע האירוע בהיר או בגוון ביניים.
+    const { background, text } = buttonPalette(primaryColor);
 
     return (
       <div
         className="welcome-overlay min-h-screen flex flex-col items-center justify-center p-6 text-center z-50 fixed inset-0 transition-colors duration-500"
-        style={{ backgroundColor: primaryColor }}
+        style={{ backgroundColor: background, color: text }}
         dir="rtl"
       >
         <div className="w-24 h-24 rounded-full flex items-center justify-center mb-8 welcome-text bg-white/20 shadow-[inset_2px_2px_5px_rgba(255,255,255,0.35),inset_-2px_-2px_5px_rgba(0,0,0,0.12),6px_6px_16px_rgba(0,0,0,0.2)]">
-          <PartyPopper size={48} className={textColor} />
+          <PartyPopper size={48} />
         </div>
         <p
-          className={`welcome-text ${subTextColor} font-bold tracking-widest uppercase text-sm mb-3`}
+          className="welcome-text font-bold tracking-widest uppercase text-sm mb-3"
         >
           ברוכים הבאים לאירוע של
         </p>
         <h1
-          className={`welcome-text text-5xl md:text-6xl font-black ${textColor} mb-12 leading-tight drop-shadow-md`}
+          className="welcome-text text-5xl md:text-6xl font-black mb-12 leading-tight drop-shadow-md"
         >
           {successEvent.name}
         </h1>
         <Loader2
-          className={`welcome-text animate-spin ${subTextColor} opacity-60`}
+          className="welcome-text animate-spin opacity-60"
           size={40}
         />
       </div>
@@ -142,35 +142,32 @@ const ScanQR = () => {
 
   return (
     <div
-      className="min-h-screen flex flex-col font-sans"
-      style={{
-        background: "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)",
-      }}
+      className="min-h-screen flex flex-col font-sans bg-clay-gradient"
       dir="rtl"
     >
       <div className="pt-[calc(4rem+env(safe-area-inset-top))] pb-12 px-6 relative z-10 text-center">
-        <div className="inline-flex items-center justify-center p-5 rounded-full mb-6 bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.09),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]">
-          <QrCode size={40} className="text-[#8fa7b8]" />
+        <div className="inline-flex items-center justify-center p-5 rounded-full mb-6 bg-clay-well shadow-clay-inset-deep">
+          <QrCode size={40} className="text-clay-primary" />
         </div>
         <h1 className="text-4xl font-black text-slate-700 mb-2 tracking-tight">
           Eventick
         </h1>
-        <p className="text-slate-500 font-medium flex items-center justify-center gap-2 text-sm">
+        <p className="text-clay-muted font-medium flex items-center justify-center gap-2 text-sm">
           היכנסו לאירוע שלכם <Sparkles size={16} className="text-amber-400" />
         </p>
       </div>
 
       <div className="px-6 relative z-20 w-full max-w-sm mx-auto flex-1 flex flex-col">
-        <div className="bg-[#f0eee7] p-2 rounded-[2.5rem] shadow-[8px_8px_20px_rgba(0,0,0,0.09),-8px_-8px_20px_rgba(255,255,255,0.9)] mb-8 flex flex-col overflow-hidden animate-in zoom-in-95 duration-500">
+        <div className="bg-clay-surface p-2 rounded-clay-lg shadow-clay mb-8 flex flex-col overflow-hidden animate-in zoom-in-95 duration-500">
           {manualMode ? (
             <div className="p-8 text-center">
-              <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.09),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]">
+              <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 bg-clay-well shadow-clay-inset-deep">
                 <Keyboard size={28} className="text-slate-600" />
               </div>
               <h2 className="text-xl font-black text-slate-700 mb-2">
                 הזנת קוד אירוע
               </h2>
-              <p className="text-slate-500 text-sm font-medium mb-6">
+              <p className="text-clay-muted text-sm font-medium mb-6">
                 הקלידו את הקוד המזהה שקיבלתם מבעלי השמחה.
               </p>
               <form onSubmit={handleManualSubmit}>
@@ -179,18 +176,13 @@ const ScanQR = () => {
                   value={manualCode}
                   onChange={(e) => setManualCode(e.target.value.toUpperCase())}
                   placeholder="לדוגמה: 123456"
-                  className="w-full p-4 rounded-[1.4rem] outline-none font-mono text-center text-xl font-black tracking-widest mb-4 text-slate-700 placeholder:text-slate-400 bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.07),inset_-4px_-4px_9px_rgba(255,255,255,0.85)] focus:shadow-[inset_5px_5px_11px_rgba(0,0,0,0.09),inset_-5px_-5px_11px_rgba(255,255,255,0.9)] transition-all"
+                  className="w-full p-4 rounded-clay-field outline-none font-mono text-center text-xl font-black tracking-widest mb-4 text-slate-700 placeholder:text-clay-muted bg-clay-well shadow-clay-inset focus:shadow-clay-inset-deep transition-all"
                   dir="ltr"
                 />
                 <button
                   type="submit"
                   disabled={processing || !manualCode.trim()}
-                  className="w-full text-white font-black py-4 rounded-full active:scale-95 transition-transform flex justify-center items-center gap-2 disabled:opacity-50"
-                  style={{
-                    background: "linear-gradient(145deg, #b6c6ae, #9fb397)",
-                    boxShadow:
-                      "7px 7px 16px rgba(0,0,0,0.12), -6px -6px 14px rgba(255,255,255,0.75), inset 2px 2px 5px rgba(255,255,255,0.35), inset -2px -2px 5px rgba(0,0,0,0.1)",
-                  }}
+                  className={`w-full font-black py-4 rounded-full active:scale-95 flex justify-center items-center gap-2 disabled:opacity-50 ${CLAY_INK_BUTTON}`}
                 >
                   {processing ? (
                     <Loader2 className="animate-spin" size={20} />
@@ -205,7 +197,7 @@ const ScanQR = () => {
               {processing ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/95 z-50">
                   <Loader2
-                    className="animate-spin text-[#8fa7b8] mb-4"
+                    className="animate-spin text-clay-primary mb-4"
                     size={48}
                   />
                   <p className="text-white font-bold">מעבד נתונים...</p>
@@ -235,7 +227,7 @@ const ScanQR = () => {
 
         <button
           onClick={() => setManualMode(!manualMode)}
-          className="mt-auto mb-[calc(2.5rem+env(safe-area-inset-bottom))] w-full py-4 text-slate-400 hover:text-slate-600 font-bold flex justify-center items-center gap-2 transition-colors"
+          className="mt-auto mb-[calc(2.5rem+env(safe-area-inset-bottom))] w-full py-4 text-clay-muted hover:text-slate-600 font-bold flex justify-center items-center gap-2 transition-colors"
         >
           {manualMode ? (
             <>

@@ -6,11 +6,11 @@ const Privacy = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-[#eceadf] p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:p-12 md:pt-[calc(3rem+env(safe-area-inset-top))] font-sans" dir="rtl">
-      <div className="max-w-4xl mx-auto bg-[#f0eee7] p-8 md:p-12 rounded-[2.25rem] shadow-[8px_8px_20px_rgba(0,0,0,0.09),-8px_-8px_20px_rgba(255,255,255,0.9)]">
+    <div className="min-h-screen bg-clay-page p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:p-12 md:pt-[calc(3rem+env(safe-area-inset-top))] font-sans" dir="rtl">
+      <div className="max-w-4xl mx-auto bg-clay-surface p-8 md:p-12 rounded-clay shadow-clay">
         <button
           onClick={() => navigate(-1)}
-          className="mb-8 p-3 rounded-full transition-all text-slate-600 bg-[#e9e6dc] shadow-[3px_3px_7px_rgba(0,0,0,0.08),-3px_-3px_7px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)]"
+          className="mb-8 p-3 rounded-full transition-all text-slate-600 bg-clay-chip shadow-clay-sm active:shadow-clay-pressed"
         >
           <ChevronLeft size={24} />
         </button>
@@ -18,7 +18,7 @@ const Privacy = () => {
         <h1 className="text-3xl md:text-4xl font-black text-slate-800 mb-2">
           מדיניות פרטיות
         </h1>
-        <p className="text-slate-500 font-medium mb-8">
+        <p className="text-clay-muted font-medium mb-8">
           תאריך עדכון אחרון: 7 באפריל 2026
         </p>
 
@@ -110,7 +110,7 @@ const Privacy = () => {
             בכתובת האימייל:{" "}
             <a
               href="mailto:np.web.desine@gmail.com"
-              className="text-indigo-600 font-bold"
+              className="text-indigo-700 font-bold"
             >
               support@eventick.app
             </a>

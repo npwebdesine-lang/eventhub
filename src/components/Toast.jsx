@@ -16,9 +16,9 @@ const ICONS = {
 };
 
 const COLORS = {
-  success: "bg-emerald-500",
-  error: "bg-rose-500",
-  warning: "bg-amber-500",
+  success: "bg-emerald-700",
+  error: "bg-rose-700",
+  warning: "bg-amber-700",
 };
 
 /**

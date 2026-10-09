@@ -25,23 +25,12 @@ import { PhotoGridSkeleton } from "../components/SkeletonCard";
 import gsap from "gsap";
 import { isValidUUIDv4, getOrCreateDeviceId } from "../utils/deviceId";
 import { appendUnique, olderThan, orderNewestFirst } from "../lib/pagination";
+import { CLAY_CARD, CLAY_INSET, DEFAULT_PRIMARY, clayButtonStyle } from "../lib/clay";
+import { accentOn } from "../lib/colors";
 
 const MAX_PHOTOS_PER_GUEST = 3;
 const PAGE_SIZE = 12;
 
-/* ============================================================
-   SOFT-CLAY / NEUMORPHISM DESIGN TOKENS  (shared with Home.jsx)
-   ------------------------------------------------------------ */
-const CLAY_BG = "#eceadf";
-const CLAY_PAGE_BG = "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)";
-const CLAY =
-  "rounded-[2.5rem] bg-[#f0eee7] shadow-[8px_8px_20px_rgba(0,0,0,0.09),-8px_-8px_20px_rgba(255,255,255,0.9)]";
-const CLAY_INSET =
-  "bg-[#eeece5] shadow-[inset_5px_5px_10px_rgba(0,0,0,0.07),inset_-5px_-5px_10px_rgba(255,255,255,0.85)]";
-const clayPrimaryBtn = (primary) => ({
-  backgroundColor: primary,
-  boxShadow: `5px 5px 14px rgba(0,0,0,0.14), -4px -4px 12px rgba(255,255,255,0.7), inset 2px 2px 4px rgba(255,255,255,0.35), inset -2px -2px 4px rgba(0,0,0,0.12)`,
-});
 
 // Relative time helper
 const timeAgo = (dateStr) => {
@@ -380,21 +369,19 @@ const Photos = () => {
   if (loading || !eventData) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center"
-        style={{ background: CLAY_PAGE_BG }}
+        className="min-h-screen flex items-center justify-center bg-clay-gradient"
       >
-        <Loader2 className="animate-spin text-slate-400" size={56} />
+        <Loader2 className="animate-spin text-clay-muted" size={56} />
       </div>
     );
   }
 
-  const primaryColor = eventData.design_config?.colors?.primary || "#8fa7b8";
+  const primaryColor = eventData.design_config?.colors?.primary || DEFAULT_PRIMARY;
   const canUploadMore = myUploadCount < MAX_PHOTOS_PER_GUEST;
 
   return (
     <div
-      className="min-h-screen font-sans pb-20"
-      style={{ background: CLAY_PAGE_BG }}
+      className="min-h-screen font-sans pb-20 bg-clay-gradient"
       dir="rtl"
     >
       {/* Header — clay surface, title + back */}
@@ -404,7 +391,7 @@ const Photos = () => {
             <div className="flex items-center gap-2.5 mb-1">
               <div
                 className="w-11 h-11 rounded-full flex items-center justify-center text-white"
-                style={clayPrimaryBtn(primaryColor)}
+                style={clayButtonStyle(primaryColor)}
               >
                 <Camera size={22} />
               </div>
@@ -415,13 +402,13 @@ const Photos = () => {
                 כל אחד צלם
               </h1>
             </div>
-            <p className="text-slate-400 font-bold text-xs uppercase tracking-widest pr-1">
+            <p className="text-clay-muted font-bold text-xs uppercase tracking-widest pr-1">
               שתפו את הרגעים המיוחדים
             </p>
           </div>
           <button
             onClick={() => navigate(-1)}
-            className="shrink-0 p-3 rounded-full text-slate-500 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
+            className="shrink-0 p-3 rounded-full text-clay-muted bg-clay-surface shadow-clay-md active:shadow-clay-pressed transition-all"
             aria-label="חזרה"
           >
             <ChevronLeft size={24} />
@@ -431,7 +418,7 @@ const Photos = () => {
 
       <div className="px-5 relative z-20 max-w-md mx-auto">
         {/* Upload Card — extruded clay */}
-        <div className={`fade-up-item ${CLAY} p-7 mb-8 text-center`}>
+        <div className={`fade-up-item ${CLAY_CARD} p-7 mb-8 text-center`}>
           {uploadSuccess ? (
             <div
               className="py-8"
@@ -446,7 +433,7 @@ const Photos = () => {
                     "inset 2px 2px 5px rgba(255,255,255,0.5), inset -2px -2px 5px rgba(0,0,0,0.1)",
                 }}
               >
-                <CheckCircle2 size={40} className="text-emerald-500" />
+                <CheckCircle2 size={40} className="text-emerald-800" />
               </div>
               <h3
                 className="font-black text-slate-700 text-xl"
@@ -454,14 +441,14 @@ const Photos = () => {
               >
                 התמונה הועלתה! ✨
               </h3>
-              <p className="text-slate-500 font-medium text-sm mt-2">
+              <p className="text-clay-muted font-medium text-sm mt-2">
                 נוספה בהצלחה לאלבום המשותף
               </p>
             </div>
           ) : (
             <>
-              <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5 bg-[#f0eee7] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.09),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]">
-                <UploadCloud size={32} style={{ color: primaryColor }} />
+              <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5 bg-clay-surface shadow-clay-inset-deep">
+                <UploadCloud size={32} style={{ color: accentOn(primaryColor) }} />
               </div>
               <h2
                 className="text-2xl font-black text-slate-700 mb-2"
@@ -469,14 +456,14 @@ const Photos = () => {
               >
                 צלמו או העלו תמונה
               </h2>
-              <p className="text-slate-500 font-medium text-sm mb-6">
+              <p className="text-clay-muted font-medium text-sm mb-6">
                 <span
                   className="font-black text-lg"
                   style={{
                     color:
                       myUploadCount >= MAX_PHOTOS_PER_GUEST
-                        ? "#f43f5e"
-                        : primaryColor,
+                        ? "#be123c"
+                        : accentOn(primaryColor),
                   }}
                 >
                   {myUploadCount}/{MAX_PHOTOS_PER_GUEST}
@@ -503,7 +490,7 @@ const Photos = () => {
               {canUploadMore ? (
                 <label
                   className="w-full font-black py-4 rounded-full flex justify-center items-center gap-2 cursor-pointer transition-all active:scale-[0.97] text-white"
-                  style={clayPrimaryBtn(primaryColor)}
+                  style={clayButtonStyle(primaryColor)}
                 >
                   {uploading ? (
                     <>
@@ -526,7 +513,7 @@ const Photos = () => {
                   />
                 </label>
               ) : (
-                <div className="text-rose-500 font-bold py-4 rounded-full flex justify-center items-center gap-2 bg-[#f0eee7] shadow-[inset_3px_3px_7px_rgba(0,0,0,0.07),inset_-3px_-3px_7px_rgba(255,255,255,0.8)]">
+                <div className="text-rose-700 font-bold py-4 rounded-full flex justify-center items-center gap-2 bg-clay-surface shadow-clay-inset">
                   <AlertCircle size={20} /> הגעתם למכסה המקסימלית
                 </div>
               )}
@@ -545,13 +532,13 @@ const Photos = () => {
             </h3>
             <Sparkles
               size={18}
-              style={{ color: primaryColor }}
+              style={{ color: accentOn(primaryColor) }}
               className="animate-pulse"
             />
             {photos.length > 0 && (
               <span
                 className="text-white font-black text-sm px-3 py-1.5 rounded-full"
-                style={clayPrimaryBtn(primaryColor)}
+                style={clayButtonStyle(primaryColor)}
               >
                 {photos.length}
               </span>
@@ -561,12 +548,12 @@ const Photos = () => {
           {loading ? (
             <PhotoGridSkeleton count={6} />
           ) : photos.length === 0 && !loadFailed ? (
-            <div className={`text-center py-16 ${CLAY}`}>
+            <div className={`text-center py-16 ${CLAY_CARD}`}>
               <ImageIcon size={52} className="mx-auto mb-4 text-slate-300" />
               <p className="text-slate-600 font-black text-lg mb-2">
                 האלבום עדיין ריק
               </p>
-              <p className="text-slate-500 font-medium text-sm leading-relaxed px-4">
+              <p className="text-clay-muted font-medium text-sm leading-relaxed px-4">
                 היו הראשונים להעלות תמונה ולחלוק רגעים מיוחדים! 📸
               </p>
             </div>
@@ -576,14 +563,14 @@ const Photos = () => {
               {photos.map((photo, idx) => (
                 <div
                   key={photo.id}
-                  className="relative group rounded-[1.8rem] overflow-hidden mb-4 break-inside-avoid cursor-pointer bg-[#f0eee7] shadow-[6px_6px_16px_rgba(0,0,0,0.1),-5px_-5px_14px_rgba(255,255,255,0.9)] transition-transform hover:scale-[1.02]"
+                  className="relative group rounded-[1.8rem] overflow-hidden mb-4 break-inside-avoid cursor-pointer bg-clay-surface shadow-clay-md transition-transform hover:scale-[1.02]"
                   onClick={() => setLightbox(idx)}
                   style={{ breakInside: "avoid", padding: "8px" }}
                 >
                   <img
                     src={photo.image_url}
                     alt={`תמונה של ${photo.guest_name}`}
-                    className="w-full object-cover rounded-[1.4rem] transition-all duration-700 group-hover:scale-105"
+                    className="w-full object-cover rounded-clay-field transition-all duration-700 group-hover:scale-105"
                     loading="lazy"
                     style={{
                       aspectRatio:
@@ -595,14 +582,14 @@ const Photos = () => {
                     }}
                   />
                   {/* Overlay */}
-                  <div className="absolute inset-2 rounded-[1.4rem] bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
+                  <div className="absolute inset-2 rounded-clay-field bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
                     <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                       <div className="flex items-center justify-between mb-1">
                         <p className="text-white text-sm font-black truncate flex items-center gap-1.5">
                           <Heart
                             size={12}
                             className="fill-current"
-                            style={{ color: primaryColor }}
+                            style={{ color: accentOn(primaryColor) }}
                           />
                           {photo.guest_name}
                         </p>
@@ -622,14 +609,14 @@ const Photos = () => {
           {hasMore &&
             (loadFailed ? (
               <div className="flex flex-col items-center gap-3 py-6">
-                <p className="text-slate-500 font-bold text-sm">
+                <p className="text-clay-muted font-bold text-sm">
                   לא הצלחנו לטעון תמונות
                 </p>
                 <button
                   type="button"
                   onClick={() => setLoadFailed(false)}
                   className="font-bold py-3 px-6 rounded-full text-sm text-white active:scale-[0.97] transition-all"
-                  style={clayPrimaryBtn(primaryColor)}
+                  style={clayButtonStyle(primaryColor)}
                 >
                   נסו שוב
                 </button>

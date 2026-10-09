@@ -3,7 +3,6 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { getOrCreateDeviceId, isValidUUIDv4 } from "../utils/deviceId";
 import { safeGetItem, safeSetItem } from "../lib/safeStorage";
-import { getTextColor } from "../lib/colors";
 import { useToast } from "../components/Toast";
 import {
   Loader2,
@@ -18,25 +17,11 @@ import {
   Phone,
 } from "lucide-react";
 import gsap from "gsap";
+import { CLAY_CARD, CLAY_FIELD, CLAY_INSET, DEFAULT_PRIMARY, clayButtonStyle } from "../lib/clay";
+import { accentOn } from "../lib/colors";
 
 const formatDialer = (phone) => `tel:${phone.replace(/\D/g, "")}`;
 
-/* ============================================================
-   SOFT-CLAY / NEUMORPHISM DESIGN TOKENS  (shared across modules)
-   ------------------------------------------------------------ */
-const CLAY_BG = "#eceadf";
-const CLAY_PAGE_BG = "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)";
-const CLAY =
-  "rounded-[2rem] bg-[#f0eee7] shadow-[8px_8px_20px_rgba(0,0,0,0.09),-8px_-8px_20px_rgba(255,255,255,0.9)]";
-const CLAY_INSET =
-  "bg-[#eeece5] shadow-[inset_5px_5px_10px_rgba(0,0,0,0.07),inset_-5px_-5px_10px_rgba(255,255,255,0.85)]";
-const clayBtn = (color) => ({
-  backgroundColor: color,
-  boxShadow: `5px 5px 14px rgba(0,0,0,0.14), -4px -4px 12px rgba(255,255,255,0.7), inset 2px 2px 4px rgba(255,255,255,0.35), inset -2px -2px 4px rgba(0,0,0,0.12)`,
-});
-// A neutral field styled as a debossed well (replaces flat inputs)
-const clayFieldCls =
-  "w-full p-4 rounded-[1.4rem] outline-none font-bold text-slate-700 placeholder:text-slate-400 bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.07),inset_-4px_-4px_9px_rgba(255,255,255,0.85)] focus:shadow-[inset_5px_5px_11px_rgba(0,0,0,0.09),inset_-5px_-5px_11px_rgba(255,255,255,0.9)] transition-all";
 
 // Improved Ride Card — sculpted in clay
 const RideCard = ({ ride, primaryColor }) => {
@@ -45,12 +30,12 @@ const RideCard = ({ ride, primaryColor }) => {
   const cleanPhone = ride.phone?.replace(/\D/g, "").replace(/^0/, "972");
 
   return (
-    <div className={`${CLAY} p-5 flex flex-col gap-3`}>
+    <div className={`${CLAY_CARD} p-5 flex flex-col gap-3`}>
       {/* Header */}
       <div className="flex items-center gap-3">
         <div
           className="w-12 h-12 rounded-[1rem] flex items-center justify-center shrink-0 text-white"
-          style={clayBtn(accentColor)}
+          style={clayButtonStyle(accentColor)}
         >
           <Car size={20} />
         </div>
@@ -61,7 +46,7 @@ const RideCard = ({ ride, primaryColor }) => {
           <span
             className="inline-block text-[10px] font-bold px-2.5 py-1 rounded-full mt-1"
             style={{
-              color: accentColor,
+              color: accentOn(accentColor),
               backgroundColor: "#eeece5",
               boxShadow:
                 "inset 2px 2px 4px rgba(0,0,0,0.06), inset -2px -2px 4px rgba(255,255,255,0.8)",
@@ -76,8 +61,8 @@ const RideCard = ({ ride, primaryColor }) => {
       <div className={`rounded-[1.2rem] p-3.5 space-y-1.5 ${CLAY_INSET}`}>
         {["there", "both"].includes(ride.direction) && ride.from_location && (
           <div className="flex items-center gap-2 text-sm">
-            <ArrowRight size={13} className="text-slate-400 shrink-0" />
-            <span className="text-slate-400 text-xs">הלוך מ:</span>
+            <ArrowRight size={13} className="text-clay-muted shrink-0" />
+            <span className="text-clay-muted text-xs">הלוך מ:</span>
             <span className="font-bold text-slate-600 truncate">
               {ride.from_location}
             </span>
@@ -85,8 +70,8 @@ const RideCard = ({ ride, primaryColor }) => {
         )}
         {["back", "both"].includes(ride.direction) && ride.to_location && (
           <div className="flex items-center gap-2 text-sm">
-            <ChevronLeft size={13} className="text-slate-400 shrink-0" />
-            <span className="text-slate-400 text-xs">חזור ל:</span>
+            <ChevronLeft size={13} className="text-clay-muted shrink-0" />
+            <span className="text-clay-muted text-xs">חזור ל:</span>
             <span className="font-bold text-slate-600 truncate">
               {ride.to_location}
             </span>
@@ -101,13 +86,13 @@ const RideCard = ({ ride, primaryColor }) => {
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center justify-center gap-1.5 text-white active:scale-[0.97] transition-all py-3 rounded-full font-bold text-sm"
-          style={clayBtn("#25D366")}
+          style={clayButtonStyle("#25D366")}
         >
           <MessageCircle size={15} /> WhatsApp
         </a>
         <a
           href={formatDialer(ride.phone)}
-          className="flex items-center justify-center gap-1.5 text-slate-600 active:scale-[0.97] transition-all py-3 rounded-full font-bold text-sm bg-[#f0eee7] shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)]"
+          className="flex items-center justify-center gap-1.5 text-slate-600 active:scale-[0.97] transition-all py-3 rounded-full font-bold text-sm bg-clay-surface shadow-clay-sm active:shadow-clay-pressed"
         >
           <Phone size={15} /> חיוג
         </a>
@@ -294,39 +279,37 @@ const Rideshare = () => {
   if (loading || !eventData) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center"
-        style={{ background: CLAY_PAGE_BG }}
+        className="min-h-screen flex items-center justify-center bg-clay-gradient"
       >
-        <Loader2 className="animate-spin text-slate-400" size={48} />
+        <Loader2 className="animate-spin text-clay-muted" size={48} />
       </div>
     );
   }
 
-  const primaryColor = eventData.design_config?.colors?.primary || "#8fa7b8";
+  const primaryColor = eventData.design_config?.colors?.primary || DEFAULT_PRIMARY;
 
   // ---- Welcome ----
   if (step === "welcome") {
     return (
       <div
-        className="min-h-screen flex flex-col p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] font-sans"
-        style={{ background: CLAY_PAGE_BG }}
+        className="min-h-screen flex flex-col p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] font-sans bg-clay-gradient"
         dir="rtl"
       >
         <button
           onClick={() => navigate(-1)}
-          className="self-end p-3 rounded-full text-slate-500 mb-8 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
+          className="self-end p-3 rounded-full text-clay-muted mb-8 bg-clay-surface shadow-clay-md active:shadow-clay-pressed transition-all"
         >
           <X size={20} />
         </button>
 
         <div className="flex-1 flex flex-col justify-center max-w-sm mx-auto w-full text-center">
-          <div className="w-24 h-24 rounded-[2rem] flex items-center justify-center mx-auto mb-6 bg-[#f0eee7] shadow-[10px_10px_24px_rgba(0,0,0,0.1),-9px_-9px_22px_rgba(255,255,255,0.9)]">
-            <Car size={40} style={{ color: primaryColor }} />
+          <div className="w-24 h-24 rounded-[2rem] flex items-center justify-center mx-auto mb-6 bg-clay-surface shadow-[10px_10px_24px_rgba(0,0,0,0.1),-9px_-9px_22px_rgba(255,255,255,0.9)]">
+            <Car size={40} style={{ color: accentOn(primaryColor) }} />
           </div>
           <h1 className="text-3xl font-black text-slate-700 mb-2">
             לוח טרמפים
           </h1>
-          <p className="text-slate-400 font-medium mb-10 text-sm">
+          <p className="text-clay-muted font-medium mb-10 text-sm">
             שתפו נסיעות — יחד זה יותר כיף
           </p>
 
@@ -334,7 +317,7 @@ const Rideshare = () => {
             <button
               onClick={() => handleRoleSelect("seeker")}
               className="w-full p-5 rounded-[1.8rem] flex items-center justify-between active:scale-[0.98] transition-transform text-white"
-              style={clayBtn(primaryColor)}
+              style={clayButtonStyle(primaryColor)}
             >
               <div>
                 <h3 className="text-lg font-black mb-0.5">
@@ -349,17 +332,17 @@ const Rideshare = () => {
 
             <button
               onClick={() => handleRoleSelect("driver")}
-              className="w-full p-5 rounded-[1.8rem] flex items-center justify-between active:scale-[0.98] transition-transform group text-right bg-[#f0eee7] shadow-[7px_7px_18px_rgba(0,0,0,0.09),-6px_-6px_16px_rgba(255,255,255,0.9)]"
+              className="w-full p-5 rounded-[1.8rem] flex items-center justify-between active:scale-[0.98] transition-transform group text-right bg-clay-surface shadow-clay-md"
             >
               <div>
                 <h3 className="text-lg font-black text-slate-700 mb-0.5">
                   אני מציע/ת טרמפ 🚗
                 </h3>
-                <p className="text-xs font-medium text-slate-400">
+                <p className="text-xs font-medium text-clay-muted">
                   יש לי מקום פנוי ברכב
                 </p>
               </div>
-              <ChevronLeft className="text-slate-300 group-hover:text-slate-500 transition-colors shrink-0" />
+              <ChevronLeft className="text-slate-300 group-hover:text-clay-muted transition-colors shrink-0" />
             </button>
           </div>
 
@@ -368,7 +351,7 @@ const Rideshare = () => {
               setStep("board");
               setBoardTab("driver");
             }}
-            className="mt-7 py-3 min-h-11 text-slate-400 hover:text-slate-600 font-bold text-sm underline underline-offset-4 transition-colors"
+            className="mt-7 py-3 min-h-11 text-clay-muted hover:text-slate-600 font-bold text-sm underline underline-offset-4 transition-colors"
           >
             רק להסתכל על הלוח המלא
           </button>
@@ -382,14 +365,13 @@ const Rideshare = () => {
     const isSeeker = formData.role === "seeker";
     return (
       <div
-        className="min-h-screen flex flex-col font-sans pb-10"
-        style={{ background: CLAY_PAGE_BG }}
+        className="min-h-screen flex flex-col font-sans pb-10 bg-clay-gradient"
         dir="rtl"
       >
         <div className="pt-[calc(2.5rem+env(safe-area-inset-top))] pb-4 px-6 relative z-10 flex justify-between items-center max-w-md mx-auto w-full">
           <button
             onClick={() => setStep("welcome")}
-            className="p-3 rounded-full text-slate-500 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
+            className="p-3 rounded-full text-clay-muted bg-clay-surface shadow-clay-md active:shadow-clay-pressed transition-all"
           >
             <ChevronLeft size={20} />
           </button>
@@ -404,12 +386,12 @@ const Rideshare = () => {
             onSubmit={handleInlineNameSubmit}
             className="px-5 relative z-20 max-w-md mx-auto w-full space-y-4"
           >
-            <div className={`fade-up-item ${CLAY} p-6 space-y-4`}>
+            <div className={`fade-up-item ${CLAY_CARD} p-6 space-y-4`}>
               <h3 className="font-bold text-slate-600 text-sm">
                 בואו נתחיל עם שמך
               </h3>
               <div>
-                <label className="text-xs font-bold text-slate-400 mb-1.5 block">
+                <label className="text-xs font-bold text-clay-muted mb-1.5 block">
                   הכנס שם כדי להשתמש בלוח הטרמפים
                 </label>
                 <input
@@ -419,13 +401,13 @@ const Rideshare = () => {
                   value={tempName}
                   onChange={(e) => setTempName(e.target.value)}
                   placeholder="איך קוראים לך?"
-                  className={clayFieldCls}
+                  className={CLAY_FIELD}
                 />
               </div>
               <button
                 type="submit"
                 className="w-full font-black py-4 rounded-full active:scale-[0.98] transition-all mt-4 text-white"
-                style={clayBtn(primaryColor)}
+                style={clayButtonStyle(primaryColor)}
               >
                 המשך
               </button>
@@ -438,10 +420,10 @@ const Rideshare = () => {
           className="px-5 relative z-20 max-w-md mx-auto w-full space-y-4 mt-2"
         >
           {/* Contact info */}
-          <div className={`fade-up-item ${CLAY} p-6 space-y-4`}>
+          <div className={`fade-up-item ${CLAY_CARD} p-6 space-y-4`}>
             <h3 className="font-bold text-slate-600 text-sm">פרטי התקשרות</h3>
             <div>
-              <label className="text-xs font-bold text-slate-400 mb-1.5 block">
+              <label className="text-xs font-bold text-clay-muted mb-1.5 block">
                 שם מלא
               </label>
               <input
@@ -451,11 +433,11 @@ const Rideshare = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, guest_name: e.target.value })
                 }
-                className={clayFieldCls}
+                className={CLAY_FIELD}
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-slate-400 mb-1.5 block">
+              <label className="text-xs font-bold text-clay-muted mb-1.5 block">
                 טלפון לתיאום
               </label>
               <input
@@ -467,13 +449,13 @@ const Rideshare = () => {
                 onChange={(e) =>
                   setFormData({ ...formData, phone: e.target.value })
                 }
-                className={`${clayFieldCls} text-left`}
+                className={`${CLAY_FIELD} text-left`}
               />
             </div>
           </div>
 
           {/* Direction */}
-          <div className={`fade-up-item ${CLAY} p-6 space-y-3`}>
+          <div className={`fade-up-item ${CLAY_CARD} p-6 space-y-3`}>
             <h3 className="font-bold text-slate-600 text-sm">כיוון נסיעה</h3>
             {[
               {
@@ -496,12 +478,12 @@ const Rideshare = () => {
               return (
                 <label
                   key={opt.value}
-                  className="relative p-4 rounded-[1.4rem] cursor-pointer transition-all flex items-center gap-3 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-slate-500"
+                  className="relative p-4 rounded-clay-field cursor-pointer transition-all flex items-center gap-3 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-slate-500"
                   style={
                     active
-                      ? { ...clayBtn(primaryColor), color: "#fff" }
+                      ? clayButtonStyle(primaryColor)
                       : {
-                          color: "#475569",
+                          color: "var(--color-clay-muted)",
                           backgroundColor: "#eeece5",
                           boxShadow:
                             "inset 4px 4px 9px rgba(0,0,0,0.07), inset -4px -4px 9px rgba(255,255,255,0.85)",
@@ -539,14 +521,14 @@ const Rideshare = () => {
           {/* Locations */}
           {formData.direction && (
             <div
-              className={`fade-up-item ${CLAY} p-6 space-y-4 animate-in slide-in-from-top-2`}
+              className={`fade-up-item ${CLAY_CARD} p-6 space-y-4 animate-in slide-in-from-top-2`}
             >
               <h3 className="font-bold text-slate-600 text-sm">
                 מאיפה / לאיפה?
               </h3>
               {["there", "both"].includes(formData.direction) && (
                 <div>
-                  <label className="text-xs font-bold text-slate-400 mb-1.5 block">
+                  <label className="text-xs font-bold text-clay-muted mb-1.5 block">
                     מאיפה בהלוך?
                   </label>
                   <div className="relative">
@@ -565,14 +547,14 @@ const Rideshare = () => {
                         })
                       }
                       placeholder="עיר, שכונה או צומת"
-                      className={`${clayFieldCls} pr-11`}
+                      className={`${CLAY_FIELD} pr-11`}
                     />
                   </div>
                 </div>
               )}
               {["back", "both"].includes(formData.direction) && (
                 <div>
-                  <label className="text-xs font-bold text-slate-400 mb-1.5 block">
+                  <label className="text-xs font-bold text-clay-muted mb-1.5 block">
                     לאן בחזור?
                   </label>
                   <div className="relative">
@@ -591,7 +573,7 @@ const Rideshare = () => {
                         })
                       }
                       placeholder="עיר, שכונה או צומת"
-                      className={`${clayFieldCls} pr-11`}
+                      className={`${CLAY_FIELD} pr-11`}
                     />
                   </div>
                 </div>
@@ -603,7 +585,7 @@ const Rideshare = () => {
             type="submit"
             disabled={isSubmitting}
             className="w-full font-black py-5 rounded-full flex justify-center items-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50 mt-4 mb-8 text-white"
-            style={clayBtn(primaryColor)}
+            style={clayButtonStyle(primaryColor)}
           >
             {isSubmitting ? (
               <>
@@ -622,19 +604,18 @@ const Rideshare = () => {
   if (step === "match") {
     return (
       <div
-        className="min-h-screen p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] flex flex-col font-sans"
-        style={{ background: CLAY_PAGE_BG }}
+        className="min-h-screen p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] flex flex-col font-sans bg-clay-gradient"
         dir="rtl"
       >
         <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full text-center">
           <div
             className="inline-flex items-center justify-center w-24 h-24 rounded-full mx-auto mb-5 text-white"
-            style={clayBtn(primaryColor)}
+            style={clayButtonStyle(primaryColor)}
           >
             <Sparkles size={44} className="animate-pulse" />
           </div>
           <h2 className="text-4xl font-black text-slate-700 mb-2">יש התאמה!</h2>
-          <p className="font-medium mb-8 text-slate-500">
+          <p className="font-medium mb-8 text-clay-muted">
             מצאנו אנשים שכבר פרסמו מודעה לאותו אזור:
           </p>
 
@@ -654,7 +635,7 @@ const Rideshare = () => {
             setBoardTab(formData.role === "driver" ? "seeker" : "driver");
             setStep("board");
           }}
-          className="w-full font-bold py-5 rounded-full transition-all active:scale-[0.98] text-slate-600 bg-[#f0eee7] shadow-[6px_6px_16px_rgba(0,0,0,0.09),-6px_-6px_16px_rgba(255,255,255,0.9)] active:shadow-[inset_4px_4px_9px_rgba(0,0,0,0.1),inset_-4px_-4px_9px_rgba(255,255,255,0.8)]"
+          className="w-full font-bold py-5 rounded-full transition-all active:scale-[0.98] text-slate-600 bg-clay-surface shadow-[6px_6px_16px_rgba(0,0,0,0.09),-6px_-6px_16px_rgba(255,255,255,0.9)] active:shadow-clay-inset-deep"
         >
           המשך ללוח הטרמפים המלא
         </button>
@@ -665,14 +646,13 @@ const Rideshare = () => {
   // ---- Board ----
   return (
     <div
-      className="min-h-screen font-sans pb-12"
-      style={{ background: CLAY_PAGE_BG }}
+      className="min-h-screen font-sans pb-12 bg-clay-gradient"
       dir="rtl"
     >
       <div className="pt-[calc(2.5rem+env(safe-area-inset-top))] pb-4 px-6 relative z-10 flex justify-between items-center max-w-md mx-auto w-full">
         <button
           onClick={() => navigate(-1)}
-          className="p-3 rounded-full text-slate-500 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
+          className="p-3 rounded-full text-clay-muted bg-clay-surface shadow-clay-md active:shadow-clay-pressed transition-all"
         >
           <ChevronLeft size={20} />
         </button>
@@ -680,7 +660,7 @@ const Rideshare = () => {
         <button
           onClick={() => setStep("welcome")}
           className="text-xs font-bold px-4 min-h-11 rounded-full transition-all text-white"
-          style={clayBtn(primaryColor)}
+          style={clayButtonStyle(primaryColor)}
         >
           + מודעה
         </button>
@@ -701,8 +681,8 @@ const Rideshare = () => {
                 className="flex-1 py-3 font-bold text-sm rounded-full transition-all"
                 style={
                   active
-                    ? { ...clayBtn(primaryColor), color: "#fff" }
-                    : { color: "#64748b" }
+                    ? clayButtonStyle(primaryColor)
+                    : { color: "var(--color-clay-muted)" }
                 }
               >
                 {tab.label}
@@ -714,12 +694,12 @@ const Rideshare = () => {
         {/* Rides list */}
         <div className="space-y-4">
           {rides.filter((r) => r.role === boardTab).length === 0 ? (
-            <div className={`fade-up-item text-center py-14 ${CLAY}`}>
+            <div className={`fade-up-item text-center py-14 ${CLAY_CARD}`}>
               <AlertCircle size={36} className="mx-auto mb-4 text-slate-300" />
               <h3 className="text-base font-bold text-slate-600 mb-1">
                 הלוח עדיין ריק
               </h3>
-              <p className="text-slate-400 text-sm">
+              <p className="text-clay-muted text-sm">
                 {boardTab === "driver"
                   ? "היו הראשונים להציע טרמפ!"
                   : "היו הראשונים לחפש טרמפ!"}

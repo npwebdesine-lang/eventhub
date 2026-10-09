@@ -20,6 +20,8 @@ import {
   Users,
 } from "lucide-react";
 import gsap from "gsap";
+import { CLAY_FIELD, CLAY_RAISED, DEFAULT_PRIMARY, clayButtonStyle } from "../lib/clay";
+import { accentOn } from "../lib/colors";
 
 const PROFILES_PAGE = 20;
 const MESSAGES_LIMIT = 50;
@@ -59,20 +61,6 @@ const mergeWithPending = (prev, serverRows) => {
   return unchanged ? prev : next;
 };
 
-/* ============================================================
-   SOFT-CLAY / NEUMORPHISM DESIGN TOKENS  (shared across modules)
-   ------------------------------------------------------------ */
-const CLAY_BG = "#eceadf";
-const CLAY_PAGE_BG = "linear-gradient(160deg, #eceadf 0%, #e2ddd0 100%)";
-const clayBtn = (color) => ({
-  backgroundColor: color,
-  boxShadow: `5px 5px 14px rgba(0,0,0,0.14), -4px -4px 12px rgba(255,255,255,0.7), inset 2px 2px 4px rgba(255,255,255,0.35), inset -2px -2px 4px rgba(0,0,0,0.12)`,
-});
-const clayRaised =
-  "bg-[#f0eee7] shadow-[8px_8px_20px_rgba(0,0,0,0.09),-8px_-8px_20px_rgba(255,255,255,0.9)]";
-// Debossed field (input / select / textarea) carved into the clay surface
-const clayFieldCls =
-  "w-full p-4 rounded-[1.4rem] outline-none font-bold text-slate-700 placeholder:text-slate-400 bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.07),inset_-4px_-4px_9px_rgba(255,255,255,0.85)] focus:shadow-[inset_5px_5px_11px_rgba(0,0,0,0.09),inset_-5px_-5px_11px_rgba(255,255,255,0.9)] transition-all";
 
 const Dating = () => {
   const [searchParams] = useSearchParams();
@@ -491,41 +479,39 @@ const Dating = () => {
   if (view === "loading" || !eventData) {
     return (
       <div
-        className="min-h-screen flex justify-center items-center"
-        style={{ background: CLAY_PAGE_BG }}
+        className="min-h-screen flex justify-center items-center bg-clay-gradient"
       >
         <Loader2 className="animate-spin text-rose-400" size={48} />
       </div>
     );
   }
 
-  const primaryColor = eventData.design_config?.colors?.primary || "#f43f5e";
+  const primaryColor = eventData.design_config?.colors?.primary || DEFAULT_PRIMARY;
 
   // ---- Registration ----
   if (view === "register") {
     return (
       <div
-        className="min-h-screen flex flex-col font-sans pb-10"
-        style={{ background: CLAY_PAGE_BG }}
+        className="min-h-screen flex flex-col font-sans pb-10 bg-clay-gradient"
         dir="rtl"
       >
         <div className="pt-[calc(3rem+env(safe-area-inset-top))] pb-6 px-6 relative z-10 text-center max-w-md mx-auto w-full">
           <button
             onClick={() => navigate(-1)}
-            className="absolute right-6 top-[calc(2.5rem+env(safe-area-inset-top))] p-3 rounded-full text-slate-500 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
+            className="absolute right-6 top-[calc(2.5rem+env(safe-area-inset-top))] p-3 rounded-full text-clay-muted bg-clay-surface shadow-clay-md active:shadow-clay-pressed transition-all"
           >
             <ChevronLeft size={24} />
           </button>
           <div
-            className="inline-flex items-center justify-center w-16 h-16 rounded-[1.4rem] mb-4 text-white"
-            style={clayBtn(primaryColor)}
+            className="inline-flex items-center justify-center w-16 h-16 rounded-clay-field mb-4 text-white"
+            style={clayButtonStyle(primaryColor)}
           >
             <Heart style={{ fill: "currentColor" }} size={30} />
           </div>
           <h1 className="text-3xl font-black mb-1 text-slate-700">
             היי {guestName}!
           </h1>
-          <p className="font-medium text-slate-400 text-sm">
+          <p className="font-medium text-clay-muted text-sm">
             ספר/י לנו קצת על עצמך
           </p>
 
@@ -553,7 +539,7 @@ const Dating = () => {
           ref={formRef}
           className="px-5 relative z-20 w-full max-w-md mx-auto"
         >
-          <div className={`p-8 rounded-[2.5rem] ${clayRaised}`}>
+          <div className={`p-8 rounded-clay-lg ${CLAY_RAISED}`}>
             {regStep === 1 && (
               <div className="space-y-5">
                 <h2 className="text-xl font-black text-slate-700 mb-4">
@@ -563,7 +549,7 @@ const Dating = () => {
                   <div>
                     <label
                       className="text-xs font-bold mb-1.5 block"
-                      style={{ color: primaryColor }}
+                      style={{ color: accentOn(primaryColor) }}
                     >
                       גיל
                     </label>
@@ -573,14 +559,14 @@ const Dating = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, age: e.target.value })
                       }
-                      className={clayFieldCls}
+                      className={CLAY_FIELD}
                       placeholder="24"
                     />
                   </div>
                   <div>
                     <label
                       className="text-xs font-bold mb-1.5 block"
-                      style={{ color: primaryColor }}
+                      style={{ color: accentOn(primaryColor) }}
                     >
                       אני
                     </label>
@@ -589,7 +575,7 @@ const Dating = () => {
                       onChange={(e) =>
                         setFormData({ ...formData, gender: e.target.value })
                       }
-                      className={clayFieldCls}
+                      className={CLAY_FIELD}
                     >
                       <option>זכר</option>
                       <option>נקבה</option>
@@ -599,7 +585,7 @@ const Dating = () => {
                 <div>
                   <label
                     className="text-xs font-bold mb-1.5 block"
-                    style={{ color: primaryColor }}
+                    style={{ color: accentOn(primaryColor) }}
                   >
                     ומחפש/ת...
                   </label>
@@ -608,7 +594,7 @@ const Dating = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, seeking: e.target.value })
                     }
-                    className={clayFieldCls}
+                    className={CLAY_FIELD}
                   >
                     <option>נקבה</option>
                     <option>זכר</option>
@@ -619,7 +605,7 @@ const Dating = () => {
                   onClick={() => setRegStep(2)}
                   disabled={!formData.age}
                   className="w-full py-4 rounded-full font-black mt-4 transition-all active:scale-[0.98] disabled:opacity-50 text-white"
-                  style={clayBtn(primaryColor)}
+                  style={clayButtonStyle(primaryColor)}
                 >
                   המשך
                 </button>
@@ -634,7 +620,7 @@ const Dating = () => {
                 <div>
                   <label
                     className="text-xs font-bold mb-1.5 block"
-                    style={{ color: primaryColor }}
+                    style={{ color: accentOn(primaryColor) }}
                   >
                     הקשר לבעלי השמחה
                   </label>
@@ -644,14 +630,14 @@ const Dating = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, connection: e.target.value })
                     }
-                    className={clayFieldCls}
+                    className={CLAY_FIELD}
                     placeholder="חבר מהצבא, בן דוד..."
                   />
                 </div>
                 <div>
                   <label
                     className="text-xs font-bold mb-1.5 block"
-                    style={{ color: primaryColor }}
+                    style={{ color: accentOn(primaryColor) }}
                   >
                     מיקום באירוע
                   </label>
@@ -661,14 +647,14 @@ const Dating = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, location: e.target.value })
                     }
-                    className={clayFieldCls}
+                    className={CLAY_FIELD}
                     placeholder="ליד הבר / שולחן 10"
                   />
                 </div>
                 <div>
                   <label
                     className="text-xs font-bold mb-1.5 block"
-                    style={{ color: primaryColor }}
+                    style={{ color: accentOn(primaryColor) }}
                   >
                     משפט מחץ (Bio)
                   </label>
@@ -677,21 +663,21 @@ const Dating = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, bio: e.target.value })
                     }
-                    className={`${clayFieldCls} h-20 resize-none`}
+                    className={`${CLAY_FIELD} h-20 resize-none`}
                     placeholder="משהו מעניין עליכם..."
                   />
                 </div>
                 <div className="flex gap-3 mt-4">
                   <button
                     onClick={() => setRegStep(1)}
-                    className="text-slate-600 px-6 py-4 rounded-full font-bold transition-all active:scale-[0.98] bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)]"
+                    className="text-slate-600 px-6 py-4 rounded-full font-bold transition-all active:scale-[0.98] bg-clay-surface shadow-clay-md active:shadow-clay-pressed"
                   >
                     חזור
                   </button>
                   <button
                     onClick={() => setRegStep(3)}
                     className="flex-1 py-4 rounded-full font-black transition-all active:scale-[0.98] text-white"
-                    style={clayBtn(primaryColor)}
+                    style={clayButtonStyle(primaryColor)}
                   >
                     המשך
                   </button>
@@ -704,11 +690,11 @@ const Dating = () => {
                 <h2 className="text-xl font-black text-slate-700 mb-2">
                   תמונה מנצחת
                 </h2>
-                <p className="text-slate-400 text-sm">
+                <p className="text-clay-muted text-sm">
                   תמונה טובה מגדילה משמעותית את הסיכויים!
                 </p>
                 <label className="relative cursor-pointer inline-block">
-                  <div className="w-40 h-40 rounded-[2rem] flex items-center justify-center overflow-hidden mx-auto p-2 bg-[#eeece5] shadow-[inset_5px_5px_11px_rgba(0,0,0,0.1),inset_-5px_-5px_11px_rgba(255,255,255,0.85)]">
+                  <div className="w-40 h-40 rounded-[2rem] flex items-center justify-center overflow-hidden mx-auto p-2 bg-clay-well shadow-clay-inset-deep">
                     {formData.photo_url ? (
                       <img
                         src={formData.photo_url}
@@ -722,7 +708,7 @@ const Dating = () => {
                       <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
                         <Loader2
                           className="animate-spin"
-                          style={{ color: primaryColor }}
+                          style={{ color: accentOn(primaryColor) }}
                         />
                       </div>
                     )}
@@ -739,7 +725,7 @@ const Dating = () => {
                     onClick={handleSaveProfile}
                     disabled={isSavingProfile}
                     className="w-full py-5 rounded-full font-black text-xl transition-all active:scale-[0.98] disabled:opacity-60 text-white"
-                    style={clayBtn(primaryColor)}
+                    style={clayButtonStyle(primaryColor)}
                   >
                     {isSavingProfile ? (
                       <Loader2 className="animate-spin mx-auto" size={24} />
@@ -749,7 +735,7 @@ const Dating = () => {
                   </button>
                   <button
                     onClick={() => setRegStep(2)}
-                    className="text-slate-400 font-bold text-sm hover:text-slate-600 transition-colors min-h-11 py-3"
+                    className="text-clay-muted font-bold text-sm hover:text-slate-600 transition-colors min-h-11 py-3"
                   >
                     חזור
                   </button>
@@ -767,15 +753,14 @@ const Dating = () => {
     const hasUnread = Object.values(unreadCounts).some((c) => c > 0);
     return (
       <div
-        className="min-h-screen flex flex-col font-sans pb-10"
-        style={{ background: CLAY_PAGE_BG }}
+        className="min-h-screen flex flex-col font-sans pb-10 bg-clay-gradient"
         dir="rtl"
       >
         <div className="pt-[calc(2.5rem+env(safe-area-inset-top))] pb-4 px-6 relative z-10 max-w-md mx-auto w-full">
           <div className="flex justify-between items-center mb-5">
             <button
               onClick={() => navigate(-1)}
-              className="p-3 rounded-full text-slate-500 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
+              className="p-3 rounded-full text-clay-muted bg-clay-surface shadow-clay-md active:shadow-clay-pressed transition-all"
             >
               <ChevronLeft size={20} />
             </button>
@@ -783,7 +768,7 @@ const Dating = () => {
               Daitline{" "}
               <Heart
                 size={18}
-                style={{ fill: primaryColor, color: primaryColor }}
+                style={{ fill: primaryColor, color: accentOn(primaryColor) }}
               />
             </h1>
             <button
@@ -791,7 +776,7 @@ const Dating = () => {
                 setRegStep(1);
                 setView("register");
               }}
-              className="p-3 rounded-full text-slate-500 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
+              className="p-3 rounded-full text-clay-muted bg-clay-surface shadow-clay-md active:shadow-clay-pressed transition-all"
               title="ערוך פרופיל"
             >
               <User size={20} />
@@ -799,14 +784,14 @@ const Dating = () => {
           </div>
 
           {/* Tab switcher — segmented control in a debossed track */}
-          <div className="flex p-1.5 rounded-full max-w-sm mx-auto bg-[#eeece5] shadow-[inset_5px_5px_10px_rgba(0,0,0,0.07),inset_-5px_-5px_10px_rgba(255,255,255,0.85)]">
+          <div className="flex p-1.5 rounded-full max-w-sm mx-auto bg-clay-well shadow-clay-inset">
             <button
               onClick={() => setView("gallery")}
               className="flex-1 py-3 rounded-full font-bold text-sm transition-all"
               style={
                 view === "gallery"
-                  ? { ...clayBtn(primaryColor), color: "#fff" }
-                  : { color: "#64748b" }
+                  ? clayButtonStyle(primaryColor)
+                  : { color: "var(--color-clay-muted)" }
               }
             >
               התאמות
@@ -816,13 +801,13 @@ const Dating = () => {
               className="flex-1 py-3 rounded-full font-bold text-sm transition-all relative"
               style={
                 view === "chatList"
-                  ? { ...clayBtn(primaryColor), color: "#fff" }
-                  : { color: "#64748b" }
+                  ? clayButtonStyle(primaryColor)
+                  : { color: "var(--color-clay-muted)" }
               }
             >
               הודעות
               {hasUnread && (
-                <span className="absolute top-2 left-4 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#eeece5] animate-pulse" />
+                <span className="absolute top-2 left-4 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-clay-well animate-pulse" />
               )}
             </button>
           </div>
@@ -837,11 +822,11 @@ const Dating = () => {
             {profiles.length === 0 ? (
               <div className="w-full flex flex-col items-center justify-center mt-16 gap-4">
                 <div
-                  className={`w-24 h-24 rounded-full flex items-center justify-center ${clayRaised}`}
+                  className={`w-24 h-24 rounded-full flex items-center justify-center ${CLAY_RAISED}`}
                 >
                   <Users size={44} className="text-slate-300" />
                 </div>
-                <p className="font-bold text-slate-400 text-center text-sm px-8">
+                <p className="font-bold text-clay-muted text-center text-sm px-8">
                   אין כרגע התאמות.
                   <br />
                   בדקו שוב מאוחר יותר!
@@ -851,7 +836,7 @@ const Dating = () => {
               profiles.map((p) => (
                 <div
                   key={p.id}
-                  className="profile-card snap-center shrink-0 w-[82vw] max-w-[340px] rounded-[2.5rem] overflow-hidden relative flex flex-col p-2.5 bg-[#f0eee7] shadow-[10px_10px_30px_rgba(0,0,0,0.15),-8px_-8px_22px_rgba(255,255,255,0.9)]"
+                  className="profile-card snap-center shrink-0 w-[82vw] max-w-[340px] rounded-clay-lg overflow-hidden relative flex flex-col p-2.5 bg-clay-surface shadow-[10px_10px_30px_rgba(0,0,0,0.15),-8px_-8px_22px_rgba(255,255,255,0.9)]"
                   style={{ height: "65vh", maxHeight: 600 }}
                 >
                   <div className="relative flex-1 rounded-[2rem] overflow-hidden">
@@ -892,7 +877,7 @@ const Dating = () => {
                           </h3>
                           <p
                             className="text-sm font-bold mt-0.5"
-                            style={{ color: primaryColor }}
+                            style={{ color: accentOn(primaryColor) }}
                           >
                             {p.connection || ""}
                           </p>
@@ -900,7 +885,7 @@ const Dating = () => {
                         <button
                           onClick={() => openChat(p)}
                           className="w-14 h-14 rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-transform text-white"
-                          style={clayBtn(primaryColor)}
+                          style={clayButtonStyle(primaryColor)}
                         >
                           <MessageCircle size={22} />
                         </button>
@@ -936,15 +921,15 @@ const Dating = () => {
         {view === "chatList" && (
           <div className="flex-1 px-5 relative z-20 space-y-3 max-w-md mx-auto w-full pt-2">
             {chatHistory.length === 0 ? (
-              <div className={`text-center py-16 rounded-[2rem] ${clayRaised}`}>
+              <div className={`text-center py-16 rounded-[2rem] ${CLAY_RAISED}`}>
                 <MessageSquare
                   size={48}
                   className="mx-auto mb-4 text-slate-300"
                 />
-                <p className="font-bold text-slate-400 text-sm">
+                <p className="font-bold text-clay-muted text-sm">
                   אין עדיין שיחות פעילות.
                 </p>
-                <p className="text-slate-300 text-xs mt-1">
+                <p className="text-clay-muted text-xs mt-1">
                   שלחו הודעה למישהו מהגלריה!
                 </p>
               </div>
@@ -953,9 +938,9 @@ const Dating = () => {
                 <div
                   key={p.id}
                   onClick={() => openChat(p)}
-                  className={`chat-item rounded-[1.6rem] p-4 flex items-center gap-4 cursor-pointer active:scale-[0.99] transition-all ${clayRaised}`}
+                  className={`chat-item rounded-[1.6rem] p-4 flex items-center gap-4 cursor-pointer active:scale-[0.99] transition-all ${CLAY_RAISED}`}
                 >
-                  <div className="w-14 h-14 rounded-full overflow-hidden bg-[#eeece5] relative shrink-0 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.12),inset_-2px_-2px_5px_rgba(255,255,255,0.7)]">
+                  <div className="w-14 h-14 rounded-full overflow-hidden bg-clay-well relative shrink-0 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.12),inset_-2px_-2px_5px_rgba(255,255,255,0.7)]">
                     {p.photo_url ? (
                       <img
                         src={p.photo_url}
@@ -969,16 +954,16 @@ const Dating = () => {
                       />
                     )}
                     {unreadCounts[p.guest_id] > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full border-2 border-[#f0eee7]" />
+                      <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full border-2 border-clay-surface" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-black text-slate-700 truncate">
                       {p.name || ""}, {p.age}
                     </h3>
-                    <p className="text-xs text-slate-400 font-medium truncate mt-0.5">
+                    <p className="text-xs text-clay-muted font-medium truncate mt-0.5">
                       {unreadCounts[p.guest_id] > 0 ? (
-                        <span className="text-rose-500 font-bold">
+                        <span className="text-rose-700 font-bold">
                           {unreadCounts[p.guest_id]} הודעות חדשות
                         </span>
                       ) : (
@@ -1000,21 +985,20 @@ const Dating = () => {
   if (view === "chat") {
     return (
       <div
-        className="h-viewport flex flex-col font-sans"
-        style={{ background: CLAY_PAGE_BG }}
+        className="h-viewport flex flex-col font-sans bg-clay-gradient"
         dir="rtl"
       >
-        <header className="p-4 flex items-center gap-3 shrink-0 z-10 mx-3 mt-[calc(0.75rem+env(safe-area-inset-top))] rounded-[1.8rem] bg-[#f0eee7] shadow-[7px_7px_18px_rgba(0,0,0,0.09),-6px_-6px_16px_rgba(255,255,255,0.9)]">
+        <header className="p-4 flex items-center gap-3 shrink-0 z-10 mx-3 mt-[calc(0.75rem+env(safe-area-inset-top))] rounded-[1.8rem] bg-clay-surface shadow-clay-md">
           <button
             onClick={() => {
               setView("chatList");
               if (myProfile) loadGalleryData(myProfile);
             }}
-            className="w-11 h-11 flex items-center justify-center rounded-full text-slate-500 shrink-0 bg-[#f0eee7] shadow-[4px_4px_9px_rgba(0,0,0,0.09),-4px_-4px_9px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)] transition-all"
+            className="w-11 h-11 flex items-center justify-center rounded-full text-clay-muted shrink-0 bg-clay-surface shadow-clay-md active:shadow-clay-pressed transition-all"
           >
             <ChevronLeft size={22} />
           </button>
-          <div className="w-11 h-11 rounded-full overflow-hidden bg-[#eeece5] shrink-0 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.12),inset_-2px_-2px_5px_rgba(255,255,255,0.7)]">
+          <div className="w-11 h-11 rounded-full overflow-hidden bg-clay-well shrink-0 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.12),inset_-2px_-2px_5px_rgba(255,255,255,0.7)]">
             {activeChat.photo_url ? (
               <img
                 src={activeChat.photo_url}
@@ -1030,7 +1014,7 @@ const Dating = () => {
               {activeChat.name || ""}
             </h2>
             {activeChat.location && (
-              <span className="text-[11px] font-bold text-slate-400">
+              <span className="text-[11px] font-bold text-clay-muted">
                 📍 {activeChat.location}
               </span>
             )}
@@ -1039,7 +1023,7 @@ const Dating = () => {
             onClick={() =>
               handleReportAndBlock(activeChat.guest_id, activeChat.name)
             }
-            className="text-xs font-bold px-3 min-h-11 rounded-full transition-all flex items-center gap-1 shrink-0 text-slate-500 bg-[#f0eee7] shadow-[4px_4px_9px_rgba(0,0,0,0.09),-4px_-4px_9px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)]"
+            className="text-xs font-bold px-3 min-h-11 rounded-full transition-all flex items-center gap-1 shrink-0 text-clay-muted bg-clay-surface shadow-clay-md active:shadow-clay-pressed"
           >
             <ShieldAlert size={13} /> חסום
           </button>
@@ -1054,7 +1038,7 @@ const Dating = () => {
           {messages.length === 0 && (
             <div className="text-center py-10">
               <Sparkles size={32} className="mx-auto mb-3 text-slate-300" />
-              <p className="text-slate-400 text-sm font-medium">
+              <p className="text-clay-muted text-sm font-medium">
                 התחלה של שיחה חדשה!
                 <br />
                 שלחו הודעה ראשונה.
@@ -1073,8 +1057,7 @@ const Dating = () => {
                   style={
                     isMine
                       ? {
-                          ...clayBtn(primaryColor),
-                          color: "#fff",
+                          ...clayButtonStyle(primaryColor),
                           borderTopRightRadius: "0.5rem",
                         }
                       : {
@@ -1108,13 +1091,13 @@ const Dating = () => {
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="כתבו הודעה..."
-            className="flex-1 p-4 rounded-full outline-none text-slate-700 font-medium text-base bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.07),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]"
+            className="flex-1 p-4 rounded-full outline-none text-slate-700 font-medium text-base bg-clay-well shadow-clay-inset"
           />
           <button
             type="submit"
             disabled={!newMessage.trim() || isSending}
             className="w-[52px] h-[52px] rounded-full flex items-center justify-center disabled:opacity-40 active:scale-95 transition-all text-white shrink-0"
-            style={clayBtn(primaryColor)}
+            style={clayButtonStyle(primaryColor)}
           >
             {isSending ? (
               <Loader2 size={18} className="animate-spin" />
