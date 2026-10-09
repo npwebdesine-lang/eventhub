@@ -483,7 +483,7 @@ const Icebreaker = () => {
       >
         <button
           onClick={() => navigate(-1)}
-          className="absolute right-6 top-8 p-3 rounded-full z-10 text-slate-500 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
+          className="absolute right-6 top-[calc(2rem+env(safe-area-inset-top))] p-3 rounded-full z-10 text-slate-500 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
         >
           <ChevronLeft size={24} />
         </button>
@@ -533,7 +533,6 @@ const Icebreaker = () => {
               <input
                 type="file"
                 accept="image/*"
-                capture="user"
                 onChange={handleProfilePhotoUpload}
                 className="hidden"
               />
@@ -599,7 +598,7 @@ const Icebreaker = () => {
         style={{ background: CLAY_PAGE_BG }}
         dir="rtl"
       >
-        <header className="p-5 flex justify-between items-center z-10 mx-3 mt-3 rounded-[1.8rem] bg-[#f0eee7] shadow-[7px_7px_18px_rgba(0,0,0,0.09),-6px_-6px_16px_rgba(255,255,255,0.9)]">
+        <header className="p-5 flex justify-between items-center z-10 mx-3 mt-[calc(0.75rem+env(safe-area-inset-top))] rounded-[1.8rem] bg-[#f0eee7] shadow-[7px_7px_18px_rgba(0,0,0,0.09),-6px_-6px_16px_rgba(255,255,255,0.9)]">
           <button
             onClick={() => setView("hub")}
             className="p-2.5 rounded-full text-slate-500 bg-[#f0eee7] shadow-[4px_4px_9px_rgba(0,0,0,0.09),-4px_-4px_9px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)] transition-all"
@@ -660,7 +659,6 @@ const Icebreaker = () => {
             <input
               type="file"
               accept="image/*"
-              capture="environment"
               ref={proofInputRef}
               onChange={handleProofUpload}
               className="hidden"
@@ -697,7 +695,7 @@ const Icebreaker = () => {
       style={{ background: CLAY_PAGE_BG }}
       dir="rtl"
     >
-      <div className="pt-12 pb-6 px-6 relative z-10 flex justify-between items-center max-w-md mx-auto w-full">
+      <div className="pt-[calc(3rem+env(safe-area-inset-top))] pb-6 px-6 relative z-10 flex justify-between items-center max-w-md mx-auto w-full">
         <button
           onClick={() => navigate(-1)}
           className="p-3 rounded-full text-slate-500 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
@@ -812,10 +810,11 @@ const Icebreaker = () => {
                     <span>בוצע בשטח 🎯</span>
                     <button
                       onClick={() => handleReport(match.id)}
-                      className="text-slate-300 hover:text-rose-400 transition-colors"
+                      className="w-11 h-11 -my-3 flex items-center justify-center rounded-full text-slate-400 hover:text-rose-400 transition-colors"
                       title="דווח"
+                      aria-label="דיווח על תוכן פוגעני"
                     >
-                      <AlertCircle size={13} />
+                      <AlertCircle size={16} />
                     </button>
                   </div>
                   <span dir="ltr">

@@ -308,7 +308,7 @@ const Rideshare = () => {
   if (step === "welcome") {
     return (
       <div
-        className="min-h-screen flex flex-col p-6 font-sans"
+        className="min-h-screen flex flex-col p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] font-sans"
         style={{ background: CLAY_PAGE_BG }}
         dir="rtl"
       >
@@ -368,7 +368,7 @@ const Rideshare = () => {
               setStep("board");
               setBoardTab("driver");
             }}
-            className="mt-10 text-slate-400 hover:text-slate-600 font-bold text-sm underline underline-offset-4 transition-colors"
+            className="mt-7 py-3 min-h-11 text-slate-400 hover:text-slate-600 font-bold text-sm underline underline-offset-4 transition-colors"
           >
             רק להסתכל על הלוח המלא
           </button>
@@ -386,7 +386,7 @@ const Rideshare = () => {
         style={{ background: CLAY_PAGE_BG }}
         dir="rtl"
       >
-        <div className="pt-10 pb-4 px-6 relative z-10 flex justify-between items-center max-w-md mx-auto w-full">
+        <div className="pt-[calc(2.5rem+env(safe-area-inset-top))] pb-4 px-6 relative z-10 flex justify-between items-center max-w-md mx-auto w-full">
           <button
             onClick={() => setStep("welcome")}
             className="p-3 rounded-full text-slate-500 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
@@ -622,7 +622,7 @@ const Rideshare = () => {
   if (step === "match") {
     return (
       <div
-        className="min-h-screen p-6 flex flex-col font-sans"
+        className="min-h-screen p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] flex flex-col font-sans"
         style={{ background: CLAY_PAGE_BG }}
         dir="rtl"
       >
@@ -669,7 +669,7 @@ const Rideshare = () => {
       style={{ background: CLAY_PAGE_BG }}
       dir="rtl"
     >
-      <div className="pt-10 pb-4 px-6 relative z-10 flex justify-between items-center max-w-md mx-auto w-full">
+      <div className="pt-[calc(2.5rem+env(safe-area-inset-top))] pb-4 px-6 relative z-10 flex justify-between items-center max-w-md mx-auto w-full">
         <button
           onClick={() => navigate(-1)}
           className="p-3 rounded-full text-slate-500 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
@@ -679,7 +679,7 @@ const Rideshare = () => {
         <h1 className="text-2xl font-black text-slate-700">הלוח המרכזי</h1>
         <button
           onClick={() => setStep("welcome")}
-          className="text-xs font-bold px-4 py-2.5 rounded-full transition-all text-white"
+          className="text-xs font-bold px-4 min-h-11 rounded-full transition-all text-white"
           style={clayBtn(primaryColor)}
         >
           + מודעה

@@ -206,7 +206,7 @@ const BlessingModule = () => {
       {/* Header — clay surface */}
       <div
         ref={headerRef}
-        className="pt-14 pb-6 px-6 relative z-10 max-w-md mx-auto w-full"
+        className="pt-[calc(3.5rem+env(safe-area-inset-top))] pb-6 px-6 relative z-10 max-w-md mx-auto w-full"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -362,15 +362,17 @@ const BlessingModule = () => {
                         alt="Preview"
                         className="w-full h-full object-cover rounded-[1.2rem] hover:scale-105 transition-transform duration-700"
                       />
-                      <div className="absolute inset-2 rounded-[1.2rem] bg-slate-900/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <button
-                          type="button"
-                          onClick={removeImage}
-                          className="bg-[#f0eee7] text-rose-500 p-4 rounded-full transform hover:scale-110 transition-all shadow-[5px_5px_12px_rgba(0,0,0,0.2)]"
-                        >
-                          <X size={24} />
-                        </button>
-                      </div>
+                      {/* ההכהיה היא קישוט בלבד. כפתור ההסרה גלוי תמיד — במסך מגע
+                          אין hover, ובלי זה אי אפשר היה להסיר תמונה שנבחרה. */}
+                      <div className="pointer-events-none absolute inset-2 rounded-[1.2rem] bg-slate-900/30 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <button
+                        type="button"
+                        onClick={removeImage}
+                        aria-label="הסרת התמונה"
+                        className="absolute top-4 left-4 w-11 h-11 flex items-center justify-center bg-[#f0eee7] text-rose-500 rounded-full active:scale-95 transition-all shadow-[5px_5px_12px_rgba(0,0,0,0.2)]"
+                      >
+                        <X size={22} />
+                      </button>
                     </div>
                   )}
                 </div>

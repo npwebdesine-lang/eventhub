@@ -127,7 +127,7 @@ const DietaryPicker = ({
           aria-pressed={active}
           onClick={() => onChange(option.value)}
           className={`flex items-center gap-1.5 rounded-full font-bold transition-all disabled:opacity-50 ${
-            compact ? "px-3 py-1.5 text-xs" : "px-4 py-2.5 text-sm"
+            compact ? "min-h-11 px-3.5 text-xs" : "min-h-11 px-4 text-sm"
           } ${
             active
               ? "text-white active:scale-95"
@@ -719,7 +719,7 @@ const Invite = () => {
     if (template === "elegant") {
       return (
         <div
-          className="min-h-screen flex flex-col items-center p-6 text-center relative overflow-hidden"
+          className="min-h-screen flex flex-col items-center p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] text-center relative overflow-hidden"
           style={{ background: CLAY_PAGE_BG }}
           dir="rtl"
         >
@@ -857,7 +857,7 @@ const Invite = () => {
     if (template === "corporate") {
       return (
         <div
-          className="min-h-screen flex flex-col items-center p-6 text-center relative overflow-hidden"
+          className="min-h-screen flex flex-col items-center p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] text-center relative overflow-hidden"
           style={{ background: CLAY_PAGE_BG }}
           dir="rtl"
         >
@@ -981,7 +981,7 @@ const Invite = () => {
 
     return (
       <div
-        className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden text-center"
+        className="min-h-screen flex flex-col items-center justify-center p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] relative overflow-hidden text-center"
         style={{ background: CLAY_PAGE_BG }}
         dir="rtl"
       >
@@ -1128,7 +1128,7 @@ const Invite = () => {
       {/* פופ-אפ אישורי הגעה רב שלבי */}
       {showRsvp && (
         <div
-          className="fixed inset-0 bg-[rgba(74,82,89,0.28)] z-[100] flex items-end md:items-center justify-center animate-in fade-in"
+          className="fixed inset-0 bg-[rgba(74,82,89,0.28)] z-[100] flex items-end md:items-center justify-center pt-[max(1rem,env(safe-area-inset-top))] md:pb-[max(1rem,env(safe-area-inset-bottom))] animate-in fade-in"
           dir="rtl"
           role="dialog"
           aria-modal="true"
@@ -1138,7 +1138,7 @@ const Invite = () => {
           }}
         >
           <div
-            className="bg-[#e8e4da] w-full max-w-lg md:rounded-[2.5rem] rounded-t-[38px] p-6 md:p-8 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-[0_-14px_40px_rgba(0,0,0,0.16)] relative max-h-[90vh] overflow-y-auto hide-scrollbar"
+            className="bg-[#e8e4da] w-full max-w-lg md:rounded-[2.5rem] rounded-t-[38px] p-6 md:p-8 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-[0_-14px_40px_rgba(0,0,0,0.16)] relative max-h-full overflow-y-auto hide-scrollbar"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Grab handle */}
@@ -1146,7 +1146,7 @@ const Invite = () => {
             {rsvpStep !== 4 && (
               <button
                 onClick={() => setShowRsvp(false)}
-                className="absolute top-6 right-6 p-2 rounded-full text-slate-500 z-10 bg-[#e9e6dc] shadow-[3px_3px_7px_rgba(0,0,0,0.08),-3px_-3px_7px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)] transition-all"
+                className="absolute top-5 right-5 w-11 h-11 flex items-center justify-center rounded-full text-slate-500 z-10 bg-[#e9e6dc] shadow-[3px_3px_7px_rgba(0,0,0,0.08),-3px_-3px_7px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)] transition-all"
                 aria-label="סגור"
               >
                 <X size={20} />
@@ -1237,7 +1237,7 @@ const Invite = () => {
                                 onClick={() => removeCompanion(companion.id)}
                                 disabled={companionBusy}
                                 aria-label={`הסרת ${companion.guest_name}`}
-                                className="rounded-full p-1.5 text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-500 disabled:opacity-50"
+                                className="w-11 h-11 -m-1.5 shrink-0 flex items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-500 disabled:opacity-50"
                               >
                                 <X size={16} />
                               </button>
@@ -1352,12 +1352,12 @@ const Invite = () => {
             {rsvpStep === 2 && (
               <form
                 onSubmit={handleVerifyBeforeSubmit}
-                className="step-anim pt-4"
+                className="step-anim pt-10"
               >
                 <button
                   type="button"
                   onClick={() => setRsvpStep(1)}
-                  className="flex items-center gap-1 text-slate-400 hover:text-slate-600 font-bold mb-6 text-sm transition-colors"
+                  className="flex items-center gap-1 min-h-11 px-1 text-slate-400 hover:text-slate-600 font-bold mb-4 text-sm transition-colors"
                 >
                   <ChevronRight size={16} /> חזור
                 </button>

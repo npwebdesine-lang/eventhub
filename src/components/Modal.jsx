@@ -77,7 +77,7 @@ export default function Modal({
 
   return (
     <div
-      className={`fixed inset-0 z-[100] flex justify-center ${alignment} bg-[rgba(74,82,89,0.35)] sm:p-4`}
+      className={`fixed inset-0 z-[100] flex justify-center ${alignment} bg-[rgba(74,82,89,0.35)] pt-[max(1rem,env(safe-area-inset-top))] sm:p-4 sm:pt-[max(1rem,env(safe-area-inset-top))]`}
       onClick={onClose}
       dir="rtl"
     >
@@ -88,7 +88,7 @@ export default function Modal({
         aria-modal="true"
         aria-label={typeof title === "string" ? title : undefined}
         onClick={(e) => e.stopPropagation()}
-        className={`relative w-full ${SIZES[size] || SIZES.md} bg-[#e8e4da] shadow-[0_-14px_40px_rgba(0,0,0,0.16),0_14px_40px_rgba(0,0,0,0.12)] flex flex-col max-h-[90vh] overflow-hidden outline-none ${radius} ${className}`}
+        className={`relative w-full ${SIZES[size] || SIZES.md} bg-[#e8e4da] shadow-[0_-14px_40px_rgba(0,0,0,0.16),0_14px_40px_rgba(0,0,0,0.12)] flex flex-col max-h-full overflow-hidden outline-none ${radius} ${className}`}
       >
         {(title || !hideClose) && (
           <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[#dcd7ca] shrink-0">
@@ -100,7 +100,7 @@ export default function Modal({
                 type="button"
                 onClick={onClose}
                 aria-label="סגור"
-                className="p-2 rounded-full text-slate-400 hover:text-slate-700 hover:bg-[#e0dccf] transition active:scale-95 shrink-0"
+                className="w-11 h-11 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 hover:bg-[#e0dccf] transition active:scale-95 shrink-0"
               >
                 <X size={20} />
               </button>

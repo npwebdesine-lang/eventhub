@@ -451,11 +451,14 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
   return (
     <div
       dir="rtl"
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 p-4"
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]"
     >
-      <div className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-[3rem] bg-[#f0eee7] shadow-2xl animate-in zoom-in-95">
-        <div className="flex shrink-0 items-center justify-between border-b border-[#e4e0d5] p-6 md:p-8">
-          <div>
+      <div className="flex max-h-full w-full max-w-5xl flex-col overflow-hidden rounded-[3rem] bg-[#f0eee7] shadow-2xl animate-in zoom-in-95">
+        {/* במובייל: כותרת + סגירה בשורה הראשונה, ייבוא/ייצוא ברוחב מלא
+            בשורה השנייה. מ-md חוזרים לשורה אחת. בלי ה-wrap הכפתורים בגודל
+            מגע (44px) חרגו מהמסך ב-360px. */}
+        <div className="flex shrink-0 flex-wrap items-start gap-x-4 gap-y-3 border-b border-[#e4e0d5] p-5 md:items-center md:p-8">
+          <div className="min-w-0 flex-1">
             <h2 className="text-2xl font-black text-slate-800">
               רשימת מוזמנים
             </h2>
@@ -469,27 +472,28 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
               )}
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="order-3 flex w-full gap-3 md:order-2 md:w-auto">
             <button
               onClick={() => setImportOpen((open) => !open)}
-              className={`${CLAY_RAISED} flex items-center gap-2 rounded-xl bg-[#f0eee7] px-4 py-2 font-bold text-slate-700`}
+              className={`${CLAY_RAISED} flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#f0eee7] px-4 min-h-11 font-bold text-slate-700 md:flex-none`}
             >
               <Upload size={18} /> ייבוא
             </button>
             <button
               onClick={exportToCSV}
               disabled={filtered.length === 0}
-              className={`${CLAY_RAISED} flex items-center gap-2 rounded-xl bg-[#f0eee7] px-4 py-2 font-bold text-slate-700 disabled:opacity-50`}
+              className={`${CLAY_RAISED} flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#f0eee7] px-4 min-h-11 font-bold text-slate-700 disabled:opacity-50 md:flex-none`}
             >
               <Download size={18} /> ייצוא
             </button>
-            <button
-              onClick={onClose}
-              className="rounded-full p-2 text-slate-500 transition-colors hover:bg-slate-200"
-            >
-              <X size={24} />
-            </button>
           </div>
+          <button
+            onClick={onClose}
+            aria-label="סגור"
+            className="order-2 w-11 h-11 shrink-0 flex items-center justify-center rounded-full text-slate-500 transition-colors hover:bg-slate-200 md:order-3"
+          >
+            <X size={24} />
+          </button>
         </div>
 
         {/* --- תצוגה מקדימה של קובץ: מחליפה את אזור הייבוא עד אישור/ביטול --- */}
@@ -524,7 +528,7 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                 <button
                   onClick={resetFileImport}
                   disabled={importing}
-                  className={`${CLAY_RAISED} rounded-xl bg-[#f0eee7] px-4 py-2 font-bold text-slate-600 disabled:opacity-50`}
+                  className={`${CLAY_RAISED} rounded-xl bg-[#f0eee7] px-4 min-h-11 font-bold text-slate-600 disabled:opacity-50`}
                 >
                   ביטול
                 </button>
@@ -716,7 +720,7 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`rounded-2xl bg-[#f0eee7] px-4 py-2 text-sm font-bold transition-all ${
+              className={`rounded-2xl bg-[#f0eee7] px-4 min-h-11 text-sm font-bold transition-all ${
                 activeTab === tab.key
                   ? `${CLAY_INSET} text-slate-800`
                   : `${CLAY_RAISED} text-slate-500`
@@ -771,7 +775,7 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                             }
                             maxLength={100}
                             aria-label="שם המוזמן"
-                            className={`${CLAY_INSET} w-full rounded-xl bg-[#f0eee7] px-3 py-1.5 text-sm font-bold text-slate-700 focus:outline-none`}
+                            className={`${CLAY_INSET} w-full rounded-xl bg-[#f0eee7] px-3 min-h-11 text-sm font-bold text-slate-700 focus:outline-none`}
                           />
                         </td>
                         <td className="px-3 py-3">
@@ -784,7 +788,7 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                             dir="ltr"
                             placeholder="050-0000000"
                             aria-label="טלפון"
-                            className={`${CLAY_INSET} w-full rounded-xl bg-[#f0eee7] px-3 py-1.5 text-right text-sm text-slate-600 placeholder:text-slate-400 focus:outline-none`}
+                            className={`${CLAY_INSET} w-full rounded-xl bg-[#f0eee7] px-3 min-h-11 text-right text-sm text-slate-600 placeholder:text-slate-400 focus:outline-none`}
                           />
                           {/* טלפון משותף = הגיעו יחד. הסימון הוא הרמז היחיד
                               לקיבוץ אחרי שכל אדם הפך לשורה עצמאית. */}
@@ -804,7 +808,7 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                               saveField(guest, "status", event.target.value)
                             }
                             aria-label="סטטוס"
-                            className={`w-full rounded-lg px-2.5 py-1.5 text-xs font-bold focus:outline-none ${STATUS_BADGE[guest.status]}`}
+                            className={`w-full rounded-lg px-2.5 min-h-11 text-xs font-bold focus:outline-none ${STATUS_BADGE[guest.status]}`}
                           >
                             {Object.entries(STATUS_LABEL).map(
                               ([key, label]) => (
@@ -830,7 +834,7 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                               )
                             }
                             aria-label="כמות אורחים"
-                            className={`${CLAY_INSET} w-16 rounded-xl bg-[#f0eee7] px-2 py-1.5 text-center text-sm font-bold text-slate-700 focus:outline-none`}
+                            className={`${CLAY_INSET} w-16 rounded-xl bg-[#f0eee7] px-2 min-h-11 text-center text-sm font-bold text-slate-700 focus:outline-none`}
                           />
                         </td>
                         <td className="px-3 py-3">
@@ -840,7 +844,7 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                               saveField(guest, "dietary", event.target.value)
                             }
                             aria-label={`העדפת תזונה עבור ${guest.guest_name}`}
-                            className={`${CLAY_INSET} w-full rounded-xl bg-[#f0eee7] px-3 py-1.5 text-sm text-slate-600 focus:outline-none`}
+                            className={`${CLAY_INSET} w-full rounded-xl bg-[#f0eee7] px-3 min-h-11 text-sm text-slate-600 focus:outline-none`}
                           >
                             {DIETARY_OPTIONS.map((option) => (
                               <option key={option.value} value={option.value}>
@@ -859,7 +863,7 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                             maxLength={500}
                             placeholder="הוסף הערה..."
                             aria-label="הערות"
-                            className={`${CLAY_INSET} w-full rounded-xl bg-[#f0eee7] px-3 py-1.5 text-sm text-slate-600 placeholder:text-slate-400 focus:outline-none`}
+                            className={`${CLAY_INSET} w-full rounded-xl bg-[#f0eee7] px-3 min-h-11 text-sm text-slate-600 placeholder:text-slate-400 focus:outline-none`}
                           />
                         </td>
                         <td className="px-3 py-3">
@@ -872,7 +876,7 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                               rel="noopener noreferrer"
                               onClick={() => markSent(guest.id)}
                               aria-label={`שליחת וואטסאפ אל ${guest.guest_name}`}
-                              className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-bold transition-all ${
+                              className={`flex items-center gap-1.5 rounded-xl px-3 min-h-11 text-sm font-bold transition-all ${
                                 sentIds.has(guest.id)
                                   ? `${CLAY_INSET} bg-[#f0eee7] text-slate-400`
                                   : `${CLAY_RAISED} bg-emerald-500 text-white hover:bg-emerald-600`
@@ -895,7 +899,7 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                                 markSent(guest.id);
                               }}
                               title="אין טלפון תקין — העתקת ההודעה"
-                              className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-bold transition-all ${
+                              className={`flex items-center gap-1.5 rounded-xl px-3 min-h-11 text-sm font-bold transition-all ${
                                 sentIds.has(guest.id)
                                   ? `${CLAY_INSET} bg-[#f0eee7] text-slate-400`
                                   : `${CLAY_RAISED} bg-[#f0eee7] text-slate-600`
@@ -912,7 +916,7 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                           {confirmingDeleteId === guest.id ? (
                             <button
                               onClick={() => confirmDelete(guest)}
-                              className="flex items-center gap-1.5 rounded-xl bg-rose-500 px-3 py-1.5 text-sm font-bold text-white transition-colors hover:bg-rose-600"
+                              className="flex items-center gap-1.5 rounded-xl bg-rose-500 px-3 min-h-11 text-sm font-bold text-white transition-colors hover:bg-rose-600"
                             >
                               <Trash2 size={16} /> לאשר?
                             </button>
@@ -920,7 +924,7 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                             <button
                               onClick={() => requestDelete(guest.id)}
                               aria-label={`מחיקת ${guest.guest_name}`}
-                              className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-bold text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-500"
+                              className="flex items-center gap-1.5 rounded-xl px-3 min-h-11 text-sm font-bold text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-500"
                             >
                               <Trash2 size={16} /> מחק
                             </button>

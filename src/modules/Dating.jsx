@@ -509,10 +509,10 @@ const Dating = () => {
         style={{ background: CLAY_PAGE_BG }}
         dir="rtl"
       >
-        <div className="pt-12 pb-6 px-6 relative z-10 text-center max-w-md mx-auto w-full">
+        <div className="pt-[calc(3rem+env(safe-area-inset-top))] pb-6 px-6 relative z-10 text-center max-w-md mx-auto w-full">
           <button
             onClick={() => navigate(-1)}
-            className="absolute right-6 top-10 p-3 rounded-full text-slate-500 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
+            className="absolute right-6 top-[calc(2.5rem+env(safe-area-inset-top))] p-3 rounded-full text-slate-500 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
           >
             <ChevronLeft size={24} />
           </button>
@@ -749,7 +749,7 @@ const Dating = () => {
                   </button>
                   <button
                     onClick={() => setRegStep(2)}
-                    className="text-slate-400 font-bold text-sm hover:text-slate-600 transition-colors"
+                    className="text-slate-400 font-bold text-sm hover:text-slate-600 transition-colors min-h-11 py-3"
                   >
                     חזור
                   </button>
@@ -771,7 +771,7 @@ const Dating = () => {
         style={{ background: CLAY_PAGE_BG }}
         dir="rtl"
       >
-        <div className="pt-10 pb-4 px-6 relative z-10 max-w-md mx-auto w-full">
+        <div className="pt-[calc(2.5rem+env(safe-area-inset-top))] pb-4 px-6 relative z-10 max-w-md mx-auto w-full">
           <div className="flex justify-between items-center mb-5">
             <button
               onClick={() => navigate(-1)}
@@ -877,7 +877,7 @@ const Dating = () => {
                     {/* Report button */}
                     <button
                       onClick={() => handleReportAndBlock(p.guest_id, p.name)}
-                      className="absolute top-4 left-4 bg-black/30 hover:bg-black/50 text-white/70 hover:text-white p-2 rounded-full transition-colors z-10"
+                      className="absolute top-4 left-4 bg-black/30 hover:bg-black/50 text-white/70 hover:text-white w-11 h-11 flex items-center justify-center rounded-full transition-colors z-10"
                       title="חסום ודווח"
                     >
                       <ShieldAlert size={17} />
@@ -1000,17 +1000,17 @@ const Dating = () => {
   if (view === "chat") {
     return (
       <div
-        className="min-h-screen flex flex-col h-[100dvh] font-sans"
+        className="h-viewport flex flex-col font-sans"
         style={{ background: CLAY_PAGE_BG }}
         dir="rtl"
       >
-        <header className="p-4 flex items-center gap-3 shrink-0 z-10 mx-3 mt-3 rounded-[1.8rem] bg-[#f0eee7] shadow-[7px_7px_18px_rgba(0,0,0,0.09),-6px_-6px_16px_rgba(255,255,255,0.9)]">
+        <header className="p-4 flex items-center gap-3 shrink-0 z-10 mx-3 mt-[calc(0.75rem+env(safe-area-inset-top))] rounded-[1.8rem] bg-[#f0eee7] shadow-[7px_7px_18px_rgba(0,0,0,0.09),-6px_-6px_16px_rgba(255,255,255,0.9)]">
           <button
             onClick={() => {
               setView("chatList");
               if (myProfile) loadGalleryData(myProfile);
             }}
-            className="p-2.5 rounded-full text-slate-500 shrink-0 bg-[#f0eee7] shadow-[4px_4px_9px_rgba(0,0,0,0.09),-4px_-4px_9px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)] transition-all"
+            className="w-11 h-11 flex items-center justify-center rounded-full text-slate-500 shrink-0 bg-[#f0eee7] shadow-[4px_4px_9px_rgba(0,0,0,0.09),-4px_-4px_9px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)] transition-all"
           >
             <ChevronLeft size={22} />
           </button>
@@ -1039,7 +1039,7 @@ const Dating = () => {
             onClick={() =>
               handleReportAndBlock(activeChat.guest_id, activeChat.name)
             }
-            className="text-xs font-bold px-3 py-2 rounded-full transition-all flex items-center gap-1 shrink-0 text-slate-500 bg-[#f0eee7] shadow-[4px_4px_9px_rgba(0,0,0,0.09),-4px_-4px_9px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)]"
+            className="text-xs font-bold px-3 min-h-11 rounded-full transition-all flex items-center gap-1 shrink-0 text-slate-500 bg-[#f0eee7] shadow-[4px_4px_9px_rgba(0,0,0,0.09),-4px_-4px_9px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)]"
           >
             <ShieldAlert size={13} /> חסום
           </button>
@@ -1102,7 +1102,7 @@ const Dating = () => {
         </div>
 
         {/* Input */}
-        <form onSubmit={sendMessage} className="p-4 flex gap-3 shrink-0 pb-6">
+        <form onSubmit={sendMessage} className="p-4 flex gap-3 shrink-0 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
           <input
             type="text"
             value={newMessage}

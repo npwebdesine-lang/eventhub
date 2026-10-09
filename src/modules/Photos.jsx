@@ -398,7 +398,7 @@ const Photos = () => {
       dir="rtl"
     >
       {/* Header — clay surface, title + back */}
-      <div className="pt-14 pb-6 px-5 relative z-10 max-w-md mx-auto">
+      <div className="pt-[calc(3.5rem+env(safe-area-inset-top))] pb-6 px-5 relative z-10 max-w-md mx-auto">
         <div className="flex items-center justify-between">
           <div className="text-right">
             <div className="flex items-center gap-2.5 mb-1">
@@ -514,10 +514,12 @@ const Photos = () => {
                       <Camera size={22} /> צלם / גלריה
                     </>
                   )}
+                  {/* בלי capture: הכפתור מבטיח "צלם / גלריה", ו-capture פותח
+                      במובייל את המצלמה ישירות בלי אפשרות לבחור מהגלריה.
+                      בלעדיו מערכת ההפעלה מציגה בורר עם שתי האפשרויות. */}
                   <input
                     type="file"
                     accept="image/*"
-                    capture="environment"
                     onChange={handleFileUpload}
                     disabled={uploading}
                     className="hidden"
@@ -652,7 +654,7 @@ const Photos = () => {
           aria-label="תצוגת תמונה"
         >
           {/* Header bar */}
-          <div className="absolute top-0 left-0 right-0 p-8 flex justify-between items-center z-50 bg-gradient-to-b from-black/70 via-black/40 to-transparent pointer-events-none">
+          <div className="absolute top-0 left-0 right-0 p-8 pt-[calc(2rem+env(safe-area-inset-top))] flex justify-between items-center z-50 bg-gradient-to-b from-black/70 via-black/40 to-transparent pointer-events-none">
             <div className="pointer-events-auto">
               <p className="text-white/60 text-xs font-bold uppercase tracking-widest mb-1">
                 צולם ע"י
@@ -674,7 +676,7 @@ const Photos = () => {
           </div>
 
           {/* Counter & Download */}
-          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-4 text-white/70 text-sm font-bold bg-black/40 px-6 py-3 rounded-full">
+          <div className="absolute bottom-[calc(2rem+env(safe-area-inset-bottom))] left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-2 text-white/70 text-sm font-bold bg-black/40 ps-6 pe-2 py-1 rounded-full">
             <span>
               {lightbox + 1} / {photos.length}
             </span>
@@ -683,7 +685,7 @@ const Photos = () => {
                 e.stopPropagation();
                 handleDownload(photos[lightbox].image_url);
               }}
-              className="text-white/60 hover:text-white transition-colors flex items-center gap-1.5"
+              className="text-white/60 hover:text-white transition-colors flex items-center gap-1.5 min-h-11 px-3 rounded-full"
               title="הורד תמונה"
             >
               <Download size={18} /> הורד
@@ -693,7 +695,7 @@ const Photos = () => {
                 e.stopPropagation();
                 handleReport(photos[lightbox].id);
               }}
-              className="text-white/60 hover:text-white transition-colors flex items-center gap-1.5"
+              className="text-white/60 hover:text-white transition-colors flex items-center gap-1.5 min-h-11 px-3 rounded-full"
               aria-label="דיווח על תמונה פוגענית"
             >
               <Flag size={18} /> דווח
@@ -707,7 +709,7 @@ const Photos = () => {
           >
             {lightbox > 0 && (
               <button
-                className="absolute right-6 md:right-12 z-50 text-white/40 hover:text-white bg-white/10 hover:bg-white/20 p-5 rounded-full transition-all group"
+                className="absolute right-[max(1.5rem,env(safe-area-inset-right))] md:right-12 z-50 text-white/40 hover:text-white bg-white/10 hover:bg-white/20 p-5 rounded-full transition-all group"
                 onClick={(e) => {
                   e.stopPropagation();
                   lightboxGo(-1);
@@ -724,13 +726,13 @@ const Photos = () => {
             <img
               src={photos[lightbox].image_url}
               alt="תמונה מוגדלת"
-              className="max-w-full max-h-[85vh] object-contain rounded-[2rem] shadow-[0_0_80px_rgba(0,0,0,0.7)] animate-in zoom-in-95 duration-300"
+              className="max-w-full max-h-[85%] object-contain rounded-[2rem] shadow-[0_0_80px_rgba(0,0,0,0.7)] animate-in zoom-in-95 duration-300"
               onClick={(e) => e.stopPropagation()}
             />
 
             {lightbox < photos.length - 1 && (
               <button
-                className="absolute left-6 md:left-12 z-50 text-white/40 hover:text-white bg-white/10 hover:bg-white/20 p-5 rounded-full transition-all group"
+                className="absolute left-[max(1.5rem,env(safe-area-inset-left))] md:left-12 z-50 text-white/40 hover:text-white bg-white/10 hover:bg-white/20 p-5 rounded-full transition-all group"
                 onClick={(e) => {
                   e.stopPropagation();
                   lightboxGo(1);

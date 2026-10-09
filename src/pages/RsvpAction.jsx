@@ -225,7 +225,7 @@ export default function RsvpAction() {
       <div
         dir="rtl"
         style={clayVars(null)}
-        className="min-h-screen flex items-center justify-center p-6 bg-[var(--clay-surface)]"
+        className="min-h-screen flex items-center justify-center p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] bg-[var(--clay-surface)]"
       >
         <div className={`${CLAY_CARD} w-full max-w-md p-10 text-center`}>
           <div
@@ -244,7 +244,7 @@ export default function RsvpAction() {
     <div
       dir="rtl"
       style={styleVars}
-      className="min-h-screen flex items-center justify-center p-6 bg-[var(--clay-surface)]"
+      className="min-h-screen flex items-center justify-center p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] bg-[var(--clay-surface)]"
     >
       <div className={`${CLAY_CARD} relative w-full max-w-md p-9 text-center`}>
         {confirmed && (
@@ -330,7 +330,7 @@ export default function RsvpAction() {
                       onClick={() => changeDietary(option.value)}
                       disabled={saving}
                       aria-pressed={active}
-                      className={`flex items-center gap-1.5 rounded-2xl bg-[var(--clay-surface)] px-3.5 py-2 text-sm font-semibold transition-all disabled:opacity-60 ${
+                      className={`flex items-center gap-1.5 rounded-2xl bg-[var(--clay-surface)] min-h-11 px-3.5 text-sm font-semibold transition-all disabled:opacity-60 ${
                         active
                           ? `${CLAY_INSET} text-slate-800`
                           : `${CLAY_BUTTON} text-slate-500`
@@ -361,7 +361,7 @@ export default function RsvpAction() {
             type="button"
             onClick={flipStatus}
             disabled={saving}
-            className="text-sm font-semibold text-slate-500 underline-offset-4 hover:underline disabled:opacity-50"
+            className="min-h-11 py-3 text-sm font-semibold text-slate-500 underline-offset-4 hover:underline disabled:opacity-50"
           >
             {confirmed ? "טעות? עבור לביטול" : "שינית את דעתך? אשר הגעה"}
           </button>

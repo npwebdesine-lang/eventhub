@@ -148,7 +148,7 @@ const ScanQR = () => {
       }}
       dir="rtl"
     >
-      <div className="pt-16 pb-12 px-6 relative z-10 text-center">
+      <div className="pt-[calc(4rem+env(safe-area-inset-top))] pb-12 px-6 relative z-10 text-center">
         <div className="inline-flex items-center justify-center p-5 rounded-full mb-6 bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.09),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]">
           <QrCode size={40} className="text-[#8fa7b8]" />
         </div>
@@ -235,7 +235,7 @@ const ScanQR = () => {
 
         <button
           onClick={() => setManualMode(!manualMode)}
-          className="mt-auto mb-10 w-full py-4 text-slate-400 hover:text-slate-600 font-bold flex justify-center items-center gap-2 transition-colors"
+          className="mt-auto mb-[calc(2.5rem+env(safe-area-inset-bottom))] w-full py-4 text-slate-400 hover:text-slate-600 font-bold flex justify-center items-center gap-2 transition-colors"
         >
           {manualMode ? (
             <>

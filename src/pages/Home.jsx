@@ -133,7 +133,7 @@ const PhotoMarqueeCard = ({
     <div className={`${CLAY} flex flex-col overflow-hidden group`}>
       <button
         onClick={(e) => openInfo(e, "photo")}
-        className="absolute top-4 left-4 text-slate-400 hover:text-slate-600 z-20 p-2.5 rounded-full bg-[#f0eee7] shadow-[3px_3px_7px_rgba(0,0,0,0.09),-3px_-3px_7px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)] transition-all"
+        className="absolute top-4 left-4 text-slate-400 hover:text-slate-600 z-20 w-11 h-11 flex items-center justify-center rounded-full bg-[#f0eee7] shadow-[3px_3px_7px_rgba(0,0,0,0.09),-3px_-3px_7px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)] transition-all"
         aria-label="מידע"
       >
         <Info size={18} />
@@ -216,7 +216,7 @@ const ActionModuleCard = ({
     >
       <button
         onClick={(e) => openInfo(e, mKey)}
-        className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 z-10 p-2 rounded-full bg-[#f0eee7] shadow-[2px_2px_6px_rgba(0,0,0,0.08),-2px_-2px_6px_rgba(255,255,255,0.9)] transition-all"
+        className="absolute top-2 right-2 text-slate-400 hover:text-slate-600 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-[#f0eee7] shadow-[2px_2px_6px_rgba(0,0,0,0.08),-2px_-2px_6px_rgba(255,255,255,0.9)] transition-all"
         aria-label="מידע"
       >
         <Info size={16} />
@@ -264,7 +264,7 @@ const RideshareHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
   >
     <button
       onClick={(e) => openInfo(e, "rideshare")}
-      className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 z-10 p-2 rounded-full bg-[#f0eee7] shadow-[2px_2px_6px_rgba(0,0,0,0.08),-2px_-2px_6px_rgba(255,255,255,0.9)] transition-all"
+      className="absolute top-2 right-2 text-slate-400 hover:text-slate-600 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-[#f0eee7] shadow-[2px_2px_6px_rgba(0,0,0,0.08),-2px_-2px_6px_rgba(255,255,255,0.9)] transition-all"
       aria-label="מידע"
     >
       <Info size={16} />
@@ -313,7 +313,7 @@ const BlessingsHomeCard = ({ primaryColor, eventId, navigate, openInfo }) => (
   >
     <button
       onClick={(e) => openInfo(e, "blessings")}
-      className="absolute top-3 right-3 text-slate-400 hover:text-slate-600 z-10 p-2 rounded-full bg-[#f0eee7] shadow-[2px_2px_6px_rgba(0,0,0,0.08),-2px_-2px_6px_rgba(255,255,255,0.9)] transition-all"
+      className="absolute top-2 right-2 text-slate-400 hover:text-slate-600 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-[#f0eee7] shadow-[2px_2px_6px_rgba(0,0,0,0.08),-2px_-2px_6px_rgba(255,255,255,0.9)] transition-all"
       aria-label="מידע"
     >
       <Info size={16} />
@@ -867,7 +867,7 @@ const Home = () => {
                 id="terms"
                 checked={termsAccepted}
                 onChange={(e) => setTermsAccepted(e.target.checked)}
-                className="mt-1 w-4 h-4 cursor-pointer shrink-0"
+                className="mt-0.5 w-5 h-5 cursor-pointer shrink-0"
                 style={{ accentColor: primary }}
               />
               <label
@@ -912,7 +912,7 @@ const Home = () => {
             <button
               type="button"
               onClick={() => navigate("/")}
-              className="w-full text-slate-400 hover:text-slate-600 font-bold text-sm py-2 transition-colors flex items-center justify-center gap-1 mt-1"
+              className="w-full text-slate-400 hover:text-slate-600 font-bold text-sm py-3 min-h-11 transition-colors flex items-center justify-center gap-1 mt-1"
             >
               <ChevronRight size={16} /> חזור לעמוד הסריקה
             </button>
@@ -930,7 +930,7 @@ const Home = () => {
       dir="rtl"
     >
       {/* Header — clay surface, greeting + floating avatar + embossed event card */}
-      <div className="pt-14 pb-6 px-5 relative z-10 max-w-lg w-full mx-auto">
+      <div className="pt-[calc(3.5rem+env(safe-area-inset-top))] pb-6 px-5 relative z-10 max-w-lg w-full mx-auto">
         <div className="header-anim">
           {/* Greeting row with floating avatar */}
           <div className="flex items-center justify-between gap-3 mb-6">
@@ -997,7 +997,7 @@ const Home = () => {
               </span>
               <button
                 onClick={handleChangeName}
-                className="shrink-0 text-xs bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-full transition-all font-bold flex items-center gap-1.5 active:scale-95"
+                className="shrink-0 text-xs bg-white/20 hover:bg-white/30 text-white px-4 min-h-11 rounded-full transition-all font-bold flex items-center gap-1.5 active:scale-95"
               >
                 <UserX size={14} /> החלף
               </button>
@@ -1020,7 +1020,7 @@ const Home = () => {
             <div className={`${CLAY} p-6 relative overflow-hidden group`}>
               <button
                 onClick={(e) => openInfo(e, "seating")}
-                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 z-10 p-2.5 rounded-full bg-[#f0eee7] shadow-[3px_3px_7px_rgba(0,0,0,0.09),-3px_-3px_7px_rgba(255,255,255,0.9)] transition-all"
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-[#f0eee7] shadow-[3px_3px_7px_rgba(0,0,0,0.09),-3px_-3px_7px_rgba(255,255,255,0.9)] transition-all"
                 aria-label="מידע"
               >
                 <Info size={18} />
@@ -1203,19 +1203,19 @@ const Home = () => {
       {/* Info Modal */}
       {infoModal && (
         <div
-          className="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center p-6 animate-in fade-in"
+          className="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center p-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] animate-in fade-in"
           onClick={() => setInfoModal(null)}
           role="dialog"
           aria-modal="true"
           aria-label={infoModal.title}
         >
           <div
-            className="rounded-[2.5rem] p-8 w-full max-w-sm text-center relative animate-in zoom-in-95 max-h-[90vh] overflow-y-auto bg-[#f0eee7] shadow-[14px_14px_34px_rgba(0,0,0,0.18),-10px_-10px_26px_rgba(255,255,255,0.9)]"
+            className="rounded-[2.5rem] p-8 w-full max-w-sm text-center relative animate-in zoom-in-95 max-h-full overflow-y-auto bg-[#f0eee7] shadow-[14px_14px_34px_rgba(0,0,0,0.18),-10px_-10px_26px_rgba(255,255,255,0.9)]"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setInfoModal(null)}
-              className="absolute top-4 right-4 text-slate-400 p-2.5 rounded-full bg-[#f0eee7] shadow-[3px_3px_7px_rgba(0,0,0,0.09),-3px_-3px_7px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)] transition-all"
+              className="absolute top-4 right-4 text-slate-400 w-11 h-11 flex items-center justify-center rounded-full bg-[#f0eee7] shadow-[3px_3px_7px_rgba(0,0,0,0.09),-3px_-3px_7px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)] transition-all"
               aria-label="סגור"
             >
               <X size={20} />
@@ -1246,19 +1246,19 @@ const Home = () => {
       {/* Table Mates Modal */}
       {showMatesModal && (
         <div
-          className="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center p-4 animate-in fade-in"
+          className="fixed inset-0 bg-black/40 z-[100] flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] animate-in fade-in"
           onClick={() => setShowMatesModal(false)}
           role="dialog"
           aria-modal="true"
           aria-label="השותפים לשולחן"
         >
           <div
-            className="rounded-[2.5rem] p-8 w-full max-w-sm text-center relative animate-in zoom-in-95 max-h-[80vh] flex flex-col bg-[#f0eee7] shadow-[14px_14px_34px_rgba(0,0,0,0.18),-10px_-10px_26px_rgba(255,255,255,0.9)]"
+            className="rounded-[2.5rem] p-8 w-full max-w-sm text-center relative animate-in zoom-in-95 max-h-full flex flex-col bg-[#f0eee7] shadow-[14px_14px_34px_rgba(0,0,0,0.18),-10px_-10px_26px_rgba(255,255,255,0.9)]"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setShowMatesModal(false)}
-              className="absolute top-4 right-4 text-slate-400 p-2.5 rounded-full bg-[#f0eee7] shadow-[3px_3px_7px_rgba(0,0,0,0.09),-3px_-3px_7px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)] transition-all z-10"
+              className="absolute top-4 right-4 text-slate-400 w-11 h-11 flex items-center justify-center rounded-full bg-[#f0eee7] shadow-[3px_3px_7px_rgba(0,0,0,0.09),-3px_-3px_7px_rgba(255,255,255,0.9)] active:shadow-[inset_2px_2px_5px_rgba(0,0,0,0.1),inset_-2px_-2px_5px_rgba(255,255,255,0.8)] transition-all z-10"
               aria-label="סגור"
             >
               <X size={20} />

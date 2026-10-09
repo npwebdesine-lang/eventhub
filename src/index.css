@@ -22,6 +22,19 @@ body {
   background: #eceadf;
 }
 
+/* ==================== MOBILE VIEWPORT ==================== */
+/* ב-iOS Safari ו-Chrome לאנדרואיד 100vh הוא הגובה כשסרגלי הדפדפן מוסתרים,
+   ולכן כשהם גלויים תוכן בגובה 100vh נדחף אל מתחת להם. dvh עוקב אחרי הגובה
+   הנראה בפועל. vh נשאר כגיבוי ל-WebView ישן שלא מכיר dvh; ה-@supports
+   הכרחי כי שתי הצהרות height רצופות מתמזגות בבנייה (lightningcss) לאחת
+   והגיבוי נעלם. */
+@utility h-viewport {
+  height: 100vh;
+  @supports (height: 100dvh) {
+    height: 100dvh;
+  }
+}
+
 /* ==================== KEYFRAME ANIMATIONS ==================== */
 @keyframes photo-marquee {
   from {

@@ -56,7 +56,7 @@ export const ToastProvider = ({ children }) => {
 
       {/* Toast container — fixed top of screen, RTL-aware */}
       <div
-        className="fixed top-4 inset-x-4 z-[9999] flex flex-col gap-2 pointer-events-none"
+        className="fixed top-[calc(1rem+env(safe-area-inset-top))] inset-x-4 z-[9999] flex flex-col gap-2 pointer-events-none"
         dir="rtl"
         aria-live="polite"
       >
@@ -74,7 +74,7 @@ export const ToastProvider = ({ children }) => {
               </span>
               <button
                 onClick={() => dismiss(toast.id)}
-                className="shrink-0 hover:opacity-70 transition-opacity p-0.5"
+                className="shrink-0 hover:opacity-70 transition-opacity w-11 h-11 -my-3 -me-3 flex items-center justify-center rounded-full"
                 aria-label="סגור"
               >
                 <X size={16} />

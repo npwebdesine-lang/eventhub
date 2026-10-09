@@ -138,7 +138,7 @@ const AdminQRGenerator = ({
                 </div>
                 <button
                   onClick={() => setImageUrl("")}
-                  className="text-xs bg-rose-50 text-rose-600 px-3 py-2 rounded-xl font-bold hover:bg-rose-100 transition-colors flex items-center gap-1"
+                  className="text-xs bg-rose-50 text-rose-600 px-3 min-h-11 rounded-xl font-bold hover:bg-rose-100 transition-colors flex items-center gap-1"
                 >
                   <X size={14} /> הסר תמונה
                 </button>

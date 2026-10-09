@@ -1072,7 +1072,7 @@ const Admin = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#eceadf] p-4 md:p-8" dir="rtl">
+    <div className="min-h-screen bg-[#eceadf] p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] md:p-8" dir="rtl">
       {!selectedEvent && (
         <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in">
           <div className="flex flex-col md:flex-row justify-between items-center bg-[#f0eee7] p-8 rounded-[2rem] shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] border border-[#dcd7ca] gap-6">
@@ -1145,7 +1145,7 @@ const Admin = () => {
                     </button>
                     <button
                       onClick={() => copyEventLink(event.id)}
-                      className={`py-2 rounded-xl transition-all border flex justify-center items-center gap-2 text-sm font-bold ${copiedEventId === event.id ? "bg-emerald-50 border-emerald-200 text-emerald-600" : "bg-[#f0eee7] border-[#dcd7ca] text-slate-600 hover:border-indigo-600 hover:text-indigo-600"}`}
+                      className={`min-h-11 py-2 rounded-xl transition-all border flex justify-center items-center gap-2 text-sm font-bold ${copiedEventId === event.id ? "bg-emerald-50 border-emerald-200 text-emerald-600" : "bg-[#f0eee7] border-[#dcd7ca] text-slate-600 hover:border-indigo-600 hover:text-indigo-600"}`}
                       title="העתק קישור לאפליקציה"
                     >
                       {copiedEventId === event.id ? (
@@ -1157,7 +1157,7 @@ const Admin = () => {
                     </button>
                     <button
                       onClick={() => copyInviteLink(event.id)}
-                      className={`py-2 rounded-xl transition-all border flex justify-center items-center gap-2 text-sm font-bold ${copiedInviteId === event.id ? "bg-emerald-50 border-emerald-200 text-emerald-600" : "bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100"}`}
+                      className={`min-h-11 py-2 rounded-xl transition-all border flex justify-center items-center gap-2 text-sm font-bold ${copiedInviteId === event.id ? "bg-emerald-50 border-emerald-200 text-emerald-600" : "bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100"}`}
                       title="העתק קישור לדף ההזמנה"
                     >
                       {copiedInviteId === event.id ? (
@@ -1179,7 +1179,7 @@ const Admin = () => {
         <div className="max-w-5xl mx-auto animate-in slide-in-from-bottom-8 duration-500">
           <button
             onClick={() => setSelectedEvent(null)}
-            className="flex items-center gap-2 text-slate-500 hover:text-slate-900 font-bold mb-6 transition-colors"
+            className="flex items-center gap-2 min-h-11 text-slate-500 hover:text-slate-900 font-bold mb-4 transition-colors"
           >
             <ChevronRight size={20} /> חזרה לכל האירועים
           </button>
@@ -1598,7 +1598,9 @@ const Admin = () => {
                                 },
                               })
                             }
-                            className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-md"
+                            type="button"
+                            aria-label="הסרת התמונה"
+                            className="absolute top-1 right-1 w-11 h-11 flex items-center justify-center bg-red-500 text-white rounded-lg"
                           >
                             <X size={16} />
                           </button>
@@ -1659,7 +1661,7 @@ const Admin = () => {
                           </span>
                         </div>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <label className="relative inline-flex items-center justify-center min-h-11 min-w-11 cursor-pointer">
                         <input
                           type="checkbox"
                           className="sr-only peer"
@@ -1714,7 +1716,7 @@ const Admin = () => {
                           </span>
                         </div>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <label className="relative inline-flex items-center justify-center min-h-11 min-w-11 cursor-pointer">
                         <input
                           type="checkbox"
                           className="sr-only peer"
@@ -1760,7 +1762,7 @@ const Admin = () => {
                           כל אחד צלם
                         </h4>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <label className="relative inline-flex items-center justify-center min-h-11 min-w-11 cursor-pointer">
                         <input
                           type="checkbox"
                           className="sr-only peer"
@@ -1813,7 +1815,7 @@ const Admin = () => {
                           סידור הושבה
                         </h4>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <label className="relative inline-flex items-center justify-center min-h-11 min-w-11 cursor-pointer">
                         <input
                           type="checkbox"
                           className="sr-only peer"
@@ -1861,7 +1863,7 @@ const Admin = () => {
                           </h4>
                         </div>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <label className="relative inline-flex items-center justify-center min-h-11 min-w-11 cursor-pointer">
                         <input
                           type="checkbox"
                           className="sr-only peer"
@@ -1908,7 +1910,7 @@ const Admin = () => {
                           </h4>
                         </div>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <label className="relative inline-flex items-center justify-center min-h-11 min-w-11 cursor-pointer">
                         <input
                           type="checkbox"
                           className="sr-only peer"
@@ -1962,7 +1964,7 @@ const Admin = () => {
                           </h4>
                         </div>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
+                      <label className="relative inline-flex items-center justify-center min-h-11 min-w-11 cursor-pointer">
                         <input
                           type="checkbox"
                           className="sr-only peer"
@@ -2001,8 +2003,8 @@ const Admin = () => {
 
       {/* --- פופ-אפ מרכז הדיווחים --- */}
       {isReportsModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-[200]">
-          <div className="bg-[#f0eee7] w-full max-w-2xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]">
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] z-[200]">
+          <div className="bg-[#f0eee7] w-full max-w-2xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-full">
             <div className="p-6 md:p-8 border-b border-[#e4e0d5] flex justify-between items-center bg-rose-50/50 shrink-0">
               <div>
                 <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
@@ -2014,7 +2016,7 @@ const Admin = () => {
               </div>
               <button
                 onClick={() => setIsReportsModalOpen(false)}
-                className="p-2 hover:bg-rose-100 text-rose-600 rounded-full transition-colors"
+                className="w-11 h-11 shrink-0 flex items-center justify-center hover:bg-rose-100 text-rose-600 rounded-full transition-colors"
               >
                 <X size={24} />
               </button>
@@ -2070,7 +2072,7 @@ const Admin = () => {
                               report.reported_item_id,
                             )
                           }
-                          className="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-bold py-2 rounded-xl text-sm transition-colors"
+                          className="flex-1 bg-rose-500 hover:bg-rose-600 text-white font-bold py-3 rounded-xl text-sm transition-colors"
                         >
                           מחק תוכן פוגעני
                         </button>
@@ -2078,7 +2080,7 @@ const Admin = () => {
                           onClick={() =>
                             handleResolveReport(report.id, "dismiss")
                           }
-                          className="flex-1 bg-[#e9e6dc] hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-sm transition-colors"
+                          className="flex-1 bg-[#e9e6dc] hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl text-sm transition-colors"
                         >
                           סגור כדיווח שווא
                         </button>
@@ -2094,8 +2096,8 @@ const Admin = () => {
 
       {/* --- פופ-אפ ניהול ברכות (חדש) --- */}
       {isBlessingsManagerOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-[200]">
-          <div className="bg-[#f0eee7] w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]">
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] z-[200]">
+          <div className="bg-[#f0eee7] w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-full">
             <div className="p-6 md:p-8 border-b border-[#e4e0d5] flex justify-between items-center bg-purple-50/50 shrink-0">
               <div>
                 <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
@@ -2107,7 +2109,7 @@ const Admin = () => {
               </div>
               <button
                 onClick={() => setIsBlessingsManagerOpen(false)}
-                className="p-2 hover:bg-purple-100 text-purple-600 rounded-full transition-colors"
+                className="w-11 h-11 shrink-0 flex items-center justify-center hover:bg-purple-100 text-purple-600 rounded-full transition-colors"
               >
                 <X size={24} />
               </button>
@@ -2152,13 +2154,13 @@ const Admin = () => {
                           <div className="flex justify-end gap-2 pt-2">
                             <button
                               onClick={() => setEditingBlessingId(null)}
-                              className="px-4 py-2 text-slate-500 hover:bg-[#e9e6dc] rounded-xl transition-colors font-bold text-sm"
+                              className="px-4 min-h-11 text-slate-500 hover:bg-[#e9e6dc] rounded-xl transition-colors font-bold text-sm"
                             >
                               ביטול
                             </button>
                             <button
                               onClick={() => saveBlessingEdit(blessing.id)}
-                              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl transition-colors font-bold text-sm flex items-center gap-1"
+                              className="px-4 min-h-11 bg-purple-600 hover:bg-purple-700 text-white rounded-xl transition-colors font-bold text-sm flex items-center gap-1"
                             >
                               <Check size={16} /> שמור שינויים
                             </button>
@@ -2173,7 +2175,7 @@ const Admin = () => {
                             <div className="flex items-center gap-1 bg-[#eeece5] rounded-lg p-1">
                               <button
                                 onClick={() => startEditingBlessing(blessing)}
-                                className="p-1.5 text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
+                                className="w-11 h-11 flex items-center justify-center text-slate-400 hover:text-purple-600 hover:bg-purple-50 rounded-md transition-colors"
                                 title="ערוך ברכה"
                               >
                                 <Edit2 size={16} />
@@ -2185,7 +2187,7 @@ const Admin = () => {
                                     blessing.guest_name,
                                   )
                                 }
-                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
+                                className="w-11 h-11 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
                                 title="מחק ברכה"
                               >
                                 <Trash2 size={16} />
@@ -2226,8 +2228,8 @@ const Admin = () => {
 
       {/* --- ניהול טרמפים --- */}
       {isRideshareManagerOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-[200]">
-          <div className="bg-[#f0eee7] w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]">
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] z-[200]">
+          <div className="bg-[#f0eee7] w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-full">
             <div className="p-6 md:p-8 border-b border-[#e4e0d5] flex justify-between items-center bg-amber-50/50 shrink-0">
               <div>
                 <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
@@ -2239,7 +2241,7 @@ const Admin = () => {
               </div>
               <button
                 onClick={() => setIsRideshareManagerOpen(false)}
-                className="p-2 hover:bg-amber-100 text-amber-600 rounded-full transition-colors"
+                className="w-11 h-11 shrink-0 flex items-center justify-center hover:bg-amber-100 text-amber-600 rounded-full transition-colors"
               >
                 <X size={24} />
               </button>
@@ -2316,7 +2318,7 @@ const Admin = () => {
                         onClick={() =>
                           handleDeleteRideshare(ride.id, ride.guest_name)
                         }
-                        className="px-4 py-2 bg-rose-100 hover:bg-rose-200 text-rose-600 font-bold rounded-xl transition-colors flex items-center gap-2 text-sm shrink-0"
+                        className="px-4 min-h-11 bg-rose-100 hover:bg-rose-200 text-rose-600 font-bold rounded-xl transition-colors flex items-center gap-2 text-sm shrink-0"
                       >
                         <Trash2 size={16} /> מחק
                       </button>
@@ -2341,7 +2343,7 @@ const Admin = () => {
 
       {isGalleryOpen && (
         <div className="fixed inset-0 z-[200] bg-slate-900/90 flex flex-col animate-in fade-in duration-300">
-          <div className="p-6 md:p-8 flex justify-between items-center bg-[#f0eee7]">
+          <div className="p-6 md:p-8 pt-[calc(1.5rem+env(safe-area-inset-top))] md:pt-[calc(2rem+env(safe-area-inset-top))] flex justify-between items-center bg-[#f0eee7]">
             <div>
               <h2 className="text-3xl font-black text-slate-800">
                 גלריית האירוע
@@ -2354,7 +2356,7 @@ const Admin = () => {
               <X size={24} />
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-6 md:p-10">
+          <div className="flex-1 overflow-y-auto p-6 md:p-10 pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:pb-[calc(2.5rem+env(safe-area-inset-bottom))]">
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
               {galleryPhotos.map((photo) => (
                 <div
@@ -2367,7 +2369,8 @@ const Admin = () => {
                   />
                   <button
                     onClick={() => handleDeletePhoto(photo)}
-                    className="absolute top-2 right-2 bg-rose-500 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100"
+                    aria-label="מחיקת התמונה"
+                    className="absolute top-2 right-2 w-11 h-11 flex items-center justify-center bg-rose-500 text-white rounded-lg transition-opacity pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 focus-visible:opacity-100"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -2378,8 +2381,8 @@ const Admin = () => {
         </div>
       )}
       {isSeatingModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-[200]">
-          <div className="bg-[#f0eee7] w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]">
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] z-[200]">
+          <div className="bg-[#f0eee7] w-full max-w-4xl rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-full">
             <div className="p-8 border-b border-[#e4e0d5] flex justify-between items-center bg-emerald-50/50 shrink-0">
               <div>
                 <h2 className="text-2xl font-black text-slate-800">
@@ -2391,7 +2394,7 @@ const Admin = () => {
               </div>
               <button
                 onClick={() => setIsSeatingModalOpen(false)}
-                className="p-2 hover:bg-emerald-100 text-emerald-600 rounded-full transition-colors"
+                className="w-11 h-11 shrink-0 flex items-center justify-center hover:bg-emerald-100 text-emerald-600 rounded-full transition-colors"
               >
                 <X size={28} />
               </button>
@@ -2600,7 +2603,7 @@ const Admin = () => {
                           onClick={() =>
                             handleDeleteGuest(guest.id, guest.guest_name)
                           }
-                          className="text-rose-500"
+                          className="w-11 h-11 shrink-0 flex items-center justify-center rounded-full text-rose-500 hover:bg-rose-50"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -2614,11 +2617,15 @@ const Admin = () => {
         </div>
       )}
       {isQrModalOpen && selectedEvent && (
-        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-[200]">
-          <div className="bg-[#f0eee7] w-full max-w-md rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh]">
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] z-[200]">
+          <div className="bg-[#f0eee7] w-full max-w-md rounded-[3rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 max-h-full">
             <div className="p-6 flex justify-between items-center bg-[#eeece5] shrink-0">
               <h2 className="text-2xl font-black text-slate-800">QR מעוצב</h2>
-              <button onClick={() => setIsQrModalOpen(false)}>
+              <button
+                onClick={() => setIsQrModalOpen(false)}
+                aria-label="סגור"
+                className="w-11 h-11 shrink-0 flex items-center justify-center rounded-full hover:bg-[#e4e0d5] transition-colors"
+              >
                 <X size={24} />
               </button>
             </div>
@@ -2635,8 +2642,8 @@ const Admin = () => {
         </div>
       )}
       {isDatingManagerOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-[200]">
-          <div className="bg-[#f0eee7] w-full max-w-5xl rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-[90vh]">
+        <div className="fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] z-[200]">
+          <div className="bg-[#f0eee7] w-full max-w-5xl rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 max-h-full">
             <div className="p-6 md:p-8 border-b border-[#e4e0d5] flex justify-between items-center bg-rose-50/50 shrink-0">
               <div>
                 <h2 className="text-2xl font-black text-slate-800 flex items-center gap-2">
@@ -2648,7 +2655,7 @@ const Admin = () => {
               </div>
               <button
                 onClick={() => setIsDatingManagerOpen(false)}
-                className="p-2 hover:bg-rose-100 text-rose-600 rounded-full transition-colors"
+                className="w-11 h-11 shrink-0 flex items-center justify-center hover:bg-rose-100 text-rose-600 rounded-full transition-colors"
               >
                 <X size={24} />
               </button>
@@ -2741,7 +2748,7 @@ const Admin = () => {
                           onClick={() =>
                             handleDeleteDatingProfile(profile.id, profile.name)
                           }
-                          className="w-full mt-auto bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
+                          className="w-full mt-auto bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
                         >
                           <Trash2 size={16} /> מחק פרופיל
                         </button>
@@ -2756,7 +2763,7 @@ const Admin = () => {
       )}
       {isIcebreakerUserManagerOpen && (
         <div className="fixed inset-0 z-[200] bg-slate-900/80 flex flex-col animate-in fade-in duration-300">
-          <div className="p-6 md:p-8 flex justify-between items-center bg-[#f0eee7] shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] z-10">
+          <div className="p-6 md:p-8 pt-[calc(1.5rem+env(safe-area-inset-top))] md:pt-[calc(2rem+env(safe-area-inset-top))] flex justify-between items-center bg-[#f0eee7] shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] z-10">
             <div>
               <h2 className="text-3xl font-black text-slate-800">
                 משתמשי IceBreaker
@@ -2769,7 +2776,7 @@ const Admin = () => {
               <X size={24} />
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-6 md:p-10">
+          <div className="flex-1 overflow-y-auto p-6 md:p-10 pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:pb-[calc(2.5rem+env(safe-area-inset-bottom))]">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {icebreakerProfiles.map((profile) => (
                 <div
@@ -2781,7 +2788,7 @@ const Admin = () => {
                     onClick={() =>
                       handleDeleteIcebreakerProfile(profile.id, profile.name)
                     }
-                    className="text-rose-500"
+                    className="w-11 h-11 shrink-0 flex items-center justify-center rounded-full text-rose-500 hover:bg-rose-50"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -2793,7 +2800,7 @@ const Admin = () => {
       )}
       {isIcebreakerModalOpen && (
         <div className="fixed inset-0 z-[200] bg-slate-900/80 flex flex-col animate-in fade-in duration-300">
-          <div className="p-6 md:p-8 flex justify-between items-center bg-[#f0eee7] shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] z-10">
+          <div className="p-6 md:p-8 pt-[calc(1.5rem+env(safe-area-inset-top))] md:pt-[calc(2rem+env(safe-area-inset-top))] flex justify-between items-center bg-[#f0eee7] shadow-[4px_4px_10px_rgba(0,0,0,0.08),-4px_-4px_10px_rgba(255,255,255,0.9)] z-10">
             <div>
               <h2 className="text-3xl font-black text-slate-800">
                 בנק המשימות
@@ -2806,7 +2813,7 @@ const Admin = () => {
               <X size={24} />
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto p-6 md:p-10 max-w-4xl mx-auto w-full">
+          <div className="flex-1 overflow-y-auto p-6 md:p-10 pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:pb-[calc(2.5rem+env(safe-area-inset-bottom))] max-w-4xl mx-auto w-full">
             <div className="bg-[#f0eee7] p-6 rounded-3xl mb-6 flex">
               <input
                 type="text"
@@ -2831,7 +2838,7 @@ const Admin = () => {
                   <p className="font-medium">{mission.content}</p>
                   <button
                     onClick={() => handleDeleteMission(mission.id)}
-                    className="text-rose-500"
+                    className="w-11 h-11 shrink-0 flex items-center justify-center rounded-full text-rose-500 hover:bg-rose-50"
                   >
                     <Trash2 size={20} />
                   </button>

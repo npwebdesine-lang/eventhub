@@ -7,7 +7,14 @@
       "Bash(sort -k5 -n)",
       "Bash(git diff *)",
       "Bash(git rm *)",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Bash(node -p \"require\\('tailwindcss/package.json'\\).version\")",
+      "Bash(perl -0pi -e 's/\\(?<!\\\\r\\)\\\\n/\\\\r\\\\n/g' src/pages/Admin.jsx)",
+      "Bash(perl -0ne 'my $lf=\\(\\)=/\\(?<!\\\\r\\)\\\\n/g; print \"bare_lf=$lf\\\\n\"' src/pages/Admin.jsx)",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('.claude/settings.json','utf8'\\)\\);console.log\\('json ok'\\)\")",
+      "Bash(npm uninstall *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
     ]
   }
 }

@@ -34,7 +34,7 @@ const OfflineBanner = () => {
 
   return (
     <div
-      className="fixed bottom-6 inset-x-4 z-[9998] flex justify-center pointer-events-none"
+      className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] inset-x-4 z-[9998] flex justify-center pointer-events-none"
       dir="rtl"
     >
       <div

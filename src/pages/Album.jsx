@@ -314,7 +314,7 @@ const Album = () => {
       {/* Header עם gradient ואנימציות */}
       <div
         ref={headerRef}
-        className="rounded-b-[2.5rem] pt-20 pb-28 px-6 relative z-10 flex flex-col items-center text-center overflow-hidden"
+        className="rounded-b-[2.5rem] pt-[calc(5rem+env(safe-area-inset-top))] pb-28 px-6 relative z-10 flex flex-col items-center text-center overflow-hidden"
         style={{
           background: `linear-gradient(145deg, ${primaryColor} 0%, ${primaryColor}cc 100%)`,
           boxShadow:
@@ -532,7 +532,7 @@ const Album = () => {
           aria-label="תצוגת תמונה"
         >
           {/* Info bar */}
-          <div className="absolute top-0 left-0 right-0 p-8 flex justify-between items-center z-50 bg-gradient-to-b from-black/70 via-black/40 to-transparent pointer-events-none">
+          <div className="absolute top-0 left-0 right-0 p-8 pt-[calc(2rem+env(safe-area-inset-top))] flex justify-between items-center z-50 bg-gradient-to-b from-black/70 via-black/40 to-transparent pointer-events-none">
             <div className="pointer-events-auto">
               <p className="text-white/60 text-xs font-bold uppercase tracking-widest mb-1">
                 צלם/ת הרגע
@@ -554,7 +554,7 @@ const Album = () => {
           </div>
 
           {/* Counter */}
-          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-50 text-white/60 text-sm font-bold bg-black/40 px-5 py-2.5 rounded-full">
+          <div className="absolute bottom-[calc(2rem+env(safe-area-inset-bottom))] left-1/2 transform -translate-x-1/2 z-50 text-white/60 text-sm font-bold bg-black/40 px-5 py-2.5 rounded-full">
             {selectedIndex + 1} / {photos.length}
           </div>
 
@@ -564,7 +564,7 @@ const Album = () => {
           >
             <button
               onClick={handleNext}
-              className="absolute right-6 md:right-12 z-50 text-white/40 hover:text-white bg-white/10 hover:bg-white/20 p-5 rounded-[1.5rem] transition-all group button-pulse"
+              className="absolute right-[max(1.5rem,env(safe-area-inset-right))] md:right-12 z-50 text-white/40 hover:text-white bg-white/10 hover:bg-white/20 p-5 rounded-[1.5rem] transition-all group button-pulse"
               aria-label="התמונה הבאה"
             >
               <ChevronRight
@@ -575,12 +575,12 @@ const Album = () => {
             <img
               key={selectedIndex}
               src={photos[selectedIndex].image_url}
-              className="max-w-full max-h-[85vh] object-contain rounded-[2rem] shadow-[0_0_80px_rgba(0,0,0,0.7)] animate-in zoom-in-95 duration-300"
+              className="max-w-full max-h-[85%] object-contain rounded-[2rem] shadow-[0_0_80px_rgba(0,0,0,0.7)] animate-in zoom-in-95 duration-300"
               alt="Enlarged moment"
             />
             <button
               onClick={handlePrev}
-              className="absolute left-6 md:left-12 z-50 text-white/40 hover:text-white bg-white/10 hover:bg-white/20 p-5 rounded-[1.5rem] transition-all group button-pulse"
+              className="absolute left-[max(1.5rem,env(safe-area-inset-left))] md:left-12 z-50 text-white/40 hover:text-white bg-white/10 hover:bg-white/20 p-5 rounded-[1.5rem] transition-all group button-pulse"
               aria-label="התמונה הקודמת"
             >
               <ChevronLeft
