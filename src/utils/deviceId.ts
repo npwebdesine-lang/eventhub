@@ -41,6 +41,14 @@ export function isValidUUIDv4(value: unknown): value is string {
   return isValid;
 }
 
+function uuidV4FromRandomBytes(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40; // version 4
+  bytes[8] = (bytes[8] & 0x3f) | 0x80; // RFC 4122 variant
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
 /**
  * Generates a cryptographically secure UUIDv4
  * Uses Web Crypto API via crypto.randomUUID() (available in all modern browsers and Node.js 15+)
@@ -49,7 +57,12 @@ export function isValidUUIDv4(value: unknown): value is string {
  */
 export function generateDeviceId(): string {
   try {
-    const uuid = crypto.randomUUID();
+    // randomUUID exists only in secure contexts; getRandomValues is available
+    // everywhere and gives the same randomness for building a valid UUIDv4.
+    const uuid =
+      typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : uuidV4FromRandomBytes();
     // Validate the generated UUID to catch any implementation bugs
     if (!isValidUUIDv4(uuid)) {
       throw new Error("Generated UUID failed validation");
@@ -150,16 +163,31 @@ export function setDeviceId(id: string): void {
  *
  * @returns Valid UUIDv4 string
  */
+// Fallback for browsers where localStorage throws (Safari/Chrome with all site
+// data blocked, some in-app browsers). supabase.js calls getOrCreateDeviceId()
+// at import time, so a throw here used to take down every route. The guest
+// keeps one stable ID for this page session instead; it just won't survive a
+// reload, which is the best a browser without storage allows.
+let sessionOnlyDeviceId: string | undefined;
+
 export function getOrCreateDeviceId(): string {
   // Try to retrieve existing valid ID
   const existing = getDeviceId();
   if (existing) {
     return existing;
   }
+  if (sessionOnlyDeviceId) {
+    return sessionOnlyDeviceId;
+  }
 
   // Generate new ID if none exists
   const newId = generateDeviceId();
-  setDeviceId(newId);
+  try {
+    setDeviceId(newId);
+  } catch (error) {
+    console.warn("[DeviceID] Storage unavailable, using a session-only ID", error);
+    sessionOnlyDeviceId = newId;
+  }
   return newId;
 }
 

@@ -23,6 +23,7 @@ import { useModalBehavior } from "../components/Modal";
 import { PhotoGridSkeleton } from "../components/SkeletonCard";
 import gsap from "gsap";
 import { isValidUUIDv4, getOrCreateDeviceId } from "../utils/deviceId";
+import { appendUnique, olderThan, orderNewestFirst } from "../lib/pagination";
 
 const MAX_PHOTOS_PER_GUEST = 3;
 const PAGE_SIZE = 12;
@@ -66,7 +67,10 @@ const Photos = () => {
   const [photos, setPhotos] = useState([]);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const offsetRef = useRef(0);
+  // אחרי כישלון עוצרים את הטעינה האוטומטית עד לחיצה על "נסו שוב" — אחרת
+  // ה-sentinel עדיין גלוי והטעינה רצה שוב ושוב בלולאה.
+  const [loadFailed, setLoadFailed] = useState(false);
+  const cursorRef = useRef(null);
 
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -86,24 +90,29 @@ const Photos = () => {
     return () => timeouts.forEach((t) => clearTimeout(t));
   }, []);
 
+  // מחזיר true בהצלחה ו-false בכישלון, כדי שהקורא יחליט אם לעצור.
   const fetchPage = useCallback(
-    async (pageOffset = 0) => {
-      if (!eventId) return;
-      const { data, error } = await supabase
-        .from("photos")
-        .select("id, image_url, guest_name, created_at")
-        .eq("event_id", eventId)
-        .order("created_at", { ascending: false })
-        .range(pageOffset, pageOffset + PAGE_SIZE - 1);
+    async ({ reset = false } = {}) => {
+      if (!eventId) return true;
+      const query = orderNewestFirst(
+        supabase
+          .from("photos")
+          .select("id, image_url, guest_name, created_at")
+          .eq("event_id", eventId),
+      ).limit(PAGE_SIZE);
+      const { data, error } = await (reset
+        ? query
+        : olderThan(query, cursorRef.current));
 
       if (error) {
         console.error(error);
-        return;
+        return false;
       }
       const rows = data || [];
       if (rows.length < PAGE_SIZE) setHasMore(false);
-      setPhotos((prev) => (pageOffset === 0 ? rows : [...prev, ...rows]));
-      offsetRef.current = pageOffset + rows.length;
+      if (rows.length > 0) cursorRef.current = rows[rows.length - 1];
+      setPhotos((prev) => (reset ? rows : appendUnique(prev, rows)));
+      return true;
     },
     [eventId],
   );
@@ -122,7 +131,8 @@ const Photos = () => {
         if (error) throw error;
         if (isMounted) setEventData(event);
 
-        await fetchPage(0);
+        const loaded = await fetchPage({ reset: true });
+        if (isMounted && !loaded) setLoadFailed(true);
 
         if (guestId && isValidUUIDv4(guestId)) {
           const { count } = await supabase
@@ -163,7 +173,11 @@ const Photos = () => {
         (payload) => {
           if (!isMounted || !payload?.new) return;
           if (payload.new.guest_id !== guestId) {
-            setPhotos((prev) => [payload.new, ...prev]);
+            setPhotos((prev) =>
+              prev.some((p) => p.id === payload.new.id)
+                ? prev
+                : [payload.new, ...prev],
+            );
           }
         },
       )
@@ -190,19 +204,23 @@ const Photos = () => {
 
   // Infinite scroll via IntersectionObserver
   useEffect(() => {
-    if (!sentinelRef.current || !hasMore) return;
+    if (!sentinelRef.current || !hasMore || loadFailed) return;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && !loadingMore && hasMore) {
           setLoadingMore(true);
-          fetchPage(offsetRef.current).finally(() => setLoadingMore(false));
+          fetchPage()
+            .then((loaded) => {
+              if (!loaded) setLoadFailed(true);
+            })
+            .finally(() => setLoadingMore(false));
         }
       },
       { rootMargin: "200px" },
     );
     observer.observe(sentinelRef.current);
     return () => observer.disconnect();
-  }, [fetchPage, hasMore, loadingMore]);
+  }, [fetchPage, hasMore, loadingMore, loadFailed]);
 
   // Entry animations
   useEffect(() => {
@@ -271,23 +289,24 @@ const Photos = () => {
         .from("event-assets")
         .getPublicUrl(`photos/${fileName}`);
 
-      const { error: dbError } = await supabase.from("photos").insert([
-        {
-          event_id: eventId,
-          guest_id: guestId,
-          guest_name: guestName || "אורח",
-          image_url: publicUrl,
-        },
-      ]);
+      // השורה האמיתית חוזרת מה-insert — id מזויף (Date.now()) היה נשבר בדיווח
+      // ובכל השוואה מול השרת. photos_select_public הוא using (true), ולכן
+      // .select() עובד גם לאורח שמחובר כמנהל.
+      const { data: newPhoto, error: dbError } = await supabase
+        .from("photos")
+        .insert([
+          {
+            event_id: eventId,
+            guest_id: guestId,
+            guest_name: guestName || "אורח",
+            image_url: publicUrl,
+          },
+        ])
+        .select("id, image_url, guest_name, created_at")
+        .single();
       if (dbError) throw dbError;
 
       setUploadProgress(100);
-      const newPhoto = {
-        id: Date.now(),
-        guest_name: guestName || "אורח",
-        image_url: publicUrl,
-        created_at: new Date().toISOString(),
-      };
       setPhotos((prev) => [newPhoto, ...prev]);
       setMyUploadCount((prev) => prev + 1);
       setUploadSuccess(true);
@@ -533,7 +552,7 @@ const Photos = () => {
 
           {loading ? (
             <PhotoGridSkeleton count={6} />
-          ) : photos.length === 0 ? (
+          ) : photos.length === 0 && !loadFailed ? (
             <div className={`text-center py-16 ${CLAY}`}>
               <ImageIcon size={52} className="mx-auto mb-4 text-slate-300" />
               <p className="text-slate-600 font-black text-lg mb-2">
@@ -592,13 +611,28 @@ const Photos = () => {
           )}
 
           {/* Infinite scroll sentinel */}
-          {hasMore && (
-            <div ref={sentinelRef} className="flex justify-center py-6">
-              {loadingMore && (
-                <Loader2 className="animate-spin text-slate-300" size={24} />
-              )}
-            </div>
-          )}
+          {hasMore &&
+            (loadFailed ? (
+              <div className="flex flex-col items-center gap-3 py-6">
+                <p className="text-slate-500 font-bold text-sm">
+                  לא הצלחנו לטעון תמונות
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setLoadFailed(false)}
+                  className="font-bold py-3 px-6 rounded-full text-sm text-white active:scale-[0.97] transition-all"
+                  style={clayPrimaryBtn(primaryColor)}
+                >
+                  נסו שוב
+                </button>
+              </div>
+            ) : (
+              <div ref={sentinelRef} className="flex justify-center py-6">
+                {loadingMore && (
+                  <Loader2 className="animate-spin text-slate-300" size={24} />
+                )}
+              </div>
+            ))}
         </div>
       </div>
 

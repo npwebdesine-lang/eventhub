@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import gsap from "gsap";
 import { useModalBehavior } from "../components/Modal";
+import { appendUnique, olderThan, orderNewestFirst } from "../lib/pagination";
 
 const PAGE_SIZE = 24;
 
@@ -30,51 +31,66 @@ const Album = () => {
   const [photosHasMore, setPhotosHasMore] = useState(true);
   const [blessingsHasMore, setBlessingsHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const photosOffset = useRef(0);
-  const blessingsOffset = useRef(0);
+  // לכל לשונית דגל כישלון משלה: אחרי כישלון הטעינה האוטומטית נעצרת עד
+  // "נסו שוב", אחרת ה-sentinel הגלוי מריץ אותה בלולאה.
+  const [loadFailed, setLoadFailed] = useState({
+    photos: false,
+    blessings: false,
+  });
+  const photosCursor = useRef(null);
+  const blessingsCursor = useRef(null);
 
   const headerRef = useRef(null);
   const gridRef = useRef(null);
   const decorationsRef = useRef([]);
   const sentinelRef = useRef(null);
 
+  // שתי הפונקציות מחזירות true בהצלחה ו-false בכישלון.
   const fetchPhotos = useCallback(
-    async (pageOffset = 0) => {
-      const { data, error } = await supabase
-        .from("photos")
-        .select("id, image_url, guest_name")
-        .eq("event_id", id)
-        .order("created_at", { ascending: false })
-        .range(pageOffset, pageOffset + PAGE_SIZE - 1);
+    async ({ reset = false } = {}) => {
+      const query = orderNewestFirst(
+        supabase
+          .from("photos")
+          .select("id, image_url, guest_name, created_at")
+          .eq("event_id", id),
+      ).limit(PAGE_SIZE);
+      const { data, error } = await (reset
+        ? query
+        : olderThan(query, photosCursor.current));
       if (error) {
         console.error(error);
-        return;
+        return false;
       }
       const rows = data || [];
       if (rows.length < PAGE_SIZE) setPhotosHasMore(false);
-      setPhotos((prev) => (pageOffset === 0 ? rows : [...prev, ...rows]));
-      photosOffset.current = pageOffset + rows.length;
+      if (rows.length > 0) photosCursor.current = rows[rows.length - 1];
+      setPhotos((prev) => (reset ? rows : appendUnique(prev, rows)));
+      return true;
     },
     [id],
   );
 
   const fetchBlessings = useCallback(
-    async (pageOffset = 0) => {
-      const { data, error } = await supabase
-        .from("blessings")
-        .select("id, guest_name, message, image_url")
-        .eq("event_id", id)
-        .eq("is_approved", true)
-        .order("created_at", { ascending: false })
-        .range(pageOffset, pageOffset + PAGE_SIZE - 1);
+    async ({ reset = false } = {}) => {
+      const query = orderNewestFirst(
+        supabase
+          .from("blessings")
+          .select("id, guest_name, message, image_url, created_at")
+          .eq("event_id", id)
+          .eq("is_approved", true),
+      ).limit(PAGE_SIZE);
+      const { data, error } = await (reset
+        ? query
+        : olderThan(query, blessingsCursor.current));
       if (error) {
         console.error(error);
-        return;
+        return false;
       }
       const rows = data || [];
       if (rows.length < PAGE_SIZE) setBlessingsHasMore(false);
-      setBlessings((prev) => (pageOffset === 0 ? rows : [...prev, ...rows]));
-      blessingsOffset.current = pageOffset + rows.length;
+      if (rows.length > 0) blessingsCursor.current = rows[rows.length - 1];
+      setBlessings((prev) => (reset ? rows : appendUnique(prev, rows)));
+      return true;
     },
     [id],
   );
@@ -93,11 +109,16 @@ const Album = () => {
         if (!isMounted) return;
         setEventData(event);
 
-        await fetchPhotos(0);
-        if (event.active_modules?.blessings) {
-          await fetchBlessings(0);
-        } else {
-          setBlessingsHasMore(false);
+        const photosLoaded = await fetchPhotos({ reset: true });
+        const blessingsLoaded = event.active_modules?.blessings
+          ? await fetchBlessings({ reset: true })
+          : true;
+        if (!event.active_modules?.blessings) setBlessingsHasMore(false);
+        if (isMounted && (!photosLoaded || !blessingsLoaded)) {
+          setLoadFailed({
+            photos: !photosLoaded,
+            blessings: !blessingsLoaded,
+          });
         }
       } catch (error) {
         console.error("Error fetching album:", error);
@@ -114,16 +135,18 @@ const Album = () => {
   // Infinite scroll for whichever tab is active
   useEffect(() => {
     const hasMore = activeTab === "photos" ? photosHasMore : blessingsHasMore;
-    if (!sentinelRef.current || !hasMore) return;
+    if (!sentinelRef.current || !hasMore || loadFailed[activeTab]) return;
+    const tab = activeTab;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && !loadingMore && hasMore) {
           setLoadingMore(true);
-          const loader =
-            activeTab === "photos"
-              ? fetchPhotos(photosOffset.current)
-              : fetchBlessings(blessingsOffset.current);
-          loader.finally(() => setLoadingMore(false));
+          const loader = tab === "photos" ? fetchPhotos() : fetchBlessings();
+          loader
+            .then((loaded) => {
+              if (!loaded) setLoadFailed((prev) => ({ ...prev, [tab]: true }));
+            })
+            .finally(() => setLoadingMore(false));
         }
       },
       { rootMargin: "300px" },
@@ -135,6 +158,7 @@ const Album = () => {
     photosHasMore,
     blessingsHasMore,
     loadingMore,
+    loadFailed,
     fetchPhotos,
     fetchBlessings,
   ]);
@@ -348,7 +372,7 @@ const Album = () => {
       <div className="relative z-20 px-4 md:px-8 -mt-10 pb-32 max-w-[1800px] mx-auto">
         {/* תצוגת תמונות */}
         {activeTab === "photos" &&
-          (photos.length === 0 ? (
+          (photos.length === 0 && !loadFailed.photos ? (
             <div className="text-center py-20 bg-[#f0eee7] rounded-[2.25rem] shadow-[8px_8px_20px_rgba(0,0,0,0.09),-8px_-8px_20px_rgba(255,255,255,0.9)] max-w-lg mx-auto">
               <ImageIcon
                 size={48}
@@ -405,7 +429,7 @@ const Album = () => {
 
         {/* תצוגת ברכות */}
         {activeTab === "blessings" &&
-          (blessings.length === 0 ? (
+          (blessings.length === 0 && !loadFailed.blessings ? (
             <div className="text-center py-20 bg-[#f0eee7] rounded-[2.25rem] shadow-[8px_8px_20px_rgba(0,0,0,0.09),-8px_-8px_20px_rgba(255,255,255,0.9)] max-w-lg mx-auto">
               <MessageCircle
                 size={48}
@@ -472,13 +496,30 @@ const Album = () => {
 
         {/* Infinite-scroll sentinel for the active tab */}
         {((activeTab === "photos" && photosHasMore) ||
-          (activeTab === "blessings" && blessingsHasMore)) && (
-          <div ref={sentinelRef} className="flex justify-center py-10">
-            {loadingMore && (
-              <Loader2 className="animate-spin text-slate-400" size={28} />
-            )}
-          </div>
-        )}
+          (activeTab === "blessings" && blessingsHasMore)) &&
+          (loadFailed[activeTab] ? (
+            <div className="flex flex-col items-center gap-3 py-10">
+              <p className="text-slate-500 font-bold text-sm">
+                לא הצלחנו לטעון את התוכן
+              </p>
+              <button
+                type="button"
+                onClick={() =>
+                  setLoadFailed((prev) => ({ ...prev, [activeTab]: false }))
+                }
+                className="text-white font-bold py-3 px-6 rounded-full text-sm active:scale-[0.97] transition-all"
+                style={{ backgroundColor: primaryColor }}
+              >
+                נסו שוב
+              </button>
+            </div>
+          ) : (
+            <div ref={sentinelRef} className="flex justify-center py-10">
+              {loadingMore && (
+                <Loader2 className="animate-spin text-slate-400" size={28} />
+              )}
+            </div>
+          ))}
       </div>
 
       {/* Lightbox - אלגנטי עם אנימציות חלקות */}
