@@ -76,6 +76,25 @@ const COLOR_PRESETS = [
   { name: "קרמל מלוח", primary: "#2e1f26", background: "#c87740" },
 ];
 
+// supabase-js לא זורק — השגיאה חוזרת בתוך התוצאה. ובנוסף, עדכון או מחיקה
+// שנחסמו ב-RLS חוזרים בלי שגיאה בכלל ועם 0 שורות. בלי הבדיקה הזו ה-UI מציג
+// "נמחק" בזמן שהשורה עדיין קיימת. select("id") מחזיר את השורות שנגעו בהן.
+const NOT_APPLIED_MESSAGE =
+  "הפעולה לא בוצעה — הפריט לא נמצא או שאין לך הרשאה אליו.";
+
+const mustAffectRows = async (query) => {
+  const { data, error } = await query.select("id");
+  if (error) throw error;
+  if (!data || data.length === 0) throw new Error(NOT_APPLIED_MESSAGE);
+  return data;
+};
+
+// לשאילתות שבהן 0 שורות הוא מצב תקין (למשל מחיקת כל התמונות של אירוע ריק).
+const throwIfError = async (query) => {
+  const { error } = await query;
+  if (error) throw error;
+};
+
 const Admin = () => {
   const [session, setSession] = useState(null);
   const [email, setEmail] = useState("");
@@ -231,23 +250,29 @@ const Admin = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setAuthLoading(false);
-      if (session) fetchEvents();
+      if (session) fetchEvents(session.user.id);
     });
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session) fetchEvents();
+      if (session) fetchEvents(session.user.id);
+      else setEvents([]);
     });
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchEvents = async () => {
+  // events_select_public הוא using (true) כי האורחים קוראים אירוע לפי id, ולכן
+  // RLS לא מסנן כאן כלום — בלי הסינון לפי owner_id כל מנהל רואה את האירועים
+  // של כל המנהלים האחרים.
+  const fetchEvents = async (ownerId = session?.user?.id) => {
+    if (!ownerId) return;
     setDataLoading(true);
     try {
       const { data, error } = await supabase
         .from("events")
         .select("*")
+        .eq("owner_id", ownerId)
         .order("created_at", { ascending: false });
       if (error) throw error;
       setEvents(data);
@@ -338,11 +363,12 @@ const Admin = () => {
     setSaving(true);
     try {
       if (selectedEvent.id) {
-        const { error } = await supabase
-          .from("events")
-          .update(payloadToSave)
-          .eq("id", selectedEvent.id);
-        if (error) throw error;
+        await mustAffectRows(
+          supabase
+            .from("events")
+            .update(payloadToSave)
+            .eq("id", selectedEvent.id),
+        );
       } else {
         const { error } = await supabase.from("events").insert([payloadToSave]);
         if (error) throw error;
@@ -369,35 +395,34 @@ const Admin = () => {
       return;
     setSaving(true);
     try {
-      await Promise.all([
-        supabase.from("photos").delete().eq("event_id", selectedEvent.id),
-        supabase.from("seating").delete().eq("event_id", selectedEvent.id),
-        supabase
-          .from("dating_profiles")
-          .delete()
-          .eq("event_id", selectedEvent.id),
-        supabase
-          .from("dating_messages")
-          .delete()
-          .eq("event_id", selectedEvent.id),
-        supabase
-          .from("icebreaker_missions")
-          .delete()
-          .eq("event_id", selectedEvent.id),
-        supabase
-          .from("icebreaker_profiles")
-          .delete()
-          .eq("event_id", selectedEvent.id),
-        supabase.from("rsvps").delete().eq("event_id", selectedEvent.id),
-        supabase.from("rideshares").delete().eq("event_id", selectedEvent.id),
-        supabase.from("reports").delete().eq("event_id", selectedEvent.id),
-        supabase.from("blessings").delete().eq("event_id", selectedEvent.id),
-      ]);
-      const { error } = await supabase
-        .from("events")
-        .delete()
-        .eq("id", selectedEvent.id);
-      if (error) throw error;
+      // המחיקה לא אטומית (אין טרנזקציה מהלקוח), ולכן לפחות לא ממשיכים למחוק
+      // את האירוע עצמו אם אחת ממחיקות הילדים נכשלה. icebreaker_matches
+      // ו-dating_likes נוספו כי בלעדיהם ה-FK חוסם את מחיקת האירוע אחרי שכל
+      // שאר הנתונים כבר נמחקו.
+      const childTables = [
+        "photos",
+        "seating",
+        "dating_profiles",
+        "dating_messages",
+        "dating_likes",
+        "icebreaker_missions",
+        "icebreaker_profiles",
+        "icebreaker_matches",
+        "rsvps",
+        "rideshares",
+        "reports",
+        "blessings",
+      ];
+      await Promise.all(
+        childTables.map((table) =>
+          throwIfError(
+            supabase.from(table).delete().eq("event_id", selectedEvent.id),
+          ),
+        ),
+      );
+      await mustAffectRows(
+        supabase.from("events").delete().eq("id", selectedEvent.id),
+      );
       setSelectedEvent(null);
       fetchEvents();
     } catch (error) {
@@ -497,7 +522,9 @@ const Admin = () => {
   const handleDeletePhoto = async (photo) => {
     if (!window.confirm(`למחוק את התמונה של ${photo.guest_name}?`)) return;
     try {
-      await supabase.from("photos").delete().eq("id", photo.id);
+      await mustAffectRows(
+        supabase.from("photos").delete().eq("id", photo.id),
+      );
       setGalleryPhotos((prev) => prev.filter((p) => p.id !== photo.id));
       setEventStats((prev) => ({
         ...prev,
@@ -546,7 +573,7 @@ const Admin = () => {
         .filter(Boolean);
       if (parsedGuests.length === 0)
         throw new Error("לא זיהינו שמות בפורמט תקין");
-      await supabase.from("seating").insert(parsedGuests);
+      await throwIfError(supabase.from("seating").insert(parsedGuests));
       openSeatingManager();
       alert(`נוספו בהצלחה ${parsedGuests.length} מוזמנים.`);
     } catch (error) {
@@ -648,10 +675,13 @@ const Admin = () => {
   const handleDeleteGuest = async (guestId, name) => {
     if (!window.confirm(`למחוק את ${name}?`)) return;
     try {
-      await supabase.from("seating").delete().eq("id", guestId);
+      await mustAffectRows(
+        supabase.from("seating").delete().eq("id", guestId),
+      );
       setSeatingGuests((prev) => prev.filter((g) => g.id !== guestId));
       setSavedGuestsCount((prev) => prev - 1);
     } catch (error) {
+      console.error(error);
       alert("שגיאה במחיקת האורח");
     }
   };
@@ -701,13 +731,16 @@ const Admin = () => {
   const handleDeleteDatingProfile = async (profileId, name) => {
     if (!window.confirm(`למחוק את הפרופיל של ${name}?`)) return;
     try {
-      await supabase.from("dating_profiles").delete().eq("id", profileId);
+      await mustAffectRows(
+        supabase.from("dating_profiles").delete().eq("id", profileId),
+      );
       setDatingProfiles((prev) => prev.filter((p) => p.id !== profileId));
       setEventStats((prev) => ({
         ...prev,
         dating: Math.max(0, prev.dating - 1),
       }));
     } catch (error) {
+      console.error(error);
       alert("תקלה במחיקה");
     }
   };
@@ -732,9 +765,10 @@ const Admin = () => {
   const handleDeleteRideshare = async (id, name) => {
     if (!window.confirm(`למחוק את המודעה של ${name}?`)) return;
     try {
-      await supabase.from("rideshares").delete().eq("id", id);
+      await mustAffectRows(supabase.from("rideshares").delete().eq("id", id));
       setRideshareList((prev) => prev.filter((r) => r.id !== id));
     } catch (error) {
+      console.error(error);
       alert("תקלה במחיקה");
     }
   };
@@ -777,9 +811,12 @@ const Admin = () => {
   const handleDeleteMission = async (missionId) => {
     if (!window.confirm("בטוח שרוצים למחוק משימה זו?")) return;
     try {
-      await supabase.from("icebreaker_missions").delete().eq("id", missionId);
+      await mustAffectRows(
+        supabase.from("icebreaker_missions").delete().eq("id", missionId),
+      );
       setIcebreakerMissions((prev) => prev.filter((m) => m.id !== missionId));
     } catch (error) {
+      console.error(error);
       alert("תקלה במחיקה");
     }
   };
@@ -825,9 +862,12 @@ const Admin = () => {
   const handleDeleteIcebreakerProfile = async (profileId, name) => {
     if (!window.confirm(`למחוק את ${name} מהמשחק?`)) return;
     try {
-      await supabase.from("icebreaker_profiles").delete().eq("id", profileId);
+      await mustAffectRows(
+        supabase.from("icebreaker_profiles").delete().eq("id", profileId),
+      );
       setIcebreakerProfiles((prev) => prev.filter((p) => p.id !== profileId));
     } catch (error) {
+      console.error(error);
       alert("תקלה במחיקה");
     }
   };
@@ -862,24 +902,43 @@ const Admin = () => {
         )
           return;
 
-        if (itemType === "photo") {
-          await supabase.from("photos").delete().eq("id", itemId);
-        } else if (itemType === "icebreaker") {
-          await supabase.from("icebreaker_matches").delete().eq("id", itemId);
+        // 0 שורות כאן הוא מצב תקין: התוכן כבר נמחק (למשל האורח הסיר את
+        // התמונה בעצמו). שגיאה אמיתית עוצרת לפני סגירת הדיווח, כדי שדיווח לא
+        // יסומן "טופל" בזמן שהתוכן הפוגעני עדיין באוויר.
+        const table =
+          itemType === "photo"
+            ? "photos"
+            : itemType === "icebreaker"
+              ? "icebreaker_matches"
+              : null;
+        if (table) {
+          const { data: deleted, error: deleteError } = await supabase
+            .from(table)
+            .delete()
+            .eq("id", itemId)
+            .select("id");
+          if (deleteError) throw deleteError;
+          alert(
+            deleted?.length
+              ? "התוכן הפוגעני נמחק בהצלחה."
+              : "התוכן כבר לא קיים במערכת — הדיווח ייסגר.",
+          );
         }
-        alert("התוכן הפוגעני נמחק בהצלחה.");
       }
 
-      await supabase
-        .from("reports")
-        .update({ status: "resolved" })
-        .eq("id", reportId);
+      await mustAffectRows(
+        supabase
+          .from("reports")
+          .update({ status: "resolved" })
+          .eq("id", reportId),
+      );
       setReportsList((prev) => prev.filter((r) => r.id !== reportId));
       setEventStats((prev) => ({
         ...prev,
         reports: Math.max(0, prev.reports - 1),
       }));
     } catch (error) {
+      console.error(error);
       alert("שגיאה בטיפול בדיווח");
     }
   };
@@ -907,13 +966,16 @@ const Admin = () => {
     if (!window.confirm(`האם אתה בטוח שברצונך למחוק את הברכה של ${name}?`))
       return;
     try {
-      await supabase.from("blessings").delete().eq("id", blessingId);
+      await mustAffectRows(
+        supabase.from("blessings").delete().eq("id", blessingId),
+      );
       setBlessingsList((prev) => prev.filter((b) => b.id !== blessingId));
       setEventStats((prev) => ({
         ...prev,
         blessings: Math.max(0, prev.blessings - 1),
       }));
     } catch (error) {
+      console.error(error);
       alert("שגיאה במחיקת הברכה");
     }
   };
@@ -928,11 +990,12 @@ const Admin = () => {
     if (!editBlessingName.trim() || !editBlessingMessage.trim())
       return alert("חובה להזין שם ותוכן ברכה");
     try {
-      const { error } = await supabase
-        .from("blessings")
-        .update({ guest_name: editBlessingName, message: editBlessingMessage })
-        .eq("id", blessingId);
-      if (error) throw error;
+      await mustAffectRows(
+        supabase
+          .from("blessings")
+          .update({ guest_name: editBlessingName, message: editBlessingMessage })
+          .eq("id", blessingId),
+      );
 
       setBlessingsList((prev) =>
         prev.map((b) =>

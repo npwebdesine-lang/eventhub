@@ -195,12 +195,14 @@ const Icebreaker = () => {
         quality: 0.78,
       });
       const fileName = `profiles/${eventId}/${guestId}_${Date.now()}.jpg`;
-      await supabase.storage
+      // supabase-js לא זורק — בלי הבדיקה נשמר URL לקובץ שמעולם לא עלה.
+      const { error: uploadError } = await supabase.storage
         .from("icebreaker-uploads")
         .upload(fileName, compressed, {
           contentType: "image/jpeg",
           upsert: false,
         });
+      if (uploadError) throw uploadError;
       const {
         data: { publicUrl },
       } = supabase.storage.from("icebreaker-uploads").getPublicUrl(fileName);
@@ -367,14 +369,17 @@ const Icebreaker = () => {
         quality: 0.82,
       });
       const fileName = `proofs/${eventId}/${currentMatch.id}_${Date.now()}.jpg`;
-      await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from("icebreaker-uploads")
         .upload(fileName, compressed, { contentType: "image/jpeg" });
+      if (uploadError) throw uploadError;
       const {
         data: { publicUrl },
       } = supabase.storage.from("icebreaker-uploads").getPublicUrl(fileName);
 
-      await supabase
+      // עדכון שנחסם ב-RLS חוזר בלי שגיאה ועם 0 שורות, ולכן בודקים גם את
+      // מספר השורות — אחרת המשימה "הושלמה" רק על המסך.
+      const { data: updated, error: updateError } = await supabase
         .from("icebreaker_matches")
         .update({
           photo_url: publicUrl,
@@ -382,7 +387,10 @@ const Icebreaker = () => {
           completed_at: new Date().toISOString(),
         })
         .eq("id", currentMatch.id)
-        .or(`guest1_id.eq.${guestId},guest2_id.eq.${guestId}`);
+        .or(`guest1_id.eq.${guestId},guest2_id.eq.${guestId}`)
+        .select("id");
+      if (updateError) throw updateError;
+      if (!updated?.length) throw new Error("mission_not_updated");
 
       setCurrentMatch(null);
       await fetchFeed();

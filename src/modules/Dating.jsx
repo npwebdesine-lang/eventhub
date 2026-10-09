@@ -24,6 +24,41 @@ import gsap from "gsap";
 
 const PROFILES_PAGE = 20;
 const MESSAGES_LIMIT = 50;
+const CHAT_POLL_MS = 4000;
+
+// השיחה בין שני אורחים, מהישנה לחדשה.
+const fetchConversation = async (eventId, guestId, partnerId) => {
+  const { data, error } = await supabase
+    .from("dating_messages")
+    .select("id, sender_id, receiver_id, message, is_read, created_at")
+    .eq("event_id", eventId)
+    .or(
+      `and(sender_id.eq.${guestId},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${guestId})`,
+    )
+    .order("created_at", { ascending: false })
+    .limit(MESSAGES_LIMIT);
+  if (error) throw error;
+  return (data || []).reverse();
+};
+
+// השרת הוא מקור האמת. הודעה מקומית (pending) נשמרת רק עד שהשרת מחזיר הודעה
+// שלי עם אותו טקסט — ה-insert כבר הצליח כשהיא נוספה, כך שזה קורה בסבב הבא.
+// אותה רשימה מחזירה את prev עצמו, כדי שהגלילה האוטומטית לא תקפוץ כל 4 שניות.
+const mergeWithPending = (prev, serverRows) => {
+  const pending = prev.filter(
+    (local) =>
+      local.pending &&
+      !serverRows.some(
+        (row) =>
+          row.sender_id === local.sender_id && row.message === local.message,
+      ),
+  );
+  const next = [...serverRows, ...pending];
+  const unchanged =
+    next.length === prev.length &&
+    next.every((message, index) => message.id === prev[index].id);
+  return unchanged ? prev : next;
+};
 
 /* ============================================================
    SOFT-CLAY / NEUMORPHISM DESIGN TOKENS  (shared across modules)
@@ -228,32 +263,31 @@ const Dating = () => {
     }
   }, [messages, view]);
 
-  // Realtime subscription for active chat
+  // Polling במקום Realtime: ה-RLS של dating_messages נשען על device_id() מתוך
+  // headers של הבקשה, ו-Realtime מאמת רק לפי ה-JWT — נבדק מול הפרויקט החי,
+  // ואף אירוע INSERT לא מגיע לאורחים. בנוסף זה חוסך חיבור Realtime לכל צ'אט
+  // פתוח, מתוך מכסה של 200 בתוכנית ה-Free.
   useEffect(() => {
     if (view !== "chat" || !activeChat) return;
-    const channel = supabase
-      .channel(`dating_chat_${eventId}_${guestId}_${activeChat.guest_id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "dating_messages",
-          filter: `event_id=eq.${eventId}`,
-        },
-        (payload) => {
-          const m = payload.new;
-          const isRelevant =
-            (m.sender_id === guestId &&
-              m.receiver_id === activeChat.guest_id) ||
-            (m.sender_id === activeChat.guest_id && m.receiver_id === guestId);
-          if (isRelevant) {
-            setMessages((prev) => [...prev, m]);
-          }
-        },
-      )
-      .subscribe();
-    return () => supabase.removeChannel(channel);
+    let cancelled = false;
+    const poll = async () => {
+      if (document.visibilityState === "hidden") return;
+      try {
+        const rows = await fetchConversation(
+          eventId,
+          guestId,
+          activeChat.guest_id,
+        );
+        if (!cancelled) setMessages((prev) => mergeWithPending(prev, rows));
+      } catch (error) {
+        console.error("Chat poll failed:", error);
+      }
+    };
+    const timer = setInterval(poll, CHAT_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
   }, [view, activeChat, guestId, eventId]);
 
   const handlePhotoUpload = async (e) => {
@@ -271,12 +305,14 @@ const Dating = () => {
         quality: 0.78,
       });
       const fileName = `${eventId}/${guestId}_${Date.now()}.jpg`;
-      await supabase.storage
+      // supabase-js לא זורק — בלי הבדיקה נשמר URL לקובץ שמעולם לא עלה.
+      const { error: uploadError } = await supabase.storage
         .from("dating-profiles")
         .upload(fileName, compressed, {
           contentType: "image/jpeg",
           upsert: false,
         });
+      if (uploadError) throw uploadError;
       const {
         data: { publicUrl },
       } = supabase.storage.from("dating-profiles").getPublicUrl(fileName);
@@ -393,18 +429,12 @@ const Dating = () => {
       setUnreadCounts((prev) => ({ ...prev, [partner.guest_id]: 0 }));
     }
 
-    const { data } = await supabase
-      .from("dating_messages")
-      .select("id, sender_id, receiver_id, message, is_read, created_at")
-      .eq("event_id", eventId)
-      .or(
-        `and(sender_id.eq.${guestId},receiver_id.eq.${partner.guest_id}),and(sender_id.eq.${partner.guest_id},receiver_id.eq.${guestId})`,
-      )
-      .order("created_at", { ascending: false })
-      .limit(MESSAGES_LIMIT);
-
-    const ordered = (data || []).reverse();
-    setMessages(ordered);
+    try {
+      setMessages(await fetchConversation(eventId, guestId, partner.guest_id));
+    } catch (error) {
+      console.error("Error loading chat:", error);
+      showToast("לא הצלחנו לטעון את השיחה", "error");
+    }
   };
 
   const sendMessage = async (e) => {
@@ -426,7 +456,23 @@ const Dating = () => {
       if (error) {
         showToast("שגיאה בשליחה, נסה שוב", "error");
         setNewMessage(text);
+        return;
       }
+      // ההודעה מוצגת מיד ולא מחכה לסבב ה-polling הבא, שמחליף אותה בשורה
+      // מהשרת. אין .select() על ה-insert כי לאורח שמחובר גם כמנהל
+      // (authenticated) אין policy קריאה, וה-insert כולו היה נכשל.
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `local-${crypto.randomUUID()}`,
+          sender_id: guestId,
+          receiver_id: activeChat.guest_id,
+          message: text,
+          is_read: false,
+          created_at: new Date().toISOString(),
+          pending: true,
+        },
+      ]);
     } finally {
       setIsSending(false);
     }

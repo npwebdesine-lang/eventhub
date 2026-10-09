@@ -67,6 +67,10 @@ const MODULES_INFO = {
   },
 };
 
+// ב-ilike התווים % ו-_ הם תווים כלליים, ו-PostgREST מתרגם גם * ל-%. שם שמכיל
+// אותם היה מתאים לשורות של אורחים אחרים.
+const escapeLikePattern = (value) => value.replace(/[\\%_*]/g, "\\$&");
+
 const getGreeting = () => {
   const h = new Date().getHours();
   if (h >= 5 && h < 12) return "בוקר טוב";
@@ -544,19 +548,46 @@ const Home = () => {
     if (!isRegistered || !eventData?.active_modules?.seating) return;
     let isMounted = true;
     const fetchMyTable = async () => {
-      const guestName = localStorage.getItem("guest_name");
+      const pattern = escapeLikePattern(
+        (localStorage.getItem("guest_name") || "").trim(),
+      );
+      if (!pattern) {
+        setMyTable({ found: false });
+        return;
+      }
       try {
-        const { data, error } = await supabase
+        // התאמה מדויקת (בלי רגישות לאותיות) קודם. חיפוש חלקי לבדו החזיר את
+        // השורה הראשונה שמכילה את השם — "דן" קיבל את השולחן של "דניאל".
+        const exact = await supabase
           .from("seating")
-          .select("table_number")
+          .select("guest_name, table_number")
           .eq("event_id", id)
-          .ilike("guest_name", `%${guestName.trim()}%`)
+          .ilike("guest_name", pattern)
           .limit(1);
-        if (error) throw error;
+        if (exact.error) throw exact.error;
+
+        let row = exact.data?.[0];
+        if (!row) {
+          // נפילה לחיפוש חלקי רק כשהוא חד-משמעי: שתי התאמות או יותר פירושן
+          // שאין לנו דרך לדעת מי האורח, ועדיף "לא נמצא" משולחן של מישהו אחר.
+          const partial = await supabase
+            .from("seating")
+            .select("guest_name, table_number")
+            .eq("event_id", id)
+            .ilike("guest_name", `%${pattern}%`)
+            .limit(2);
+          if (partial.error) throw partial.error;
+          if (partial.data?.length === 1) row = partial.data[0];
+        }
+
         if (isMounted) {
           setMyTable(
-            data?.length > 0
-              ? { found: true, number: data[0].table_number }
+            row
+              ? {
+                  found: true,
+                  number: row.table_number,
+                  seatedName: row.guest_name,
+                }
               : { found: false },
           );
         }
@@ -708,7 +739,15 @@ const Home = () => {
     setLoadingMates(true);
     setShowMatesModal(true);
     try {
-      const guestName = localStorage.getItem("guest_name");
+      // מסננים לפי השם כפי שהוא רשום בהושבה ולא לפי מה שהאורח הקליד — בהתאמה
+      // חלקית השניים שונים, והאורח היה מופיע ברשימת השותפים של עצמו.
+      const selfName = (
+        myTable?.seatedName ||
+        localStorage.getItem("guest_name") ||
+        ""
+      )
+        .trim()
+        .toLowerCase();
       const { data, error } = await supabase
         .from("seating")
         .select("guest_name")
@@ -716,8 +755,8 @@ const Home = () => {
         .eq("table_number", tableNum);
       if (error) throw error;
       setTableMates(
-        data.filter(
-          (g) => g.guest_name.toLowerCase() !== guestName.toLowerCase(),
+        (data || []).filter(
+          (g) => (g.guest_name || "").trim().toLowerCase() !== selfName,
         ),
       );
     } catch (error) {
