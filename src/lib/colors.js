@@ -119,6 +119,16 @@ export const darken = (hex, amount) => {
   return toHex(rgb.map((c) => c * (1 - amount)));
 };
 
+/** ערבוב ליניארי בין שני צבעים: t=0 מחזיר את a, t=1 את b. */
+export const mix = (a, b, t) => {
+  const ca = parseHex(a) || parseHex(DEFAULT_PRIMARY);
+  const cb = parseHex(b) || ca;
+  return toHex(ca.map((c, i) => c + (cb[i] - c) * t));
+};
+
+/** האם הערך ניתן לפענוח כצבע (hex או rgb()). */
+export const isParsableColor = (color) => parseHex(color) !== null;
+
 /** מבהיר צבע במקדם 0–1 (ערבוב עם לבן). */
 export const lighten = (hex, amount) => {
   const rgb = parseHex(hex) || parseHex(DEFAULT_PRIMARY);

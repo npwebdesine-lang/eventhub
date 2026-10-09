@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { CLAY_FIELD, DEFAULT_PRIMARY, clayButtonStyle } from "../lib/clay";
 import { accentOn } from "../lib/colors";
+import { useEventBackdrop } from "../lib/useEventBackdrop";
 
 
 const BlessingModule = () => {
@@ -28,6 +29,7 @@ const BlessingModule = () => {
   const eventId = searchParams.get("event");
 
   const [eventData, setEventData] = useState(null);
+  useEventBackdrop(eventData?.design_config?.colors?.background);
   const [loadingEvent, setLoadingEvent] = useState(true);
 
   const [guestName, setGuestName] = useState("");

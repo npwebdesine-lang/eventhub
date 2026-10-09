@@ -30,6 +30,7 @@ import {
 import { accentOn } from "../lib/colors";
 import { useModalBehavior } from "../components/Modal";
 import gsap from "gsap";
+import { useEventBackdrop } from "../lib/useEventBackdrop";
 
 const MODULES_INFO = {
   photo: {
@@ -484,6 +485,7 @@ const Home = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [eventData, setEventData] = useState(null);
+  useEventBackdrop(eventData?.design_config?.colors?.background);
   const [loading, setLoading] = useState(true);
 
   const [isRegistered, setIsRegistered] = useState(false);

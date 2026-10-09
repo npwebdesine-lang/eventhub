@@ -27,6 +27,7 @@ import { isValidUUIDv4, getOrCreateDeviceId } from "../utils/deviceId";
 import { appendUnique, olderThan, orderNewestFirst } from "../lib/pagination";
 import { CLAY_CARD, CLAY_INSET, DEFAULT_PRIMARY, clayButtonStyle } from "../lib/clay";
 import { accentOn } from "../lib/colors";
+import { useEventBackdrop } from "../lib/useEventBackdrop";
 
 const MAX_PHOTOS_PER_GUEST = 3;
 const PAGE_SIZE = 12;
@@ -54,6 +55,7 @@ const Photos = () => {
 
   const [loading, setLoading] = useState(true);
   const [eventData, setEventData] = useState(null);
+  useEventBackdrop(eventData?.design_config?.colors?.background);
   const [photos, setPhotos] = useState([]);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);

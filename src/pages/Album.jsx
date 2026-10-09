@@ -17,6 +17,7 @@ import { useModalBehavior } from "../components/Modal";
 import { appendUnique, olderThan, orderNewestFirst } from "../lib/pagination";
 import { DEFAULT_PRIMARY, clayButtonStyle, clayHeroStyle } from "../lib/clay";
 import { accentOn } from "../lib/colors";
+import { useEventBackdrop } from "../lib/useEventBackdrop";
 
 const PAGE_SIZE = 24;
 
@@ -24,6 +25,7 @@ const Album = () => {
   const { id } = useParams();
 
   const [eventData, setEventData] = useState(null);
+  useEventBackdrop(eventData?.design_config?.colors?.background);
   const [photos, setPhotos] = useState([]);
   const [blessings, setBlessings] = useState([]);
   const [loading, setLoading] = useState(true);

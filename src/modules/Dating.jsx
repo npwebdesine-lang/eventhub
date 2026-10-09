@@ -22,6 +22,7 @@ import {
 import gsap from "gsap";
 import { CLAY_FIELD, CLAY_RAISED, DEFAULT_PRIMARY, clayButtonStyle } from "../lib/clay";
 import { accentOn } from "../lib/colors";
+import { useEventBackdrop } from "../lib/useEventBackdrop";
 
 const PROFILES_PAGE = 20;
 const MESSAGES_LIMIT = 50;
@@ -69,6 +70,7 @@ const Dating = () => {
   const { showToast } = useToast();
 
   const [eventData, setEventData] = useState(null);
+  useEventBackdrop(eventData?.design_config?.colors?.background);
   const [view, setView] = useState("loading");
   const [regStep, setRegStep] = useState(1);
 

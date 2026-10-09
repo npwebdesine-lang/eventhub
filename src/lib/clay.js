@@ -5,11 +5,16 @@
  * מחלקות ו-style מוכנים.
  */
 import {
+  CLAY_PAGE_END_HEX,
+  CLAY_PAGE_HEX,
   DEFAULT_PRIMARY,
   LIGHT_TEXT,
   buttonPalette,
   darken,
+  isParsableColor,
   lighten,
+  mix,
+  relativeLuminance,
 } from "./colors";
 
 export { DEFAULT_PRIMARY };
@@ -67,4 +72,36 @@ export const clayHeroStyle = (color) => {
       ? "rgb(0 0 0 / 0.2)"
       : "rgb(255 255 255 / 0.45)",
   };
+};
+
+const backdropCache = new Map();
+// בהירות סוף המעבר המקורי — כל בדיקות הניגודיות (clay-muted, accentOn)
+// נמדדו מולו, ולכן רקע האירוע אסור שיהיה כהה ממנו.
+const MIN_PAGE_END_LUMINANCE = relativeLuminance(CLAY_PAGE_END_HEX);
+// סוף המעבר המקורי כהה מתחילתו בכ-6%; שומרים על אותו עומק.
+const PAGE_END_DEPTH = 0.06;
+
+/**
+ * רקע הדף לפי "צבע הרקע" שהמנהל בחר. מערבבים את גוון החימר עם הצבע שנבחר
+ * בעוצמה הגבוהה ביותר שעדיין לא מכהה את הדף מתחת למשטח החימר הכהה ביותר —
+ * כך פסטלים מופיעים כמעט במלואם, וצבע כהה (למשל #020617, ברירת המחדל
+ * הישנה) הופך לגוון עדין במקום לדף כהה שהטקסט עליו לא נקרא.
+ * מחזיר null כשאין צבע תקין — ואז נשארים עם ברירת המחדל של החימר.
+ */
+export const eventBackdrop = (background) => {
+  if (!isParsableColor(background)) return null;
+  if (backdropCache.has(background)) return backdropCache.get(background);
+
+  let result = null;
+  for (let step = 20; step >= 1; step -= 1) {
+    const strength = step / 20;
+    const page = mix(CLAY_PAGE_HEX, background, strength);
+    const pageEnd = darken(page, PAGE_END_DEPTH);
+    if (relativeLuminance(pageEnd) >= MIN_PAGE_END_LUMINANCE) {
+      result = { page, pageEnd };
+      break;
+    }
+  }
+  backdropCache.set(background, result);
+  return result;
 };

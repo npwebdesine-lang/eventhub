@@ -45,7 +45,10 @@
       "Bash(perl -pi -e 's/^const BUTTON = `rounded-full active:scale-95 \\\\$\\\\{BUTTON\\\\}`;/const BUTTON = `rounded-full active:scale-95 \\\\${CLAY_BUTTON}`;/' src/pages/RsvpAction.jsx)",
       "Bash(perl -pi -e 's/import \\\\{ CLAY_FIELD, CLAY_INSET, CLAY_RAISED, DEFAULT_PRIMARY, clayButtonStyle, clayHeroStyle \\\\} from \"\\\\.\\\\.\\\\/lib\\\\/clay\";/import {\\\\r\\\\n  CLAY_FIELD,\\\\r\\\\n  CLAY_RAISED,\\\\r\\\\n  DEFAULT_PRIMARY,\\\\r\\\\n  clayButtonStyle,\\\\r\\\\n  clayHeroStyle,\\\\r\\\\n} from \"..\\\\/lib\\\\/clay\";/' src/pages/Invite.jsx)",
       "Bash(perl -0pi -e 's/\\(?<!\\\\r\\)\\\\n/\\\\r\\\\n/g' src/pages/AdminQRGenerator.jsx)",
-      "Bash(perl -pi -e 's/hover:bg-current\\\\/20/hover:bg-[var\\(--hero-chip-strong\\)]/g; s/hover:bg-current\\\\/10/hover:bg-[var\\(--hero-chip\\)]/g; s/bg-current\\\\/10/bg-[var\\(--hero-chip\\)]/g' src/pages/Home.jsx src/pages/Album.jsx)"
+      "Bash(perl -pi -e 's/hover:bg-current\\\\/20/hover:bg-[var\\(--hero-chip-strong\\)]/g; s/hover:bg-current\\\\/10/hover:bg-[var\\(--hero-chip\\)]/g; s/bg-current\\\\/10/bg-[var\\(--hero-chip\\)]/g' src/pages/Home.jsx src/pages/Album.jsx)",
+      "Bash(git log *)",
+      "mcp__claude_ai_Supabase__execute_sql",
+      "Bash(perl -pi -e 's/<div className=\"w-11 h-6 bg-slate-200 /<div className=\"relative w-11 h-6 bg-slate-200 /g' src/pages/Admin.jsx)"
     ]
   }
 }

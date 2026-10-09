@@ -21,6 +21,7 @@ import {
 import gsap from "gsap";
 import { CLAY_RAISED, DEFAULT_PRIMARY, clayButtonStyle } from "../lib/clay";
 import { accentOn } from "../lib/colors";
+import { useEventBackdrop } from "../lib/useEventBackdrop";
 
 
 const Icebreaker = () => {
@@ -33,6 +34,7 @@ const Icebreaker = () => {
   const guestId = getOrCreateDeviceId();
 
   const [eventData, setEventData] = useState(null);
+  useEventBackdrop(eventData?.design_config?.colors?.background);
   const [view, setView] = useState("loading");
   const [myProfile, setMyProfile] = useState(null);
   const [currentMatch, setCurrentMatch] = useState(null);

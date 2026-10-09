@@ -32,6 +32,7 @@ import {
   clayButtonStyle,
   clayHeroStyle,
 } from "../lib/clay";
+import { useEventBackdrop } from "../lib/useEventBackdrop";
 
 
 // שלב ייעודי ל"קישור קסם" (?guest_id=). 1-4 נשארים הזרימה העצמאית הקיימת.
@@ -205,6 +206,7 @@ const Invite = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [eventData, setEventData] = useState(null);
+  useEventBackdrop(eventData?.design_config?.colors?.background);
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState({
     days: 0,

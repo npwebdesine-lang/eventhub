@@ -46,6 +46,8 @@ import {
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import AdminQRGenerator from "./AdminQRGenerator";
+import { DEFAULT_PRIMARY } from "../lib/clay";
+import { CLAY_PAGE_HEX } from "../lib/colors";
 
 const MISSION_PRESETS = {
   wedding_young: [
@@ -315,9 +317,10 @@ const Admin = () => {
       },
       design_config: {
         template: event.design_config?.template || "glass",
-        colors: event.design_config?.colors || {
-          primary: "#3b82f6",
-          background: "#020617",
+        colors: {
+          primary: DEFAULT_PRIMARY,
+          background: CLAY_PAGE_HEX,
+          ...event.design_config?.colors,
         },
         invite_template: event.design_config?.invite_template || "modern",
         invite_image: event.design_config?.invite_image || "",
@@ -343,7 +346,7 @@ const Admin = () => {
       },
       design_config: {
         template: "glass",
-        colors: { primary: "#3b82f6", background: "#020617" },
+        colors: { primary: DEFAULT_PRIMARY, background: CLAY_PAGE_HEX },
         invite_template: "modern",
         invite_image: "",
       },
@@ -928,7 +931,11 @@ const Admin = () => {
       await mustAffectRows(
         supabase
           .from("reports")
-          .update({ status: "resolved" })
+          // ה-check constraint reports_status מתיר רק pending / reviewed /
+          // dismissed. "resolved" נדחה ב-23514, והדיווח נשאר פתוח לתמיד.
+          .update({
+            status: action === "delete_item" ? "reviewed" : "dismissed",
+          })
           .eq("id", reportId),
       );
       setReportsList((prev) => prev.filter((r) => r.id !== reportId));
@@ -1398,7 +1405,7 @@ const Admin = () => {
                               formData.design_config.colors.primary,
                             )
                               ? formData.design_config.colors.primary
-                              : "#3b82f6"
+                              : DEFAULT_PRIMARY
                           }
                           onChange={(e) =>
                             setFormData({
@@ -1431,7 +1438,7 @@ const Admin = () => {
                             },
                           })
                         }
-                        placeholder="למשל: #3b82f6 / rgb()"
+                        placeholder="למשל: #8fa7b8 / rgb()"
                         className="w-full p-3 bg-clay-well shadow-clay-inset rounded-xl outline-none focus:ring-2 focus:ring-clay-ink/40 font-mono text-left text-sm"
                         dir="ltr"
                       />
@@ -1457,7 +1464,7 @@ const Admin = () => {
                               formData.design_config.colors.background,
                             )
                               ? formData.design_config.colors.background
-                              : "#020617"
+                              : CLAY_PAGE_HEX
                           }
                           onChange={(e) =>
                             setFormData({
@@ -1490,7 +1497,7 @@ const Admin = () => {
                             },
                           })
                         }
-                        placeholder="למשל: #020617 / rgb()"
+                        placeholder="למשל: #fff8e7 / rgb()"
                         className="w-full p-3 bg-clay-well shadow-clay-inset rounded-xl outline-none focus:ring-2 focus:ring-clay-ink/40 font-mono text-left text-sm"
                         dir="ltr"
                       />
@@ -1676,7 +1683,7 @@ const Admin = () => {
                             })
                           }
                         />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-clay-surface after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                        <div className="relative w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-clay-surface after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
                       </label>
                     </div>
                     {formData.active_modules.rsvp && !selectedEvent.isNew && (
@@ -1731,7 +1738,7 @@ const Admin = () => {
                             })
                           }
                         />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-clay-surface after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
+                        <div className="relative w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-clay-surface after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-500"></div>
                       </label>
                     </div>
                     {formData.active_modules.blessings &&
@@ -1777,7 +1784,7 @@ const Admin = () => {
                             })
                           }
                         />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-clay-surface after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                        <div className="relative w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-clay-surface after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
                       </label>
                     </div>
                     {formData.active_modules.photo && !selectedEvent.isNew && (
@@ -1830,7 +1837,7 @@ const Admin = () => {
                             })
                           }
                         />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-clay-surface after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                        <div className="relative w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-clay-surface after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                       </label>
                     </div>
                     {formData.active_modules.seating &&
@@ -1878,7 +1885,7 @@ const Admin = () => {
                             })
                           }
                         />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-clay-surface after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
+                        <div className="relative w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-clay-surface after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-rose-500"></div>
                       </label>
                     </div>
                     {formData.active_modules.dating && !selectedEvent.isNew && (
@@ -1925,7 +1932,7 @@ const Admin = () => {
                             })
                           }
                         />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-clay-surface after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div>
+                        <div className="relative w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-clay-surface after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyan-500"></div>
                       </label>
                     </div>
                     {formData.active_modules.icebreaker &&
@@ -1979,7 +1986,7 @@ const Admin = () => {
                             })
                           }
                         />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-clay-surface after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
+                        <div className="relative w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-clay-surface after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
                       </label>
                     </div>
                     {formData.active_modules.rideshare &&

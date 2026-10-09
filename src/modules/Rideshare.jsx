@@ -19,6 +19,7 @@ import {
 import gsap from "gsap";
 import { CLAY_CARD, CLAY_FIELD, CLAY_INSET, DEFAULT_PRIMARY, clayButtonStyle } from "../lib/clay";
 import { accentOn } from "../lib/colors";
+import { useEventBackdrop } from "../lib/useEventBackdrop";
 
 const formatDialer = (phone) => `tel:${phone.replace(/\D/g, "")}`;
 
@@ -118,6 +119,7 @@ const Rideshare = () => {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [eventData, setEventData] = useState(null);
+  useEventBackdrop(eventData?.design_config?.colors?.background);
   const [rides, setRides] = useState([]);
   const [step, setStep] = useState("welcome");
   const [tempName, setTempName] = useState("");

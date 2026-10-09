@@ -8,6 +8,7 @@ import { isValidUUIDv4 } from "../utils/deviceId";
 import { useToast } from "../components/Toast";
 import { CLAY_BUTTON, CLAY_INSET, CLAY_RAISED, DEFAULT_PRIMARY } from "../lib/clay";
 import { accentOn } from "../lib/colors";
+import { useEventBackdrop } from "../lib/useEventBackdrop";
 
 // עיבוד "קישור קסם" מוואטסאפ: /rsvp-action?id=<uuid>&status=confirmed|canceled
 // ה-UUID עצמו הוא ההרשאה — אין ל-anon גישה ישירה לטבלת event_guests, וכל
@@ -61,6 +62,7 @@ export default function RsvpAction() {
     isValidUUIDv4(guestId) && VALID_STATUSES.includes(requestedStatus);
 
   const [result, setResult] = useState(null);
+  useEventBackdrop(result?.design_config?.colors?.background);
   const [errorCode, setErrorCode] = useState(
     linkIsValid ? null : "invalid_link",
   );
