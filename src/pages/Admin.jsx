@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "../lib/supabase";
-import { sanitize } from "../utils/sanitize";
 import { useModalBehavior } from "../components/Modal";
 import { useToast } from "../components/Toast";
 import GuestListManager from "../components/GuestListManager";
@@ -2404,7 +2403,7 @@ const Admin = () => {
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <h3 className="text-lg font-black text-slate-800">
-                        תצוגה מקדימה — {sanitize(seatingFileName)}
+                        תצוגה מקדימה — {seatingFileName}
                       </h3>
                       <p className="mt-1 text-sm font-bold text-slate-500">
                         {seatingPreview.rows.filter(isValidSeatingRow).length}{" "}
@@ -2477,13 +2476,13 @@ const Admin = () => {
                             <td
                               className={`px-3 py-2.5 font-bold ${row.issues.includes("missing_name") ? "text-rose-500" : "text-slate-700"}`}
                             >
-                              {row.name ? sanitize(row.name) : "— חסר שם —"}
+                              {row.name ? row.name : "— חסר שם —"}
                             </td>
                             <td
                               className={`px-3 py-2.5 font-bold ${row.issues.includes("missing_table") ? "text-rose-500" : "text-slate-700"}`}
                             >
                               {row.tableNumber
-                                ? sanitize(row.tableNumber)
+                                ? row.tableNumber
                                 : "— חסר שולחן —"}
                             </td>
                             <td className="rounded-l-2xl px-3 py-2.5 text-xs font-bold">
@@ -2594,7 +2593,7 @@ const Admin = () => {
                             {guest.table_number}
                           </div>
                           <span className="font-bold text-slate-700">
-                            {sanitize(guest.guest_name || "")}
+                            {guest.guest_name || ""}
                           </span>
                         </div>
                         <button

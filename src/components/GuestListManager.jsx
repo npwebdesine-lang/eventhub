@@ -23,7 +23,6 @@ import {
   dietaryLabelOf,
 } from "../lib/dietary";
 import { parseGuestFile, isValidGuestRow } from "../lib/guestImport";
-import { sanitize } from "../utils/sanitize";
 import { useToast } from "./Toast";
 
 // ניהול רשימת מוזמנים + "קישורי קסם" לוואטסאפ.
@@ -499,7 +498,7 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
             <div className="flex flex-wrap items-center justify-between gap-3 p-6 pb-3">
               <div>
                 <h3 className="font-black text-slate-800">
-                  תצוגה מקדימה — {sanitize(fileName)}
+                  תצוגה מקדימה — {fileName}
                 </h3>
                 <p className="mt-1 text-sm font-bold text-slate-500">
                   {filePreview.rows.filter(isValidGuestRow).length} שורות תקינות
@@ -568,16 +567,16 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                         <td
                           className={`px-3 py-2 font-bold ${row.issues.includes("missing_name") ? "text-rose-500" : "text-slate-700"}`}
                         >
-                          {row.name ? sanitize(row.name) : "— חסר שם —"}
+                          {row.name ? row.name : "— חסר שם —"}
                         </td>
                         <td
                           dir="ltr"
                           className={`px-3 py-2 text-right text-sm font-bold ${row.issues.includes("invalid_phone") ? "text-rose-500" : "text-slate-600"}`}
                         >
                           {row.phone
-                            ? sanitize(row.phone)
+                            ? row.phone
                             : row.rawPhone
-                              ? `${sanitize(row.rawPhone)} ✗`
+                              ? `${row.rawPhone} ✗`
                               : "—"}
                         </td>
                         <td className="px-3 py-2 font-bold text-slate-700">
@@ -688,7 +687,7 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                     <ul className="space-y-0.5 text-xs text-rose-600">
                       {preview.invalid.map((row) => (
                         <li key={row.lineNumber}>
-                          שורה {row.lineNumber}: {sanitize(row.line)} —{" "}
+                          שורה {row.lineNumber}: {row.line} —{" "}
                           {row.reason}
                         </li>
                       ))}

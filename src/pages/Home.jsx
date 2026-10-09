@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { getOrCreateDeviceId } from "../utils/deviceId";
+import { safeGetItem, safeRemoveItem, safeSetItem } from "../lib/safeStorage";
 import { useModalBehavior } from "../components/Modal";
 import gsap from "gsap";
 
@@ -516,7 +517,7 @@ const Home = () => {
 
   // Fetch event data
   useEffect(() => {
-    const savedName = localStorage.getItem("guest_name");
+    const savedName = safeGetItem("guest_name");
     if (savedName) setIsRegistered(true);
 
     let isMounted = true;
@@ -549,7 +550,7 @@ const Home = () => {
     let isMounted = true;
     const fetchMyTable = async () => {
       const pattern = escapeLikePattern(
-        (localStorage.getItem("guest_name") || "").trim(),
+        (safeGetItem("guest_name") || "").trim(),
       );
       if (!pattern) {
         setMyTable({ found: false });
@@ -715,7 +716,7 @@ const Home = () => {
     setRegistrationError(null);
 
     try {
-      localStorage.setItem("guest_name", nameInput.trim());
+      safeSetItem("guest_name", nameInput.trim());
       getOrCreateDeviceId();
       setIsRegistered(true);
     } catch (err) {
@@ -727,7 +728,7 @@ const Home = () => {
   };
 
   const handleChangeName = () => {
-    localStorage.removeItem("guest_name");
+    safeRemoveItem("guest_name");
     setNameInput("");
     setTermsAccepted(false);
     setMyTable(null);
@@ -743,7 +744,7 @@ const Home = () => {
       // חלקית השניים שונים, והאורח היה מופיע ברשימת השותפים של עצמו.
       const selfName = (
         myTable?.seatedName ||
-        localStorage.getItem("guest_name") ||
+        safeGetItem("guest_name") ||
         ""
       )
         .trim()
@@ -803,7 +804,7 @@ const Home = () => {
 
   const { name, active_modules, design_config } = eventData;
   const { primary = "#8fa7b8" } = design_config?.colors || {};
-  const guestNameStr = localStorage.getItem("guest_name");
+  const guestNameStr = safeGetItem("guest_name");
   const guestInitial = (guestNameStr || "").trim().charAt(0) || "?";
 
   const secondaryModules = [

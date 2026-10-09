@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs wc -l)",
+      "Bash(npx eslint *)",
+      "Bash(grep -v \"^$\")",
+      "Bash(sort -k5 -n)",
+      "Bash(git diff *)",
+      "Bash(git rm *)",
+      "Bash(npx vite *)"
+    ]
+  }
+}

@@ -15,8 +15,9 @@ import {
   Download,
   ChevronRight as ChevRight,
   ZoomIn,
+  Flag,
 } from "lucide-react";
-import { getTextColor } from "../lib/colors";
+import { safeGetItem } from "../lib/safeStorage";
 import { compressImage, isAllowedImageType } from "../lib/imageUtils";
 import { useToast } from "../components/Toast";
 import { useModalBehavior } from "../components/Modal";
@@ -59,7 +60,7 @@ const Photos = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
 
-  const guestName = localStorage.getItem("guest_name") || "";
+  const guestName = safeGetItem("guest_name") || "";
   const guestId = getOrCreateDeviceId();
 
   const [loading, setLoading] = useState(true);
@@ -325,9 +326,12 @@ const Photos = () => {
     }
   };
 
-  const handleReport = async (photoId, reportedName) => {
+  // supabase-js לא זורק — השגיאה חוזרת בתוצאה. בלי הבדיקה האורח ראה "הדיווח
+  // התקבל" גם כשהדיווח מעולם לא נשמר.
+  const handleReport = async (photoId) => {
+    if (!window.confirm("לדווח על התמונה הזו כפוגענית?")) return;
     try {
-      await supabase.from("reports").insert([
+      const { error } = await supabase.from("reports").insert([
         {
           event_id: eventId,
           reported_item_id: photoId,
@@ -335,9 +339,11 @@ const Photos = () => {
           reporter_id: guestId,
         },
       ]);
+      if (error) throw error;
       showToast("הדיווח התקבל ויטופל על ידי מנהלי האירוע", "success");
     } catch (e) {
       console.error(e);
+      showToast("הדיווח לא נשלח, נסו שוב", "error");
     }
   };
 
@@ -681,6 +687,16 @@ const Photos = () => {
               title="הורד תמונה"
             >
               <Download size={18} /> הורד
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleReport(photos[lightbox].id);
+              }}
+              className="text-white/60 hover:text-white transition-colors flex items-center gap-1.5"
+              aria-label="דיווח על תמונה פוגענית"
+            >
+              <Flag size={18} /> דווח
             </button>
           </div>
 

@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { getTextColor } from "../lib/colors";
 import { compressImage, isAllowedImageType } from "../lib/imageUtils";
+import { safeGetItem } from "../lib/safeStorage";
 import { useToast } from "../components/Toast";
-import { sanitize } from "../utils/sanitize";
 import { isValidUUIDv4, getOrCreateDeviceId } from "../utils/deviceId";
 import {
   Loader2,
@@ -41,7 +40,7 @@ const Icebreaker = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
 
-  const guestName = localStorage.getItem("guest_name");
+  const guestName = safeGetItem("guest_name");
   const guestId = getOrCreateDeviceId();
 
   const [eventData, setEventData] = useState(null);
@@ -53,9 +52,16 @@ const Icebreaker = () => {
   const [photoUrl, setPhotoUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
+  // אחרי שה-insert של ההתאמה יצא לדרך אין ביטול — אחרת נשארת התאמה ממתינה
+  // ב-DB שהאורח לא יודע עליה.
+  const [rouletteCommitting, setRouletteCommitting] = useState(false);
   const proofInputRef = useRef(null);
   const rouletteRef = useRef(null);
   const rouletteTimeoutRef = useRef(null);
+  const rouletteTweenRef = useRef(null);
+  // מזהה הגרלה נוכחית: ביטול מקדם אותו, וכך הגרלה שהשאילתות שלה עוד רצות
+  // לא ממשיכה אחרי שהאורח כבר יצא.
+  const rouletteRunRef = useRef(0);
   const isMountedRef = useRef(true);
 
   useEffect(() => {
@@ -63,6 +69,7 @@ const Icebreaker = () => {
     return () => {
       isMountedRef.current = false;
       if (rouletteTimeoutRef.current) clearTimeout(rouletteTimeoutRef.current);
+      rouletteTweenRef.current?.kill();
     };
   }, []);
 
@@ -275,21 +282,38 @@ const Icebreaker = () => {
     }
   };
 
+  const cancelRoulette = () => {
+    rouletteRunRef.current += 1;
+    if (rouletteTimeoutRef.current) clearTimeout(rouletteTimeoutRef.current);
+    rouletteTimeoutRef.current = null;
+    rouletteTweenRef.current?.kill();
+    setView("hub");
+  };
+
   const startRoulette = async () => {
+    const runId = ++rouletteRunRef.current;
+    const isCurrentRun = () =>
+      isMountedRef.current && runId === rouletteRunRef.current;
+    setRouletteCommitting(false);
     setView("roulette");
     try {
-      const { data: others } = await supabase
+      const { data: others, error: othersError } = await supabase
         .from("icebreaker_profiles")
         .select("id, guest_id, name, photo_url")
         .eq("event_id", eventId)
         .neq("guest_id", guestId)
         .limit(200);
+      if (othersError) throw othersError;
 
-      const { data: missions } = await supabase
+      const { data: missions, error: missionsError } = await supabase
         .from("icebreaker_missions")
         .select("id, content")
         .eq("event_id", eventId)
         .limit(100);
+      if (missionsError) throw missionsError;
+
+      // האורח ביטל בזמן שהשאילתות רצו — לא מתחילים הגרלה שאף אחד לא מחכה לה.
+      if (!isCurrentRun()) return;
 
       if (!others?.length) {
         showToast("עדיין אין עוד אנשים במשחק! תגידו לחבר'ה להירשם.", "warning");
@@ -307,7 +331,7 @@ const Icebreaker = () => {
         missions[Math.floor(Math.random() * missions.length)];
 
       if (rouletteRef.current) {
-        gsap.to(rouletteRef.current, {
+        rouletteTweenRef.current = gsap.to(rouletteRef.current, {
           scale: 1.1,
           duration: 0.2,
           yoyo: true,
@@ -316,23 +340,29 @@ const Icebreaker = () => {
       }
 
       rouletteTimeoutRef.current = setTimeout(async () => {
-        if (!isMountedRef.current) return;
-        const { data: matchData, error } = await supabase
-          .from("icebreaker_matches")
-          .insert([
-            {
-              event_id: eventId,
-              guest1_id: guestId,
-              guest2_id: randomPartner.guest_id,
-              mission_text: randomMission.content,
-              status: "pending",
-            },
-          ])
-          .select()
-          .maybeSingle();
+        rouletteTimeoutRef.current = null;
+        if (!isCurrentRun()) return;
+        setRouletteCommitting(true);
+        // כל כישלון כאן חייב להחזיר ל-hub: מסך הרולטה הוא ספינר בלי יציאה,
+        // ובלי זה האורח נתקע עליו לתמיד.
+        try {
+          const { data: matchData, error } = await supabase
+            .from("icebreaker_matches")
+            .insert([
+              {
+                event_id: eventId,
+                guest1_id: guestId,
+                guest2_id: randomPartner.guest_id,
+                mission_text: randomMission.content,
+                status: "pending",
+              },
+            ])
+            .select()
+            .maybeSingle();
 
-        if (!isMountedRef.current) return;
-        if (!error && matchData) {
+          if (!isMountedRef.current) return;
+          if (error || !matchData) throw error || new Error("match_not_created");
+
           setCurrentMatch({ ...matchData, partner: randomPartner });
           setView("active_mission");
           gsap.fromTo(
@@ -346,10 +376,17 @@ const Icebreaker = () => {
               ease: "back.out(1.5)",
             },
           );
+        } catch (err) {
+          console.error("Roulette match failed:", err);
+          if (!isMountedRef.current) return;
+          showToast("לא הצלחנו להגריל משימה, נסו שוב", "error");
+          setView("hub");
         }
       }, 2000);
     } catch (err) {
       console.error(err);
+      if (!isCurrentRun()) return;
+      showToast("לא הצלחנו להגריל משימה, נסו שוב", "error");
       setView("hub");
     }
   };
@@ -406,7 +443,8 @@ const Icebreaker = () => {
   const handleReport = async (matchId) => {
     if (!window.confirm("האם לדווח על תוכן זה כפוגעני?")) return;
     try {
-      await supabase.from("reports").insert([
+      // supabase-js לא זורק — בלי הבדיקה הוצג "הדיווח התקבל" גם בכישלון.
+      const { error } = await supabase.from("reports").insert([
         {
           event_id: eventId,
           reported_item_id: matchId,
@@ -414,9 +452,11 @@ const Icebreaker = () => {
           reporter_id: guestId,
         },
       ]);
+      if (error) throw error;
       showToast("הדיווח התקבל ויטופל על ידי מנהלי האירוע", "success");
     } catch (e) {
       console.error(e);
+      showToast("הדיווח לא נשלח, נסו שוב", "error");
     }
   };
 
@@ -538,6 +578,15 @@ const Icebreaker = () => {
             מגריל משימה חשאית
           </p>
         </div>
+        {!rouletteCommitting && (
+          <button
+            type="button"
+            onClick={cancelRoulette}
+            className="mt-10 px-8 py-3.5 rounded-full font-bold text-slate-600 bg-[#f0eee7] shadow-[5px_5px_12px_rgba(0,0,0,0.09),-5px_-5px_12px_rgba(255,255,255,0.9)] active:shadow-[inset_3px_3px_7px_rgba(0,0,0,0.1),inset_-3px_-3px_7px_rgba(255,255,255,0.8)] transition-all"
+          >
+            ביטול
+          </button>
+        )}
       </div>
     );
   }
@@ -583,7 +632,7 @@ const Icebreaker = () => {
             )}
           </div>
           <h1 className="text-4xl font-black text-slate-700 mb-8">
-            {sanitize(currentMatch.partner?.name || "")}
+            {currentMatch.partner?.name || ""}
           </h1>
 
           {/* Mission card */}

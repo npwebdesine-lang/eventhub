@@ -3,7 +3,6 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { DEFAULT_DIETARY, DIETARY_OPTIONS } from "../lib/dietary";
 import { isValidUUIDv4 } from "../utils/deviceId";
-import { sanitize } from "../utils/sanitize";
 import {
   Loader2,
   CalendarHeart,
@@ -98,7 +97,7 @@ const LocationLine = ({ location, primaryColor, size = "md", className = "" }) =
       <span
         className={`font-medium text-slate-500 ${isSmall ? "text-sm" : "text-base"}`}
       >
-        {sanitize(text)}
+        {text}
       </span>
     </div>
   );
@@ -1231,7 +1230,7 @@ const Invite = () => {
                           >
                             <div className="flex items-center justify-between gap-2">
                               <span className="font-bold text-slate-700">
-                                {sanitize(companion.guest_name)}
+                                {companion.guest_name}
                               </span>
                               <button
                                 type="button"
@@ -1461,7 +1460,7 @@ const Invite = () => {
                       className="text-sm font-bold text-amber-800 flex items-center gap-2"
                     >
                       <span className="w-1.5 h-1.5 bg-amber-400 rounded-full shrink-0"></span>
-                      השם "{sanitize(dup.guest_name || "")}" כבר רשום באירוע
+                      השם "{dup.guest_name || ""}" כבר רשום באירוע
                     </p>
                   ))}
                 </div>

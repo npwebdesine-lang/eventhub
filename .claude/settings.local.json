@@ -58,7 +58,24 @@
       "Bash(git ls-remote *)",
       "Bash(node -e ' *)",
       "Bash(node -e 'const fs=require\\(\"fs\"\\);const p=\"src/components/GuestListManager.jsx\";let s=fs.readFileSync\\(p,\"utf8\"\\);const esc=\"\\\\\"\" + \"\\\\\\\\\" + \"uFEFF\" + \"\\\\\"\";s=s.replace\\(/\"\\\\uFEFF\"/, esc\\);fs.writeFileSync\\(p,s\\);console.log\\(\"remaining literal U+FEFF chars:\",\\(s.match\\(/\\\\uFEFF/g\\)||[]\\).length\\);')",
-      "Bash(echo \"eslint_exit=$?\")"
+      "Bash(echo \"eslint_exit=$?\")",
+      "Bash(git commit *)",
+      "Bash(npm i *)",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/xlsx/package.json'\\).version\\)\")",
+      "Bash(cp \"C:/Users/npata/AppData/Local/Temp/claude/c--Users-npata-OneDrive-Desktop-business-my-apps-eventtick/6a9e4725-6533-40e6-9a58-366a6dd69208/scratchpad/seating-parse-test.mjs\" ./__seatingtest.mjs)",
+      "Bash(node __seatingtest.mjs)",
+      "Bash(rm -f __seatingtest.mjs)",
+      "Bash(node __importtest.mjs)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(git diff *)",
+      "Bash(node __ogtest.mjs)",
+      "Bash(node -e 'const b=require\\(\"fs\"\\).readFileSync\\(\".env\"\\);console.log\\(\"first bytes:\",[...b.slice\\(0,5\\)].map\\(x=>x.toString\\(16\\)\\).join\\(\" \"\\)\\);console.log\\(\"BOM present:\",b[0]===0xEF&&b[1]===0xBB&&b[2]===0xBF\\);')",
+      "Bash(rm -f __ogtest.mjs)",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('vercel.json','utf8'\\)\\);console.log\\('vercel.json parses OK'\\)\")",
+      "Bash(xargs wc -l)",
+      "Bash(git switch *)",
+      "Bash(node keyset_check.mjs \"C:/Users/npata/OneDrive/Desktop/business/my apps/eventtick\")",
+      "Bash(python -)"
     ]
   }
 }

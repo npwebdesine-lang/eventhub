@@ -5,7 +5,6 @@ import { Check, Loader2, Minus, Plus, X } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { DEFAULT_DIETARY, DIETARY_OPTIONS } from "../lib/dietary";
 import { isValidUUIDv4 } from "../utils/deviceId";
-import { sanitize } from "../utils/sanitize";
 import { useToast } from "../components/Toast";
 
 // עיבוד "קישור קסם" מוואטסאפ: /rsvp-action?id=<uuid>&status=confirmed|canceled
@@ -278,7 +277,7 @@ export default function RsvpAction() {
         </div>
 
         <h1 className="mb-2 text-2xl font-bold text-slate-700">
-          היי {sanitize(result?.guest_name || "")},
+          היי {result?.guest_name || ""},
         </h1>
         <p className="mb-8 text-lg text-slate-500">
           {confirmed ? "אישרנו את הגעתך! 🎉" : "נשמח לראותך בפעם הבאה 💛"}

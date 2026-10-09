@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import gsap from "gsap";
-import { sanitize } from "../utils/sanitize";
 import { compressImage, isAllowedImageType } from "../lib/imageUtils";
+import { safeGetItem } from "../lib/safeStorage";
 import { useToast } from "../components/Toast";
 import {
   Send,
@@ -53,7 +53,7 @@ const BlessingModule = () => {
   const cardRef = useRef(null);
 
   useEffect(() => {
-    const savedName = localStorage.getItem("guest_name");
+    const savedName = safeGetItem("guest_name");
     if (savedName) setGuestName(savedName);
 
     if (!eventId) return;
@@ -265,7 +265,7 @@ const BlessingModule = () => {
               </h3>
               <p className="text-slate-600 font-medium text-sm mb-8 px-4 leading-relaxed">
                 המילים המרגשות שלך צורפו לספר הברכות של{" "}
-                {sanitize(eventData?.name || "")}.
+                {eventData?.name || ""}.
               </p>
 
               <button

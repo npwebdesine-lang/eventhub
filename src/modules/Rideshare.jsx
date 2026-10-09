@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { getOrCreateDeviceId, isValidUUIDv4 } from "../utils/deviceId";
+import { safeGetItem, safeSetItem } from "../lib/safeStorage";
 import { getTextColor } from "../lib/colors";
 import { useToast } from "../components/Toast";
 import {
@@ -121,7 +122,7 @@ const Rideshare = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
 
-  const localGuestName = localStorage.getItem("guest_name") || "";
+  const localGuestName = safeGetItem("guest_name") || "";
   const localGuestId = (() => {
     const id = getOrCreateDeviceId();
     return isValidUUIDv4(id) ? id : "";
@@ -211,7 +212,7 @@ const Rideshare = () => {
     if (!tempName.trim()) return;
 
     const trimmedName = tempName.trim();
-    localStorage.setItem("guest_name", trimmedName);
+    safeSetItem("guest_name", trimmedName);
 
     const guestId = getOrCreateDeviceId();
     if (!isValidUUIDv4(guestId)) {
@@ -225,6 +226,11 @@ const Rideshare = () => {
   const submitForm = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
+    // גיבוי לוולידציה של הדפדפן: בלי כיוון אין לפי מה להתאים טרמפים.
+    if (!formData.direction) {
+      showToast("בחרו כיוון נסיעה", "warning");
+      return;
+    }
     setIsSubmitting(true);
     try {
       const { data: savedRide, error } = await supabase
@@ -490,7 +496,7 @@ const Rideshare = () => {
               return (
                 <label
                   key={opt.value}
-                  className="p-4 rounded-[1.4rem] cursor-pointer transition-all flex items-center gap-3"
+                  className="relative p-4 rounded-[1.4rem] cursor-pointer transition-all flex items-center gap-3 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-slate-500"
                   style={
                     active
                       ? { ...clayBtn(primaryColor), color: "#fff" }
@@ -502,11 +508,15 @@ const Rideshare = () => {
                         }
                   }
                 >
+                  {/* sr-only ולא hidden: display:none מוציא את הרדיו מהמקלדת,
+                      והדפדפן חוסם שליחה של required בלי להציג את ההודעה —
+                      הכפתור פשוט לא הגיב. */}
                   <input
                     type="radio"
                     name="dir"
                     value={opt.value}
-                    className="hidden"
+                    checked={active}
+                    className="sr-only"
                     required
                     onChange={() =>
                       setFormData({

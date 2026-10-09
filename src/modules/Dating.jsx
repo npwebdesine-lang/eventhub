@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { getTextColor } from "../lib/colors";
 import { compressImage, isAllowedImageType } from "../lib/imageUtils";
+import { safeGetItem, safeGetJSON, safeSetItem } from "../lib/safeStorage";
 import { useToast } from "../components/Toast";
-import { sanitize } from "../utils/sanitize";
 import { isValidUUIDv4, getOrCreateDeviceId } from "../utils/deviceId";
 import {
   Heart,
@@ -95,11 +94,12 @@ const Dating = () => {
   const [chatHistory, setChatHistory] = useState([]);
   const [unreadCounts, setUnreadCounts] = useState({});
 
-  const [blockedUsers, setBlockedUsers] = useState(() =>
-    JSON.parse(localStorage.getItem("blocked_users") || "[]"),
-  );
+  const [blockedUsers, setBlockedUsers] = useState(() => {
+    const stored = safeGetJSON("blocked_users", []);
+    return Array.isArray(stored) ? stored : [];
+  });
 
-  const guestName = localStorage.getItem("guest_name");
+  const guestName = safeGetItem("guest_name");
   const guestId = getOrCreateDeviceId();
 
   const formRef = useRef(null);
@@ -393,11 +393,14 @@ const Dating = () => {
     if (!confirmed) return;
 
     const newBlocked = [...blockedUsers, partnerId];
-    localStorage.setItem("blocked_users", JSON.stringify(newBlocked));
+    safeSetItem("blocked_users", JSON.stringify(newBlocked));
     setBlockedUsers(newBlocked);
 
+    // החסימה מקומית ולכן תמיד מצליחה; הדיווח למנהל יכול להיכשל, ואז אומרים
+    // את זה במפורש במקום להציג "הועבר לבדיקה" על דיווח שלא נשמר.
+    let reported = false;
     try {
-      await supabase.from("reports").insert([
+      const { error } = await supabase.from("reports").insert([
         {
           event_id: eventId,
           reported_item_id: partnerId,
@@ -405,11 +408,17 @@ const Dating = () => {
           reporter_id: guestId,
         },
       ]);
+      if (error) throw error;
+      reported = true;
     } catch (e) {
       console.error(e);
     }
 
-    showToast("המשתמש נחסם והועבר לבדיקה", "success");
+    if (reported) {
+      showToast("המשתמש נחסם והועבר לבדיקה", "success");
+    } else {
+      showToast("המשתמש נחסם, אך הדיווח למנהלים לא נשלח", "warning");
+    }
     setView("chatList");
     if (myProfile) await loadGalleryData(myProfile);
   };
@@ -879,13 +888,13 @@ const Dating = () => {
                       <div className="flex items-end justify-between mb-2">
                         <div>
                           <h3 className="font-black text-3xl text-white leading-tight">
-                            {sanitize(p.name || "")}, {p.age}
+                            {p.name || ""}, {p.age}
                           </h3>
                           <p
                             className="text-sm font-bold mt-0.5"
                             style={{ color: primaryColor }}
                           >
-                            {sanitize(p.connection || "")}
+                            {p.connection || ""}
                           </p>
                         </div>
                         <button
@@ -899,14 +908,14 @@ const Dating = () => {
 
                       {p.bio && (
                         <p className="text-white/80 text-sm font-medium line-clamp-2 mb-3">
-                          "{sanitize(p.bio)}"
+                          "{p.bio}"
                         </p>
                       )}
 
                       <div className="flex gap-2 flex-wrap">
                         {p.location && (
                           <span className="bg-white/90 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1">
-                            <MapPin size={11} /> {sanitize(p.location)}
+                            <MapPin size={11} /> {p.location}
                           </span>
                         )}
                         <span className="bg-white/90 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-full">
@@ -965,7 +974,7 @@ const Dating = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-black text-slate-700 truncate">
-                      {sanitize(p.name || "")}, {p.age}
+                      {p.name || ""}, {p.age}
                     </h3>
                     <p className="text-xs text-slate-400 font-medium truncate mt-0.5">
                       {unreadCounts[p.guest_id] > 0 ? (
@@ -1018,11 +1027,11 @@ const Dating = () => {
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="font-black text-base leading-tight truncate text-slate-700">
-              {sanitize(activeChat.name || "")}
+              {activeChat.name || ""}
             </h2>
             {activeChat.location && (
               <span className="text-[11px] font-bold text-slate-400">
-                📍 {sanitize(activeChat.location)}
+                📍 {activeChat.location}
               </span>
             )}
           </div>
@@ -1078,7 +1087,7 @@ const Dating = () => {
                   }
                 >
                   <p className="text-sm font-medium leading-relaxed">
-                    {sanitize(m.message)}
+                    {m.message}
                   </p>
                   <span className="text-[10px] opacity-50 mt-1 block" dir="ltr">
                     {new Date(m.created_at).toLocaleTimeString("he-IL", {
@@ -1099,7 +1108,7 @@ const Dating = () => {
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="כתבו הודעה..."
-            className="flex-1 p-4 rounded-full outline-none text-slate-700 font-medium text-sm bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.07),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]"
+            className="flex-1 p-4 rounded-full outline-none text-slate-700 font-medium text-base bg-[#eeece5] shadow-[inset_4px_4px_9px_rgba(0,0,0,0.07),inset_-4px_-4px_9px_rgba(255,255,255,0.85)]"
           />
           <button
             type="submit"
