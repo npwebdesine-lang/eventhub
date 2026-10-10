@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import { useModalBehavior } from "../components/Modal";
 import { useToast } from "../components/Toast";
@@ -47,8 +47,16 @@ import {
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import AdminQRGenerator from "./AdminQRGenerator";
-import { CLAY_CARD, CLAY_INSET, DEFAULT_PRIMARY } from "../lib/clay";
+import {
+  CLAY_CARD,
+  CLAY_INK_BUTTON,
+  CLAY_INSET,
+  DEFAULT_PRIMARY,
+} from "../lib/clay";
 import { CLAY_PAGE_HEX } from "../lib/colors";
+import { isAllowedImageType } from "../lib/imageUtils";
+
+const GALLERY_PAGE_SIZE = 60;
 
 const MISSION_PRESETS = {
   wedding_young: [
@@ -119,12 +127,19 @@ const Admin = () => {
   const [dataLoading, setDataLoading] = useState(false);
 
   const [selectedEvent, setSelectedEvent] = useState(null);
+  // האירוע שמוצג כרגע — לבדיקה אחרי await, שהתשובה עדיין שייכת אליו.
+  const activeEventIdRef = useRef(null);
+  useEffect(() => {
+    activeEventIdRef.current = selectedEvent?.id ?? null;
+  }, [selectedEvent]);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState(null);
   const [uploadingAsset, setUploadingAsset] = useState(false);
 
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [galleryPhotos, setGalleryPhotos] = useState([]);
+  const [galleryLoading, setGalleryLoading] = useState(false);
+  const [galleryHasMore, setGalleryHasMore] = useState(false);
   const [downloadingZip, setDownloadingZip] = useState(false);
 
   const [copiedEventId, setCopiedEventId] = useState(null);
@@ -268,6 +283,31 @@ const Admin = () => {
     }
   }, [selectedEvent]);
 
+  // events_select_public הוא using (true) כי האורחים קוראים אירוע לפי id, ולכן
+  // RLS לא מסנן כאן כלום — בלי הסינון לפי owner_id כל מנהל רואה את האירועים
+  // של כל המנהלים האחרים.
+  // ownerId מפורש (ולא session מה-closure) כדי שהפונקציה תהיה יציבה, וה-effect
+  // של ה-auth למטה לא יירשם מחדש בכל שינוי session.
+  const fetchEvents = useCallback(async (ownerId) => {
+    if (!ownerId) return;
+    setDataLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("events")
+        .select(
+          "id, name, event_date, location, short_code, active_modules, design_config, created_at",
+        )
+        .eq("owner_id", ownerId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      setEvents(data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setDataLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -282,28 +322,7 @@ const Admin = () => {
       else setEvents([]);
     });
     return () => subscription.unsubscribe();
-  }, []);
-
-  // events_select_public הוא using (true) כי האורחים קוראים אירוע לפי id, ולכן
-  // RLS לא מסנן כאן כלום — בלי הסינון לפי owner_id כל מנהל רואה את האירועים
-  // של כל המנהלים האחרים.
-  const fetchEvents = async (ownerId = session?.user?.id) => {
-    if (!ownerId) return;
-    setDataLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("events")
-        .select("*")
-        .eq("owner_id", ownerId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      setEvents(data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setDataLoading(false);
-    }
-  };
+  }, [fetchEvents]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -397,7 +416,7 @@ const Admin = () => {
         if (error) throw error;
       }
       setSelectedEvent(null);
-      fetchEvents();
+      fetchEvents(session?.user?.id);
     } catch (error) {
       if (error.code === "23505") {
         alert("הקוד הקצר הזה כבר תפוס על ידי אירוע אחר. אנא בחרו קוד אחר.");
@@ -447,7 +466,7 @@ const Admin = () => {
         supabase.from("events").delete().eq("id", selectedEvent.id),
       );
       setSelectedEvent(null);
-      fetchEvents();
+      fetchEvents(session?.user?.id);
     } catch (error) {
       console.error(error);
       alert("שגיאה במחיקה. נסו שוב.");
@@ -478,12 +497,20 @@ const Admin = () => {
   };
 
   const handleInviteImageUpload = async (e) => {
-    const file = e.target.files[0];
+    const input = e.target;
+    const file = input.files?.[0];
+    // מאפשר לבחור שוב את אותו קובץ אחרי כישלון.
+    input.value = "";
     if (!file) return;
+    if (!isAllowedImageType(file)) {
+      showToast("יש להעלות קובץ תמונה בלבד", "error");
+      return;
+    }
+    const uploadEventId = selectedEvent.id;
     setUploadingAsset(true);
     try {
       const fileExt = file.name.split(".").pop();
-      const fileName = `${selectedEvent.id}_${Date.now()}.${fileExt}`;
+      const fileName = `${uploadEventId}_${Date.now()}.${fileExt}`;
       const { error: uploadError } = await supabase.storage
         .from("event-assets")
         .upload(fileName, file);
@@ -491,12 +518,16 @@ const Admin = () => {
       const {
         data: { publicUrl },
       } = supabase.storage.from("event-assets").getPublicUrl(fileName);
-      setFormData({
-        ...formData,
-        design_config: { ...formData.design_config, invite_image: publicUrl },
-      });
+      // המנהל עבר לאירוע אחר בזמן ההעלאה — לא כותבים את התמונה לטופס שלו.
+      if (activeEventIdRef.current !== uploadEventId) return;
+      // updater פונקציונלי: formData מה-closure הוא מלפני ה-await, ושינויים
+      // שהמנהל הקליד בזמן ההעלאה (שם, תאריך, צבעים) היו נדרסים.
+      setFormData((prev) => ({
+        ...prev,
+        design_config: { ...prev.design_config, invite_image: publicUrl },
+      }));
     } catch (error) {
-      alert("שגיאה בהעלאת התמונה");
+      showToast("שגיאה בהעלאת התמונה", "error");
       console.error(error);
     } finally {
       setUploadingAsset(false);
@@ -504,31 +535,63 @@ const Admin = () => {
   };
 
   const applyColorPreset = (preset) => {
-    setFormData({
-      ...formData,
+    setFormData((prev) => ({
+      ...prev,
       design_config: {
-        ...formData.design_config,
+        ...prev.design_config,
         colors: { primary: preset.primary, background: preset.background },
       },
-    });
+    }));
   };
 
-  const openGallery = async () => {
-    setIsGalleryOpen(true);
-    const { data } = await supabase
-      .from("photos")
-      .select("*")
-      .eq("event_id", selectedEvent.id)
-      .order("created_at", { ascending: false });
-    setGalleryPhotos(data || []);
+  // הגלריה נטענת בעמודים (cursor על created_at) ובעמודות שהיא מציגה בלבד —
+  // באירוע עם מאות תמונות, select("*") של הכל בבת אחת היה איטי וכבד.
+  const loadGalleryPage = async (cursor = null) => {
+    const eventId = selectedEvent.id;
+    setGalleryLoading(true);
+    try {
+      let query = supabase
+        .from("photos")
+        .select("id, image_url, guest_name, created_at")
+        .eq("event_id", eventId)
+        .order("created_at", { ascending: false })
+        .limit(GALLERY_PAGE_SIZE);
+      if (cursor) query = query.lt("created_at", cursor);
+      const { data, error } = await query;
+      if (error) throw error;
+      if (activeEventIdRef.current !== eventId) return;
+      const rows = data || [];
+      setGalleryPhotos((prev) => (cursor ? [...prev, ...rows] : rows));
+      setGalleryHasMore(rows.length === GALLERY_PAGE_SIZE);
+    } catch (error) {
+      console.error(error);
+      showToast("לא הצלחנו לטעון את התמונות", "error");
+    } finally {
+      setGalleryLoading(false);
+    }
   };
+
+  const openGallery = () => {
+    setIsGalleryOpen(true);
+    setGalleryPhotos([]);
+    setGalleryHasMore(false);
+    loadGalleryPage();
+  };
+
+  // ה-ZIP צריך את כל התמונות, לא רק את העמודים שנטענו לגלריה.
   const downloadAlbum = async () => {
     setDownloadingZip(true);
     try {
+      const { data: allPhotos, error } = await supabase
+        .from("photos")
+        .select("image_url, guest_name")
+        .eq("event_id", selectedEvent.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
       const zip = new JSZip();
       const imgFolder = zip.folder(`Album_${formData.name}`);
       await Promise.all(
-        galleryPhotos.map(async (p, i) => {
+        (allPhotos || []).map(async (p, i) => {
           const res = await fetch(p.image_url);
           const blob = await res.blob();
           imgFolder.file(`${p.guest_name}_${i + 1}.jpg`, blob);
@@ -565,7 +628,7 @@ const Admin = () => {
     try {
       const { data, count, error } = await supabase
         .from("seating")
-        .select("*", { count: "exact" })
+        .select("id, guest_name, table_number", { count: "exact" })
         .eq("event_id", selectedEvent.id)
         .order("guest_name", { ascending: true });
       if (error) throw error;
@@ -774,7 +837,9 @@ const Admin = () => {
     try {
       const { data } = await supabase
         .from("rideshares")
-        .select("*")
+        .select(
+          "id, guest_name, phone, role, direction, from_location, to_location",
+        )
         .eq("event_id", selectedEvent.id)
         .order("created_at", { ascending: false });
       setRideshareList(data || []);
@@ -802,7 +867,7 @@ const Admin = () => {
     try {
       const { data } = await supabase
         .from("icebreaker_missions")
-        .select("*")
+        .select("id, content")
         .eq("event_id", selectedEvent.id)
         .order("created_at", { ascending: false });
       setIcebreakerMissions(data || []);
@@ -821,7 +886,7 @@ const Admin = () => {
         .insert([
           { event_id: selectedEvent.id, content: newMissionText.trim() },
         ])
-        .select();
+        .select("id, content");
       if (error) throw error;
       setIcebreakerMissions([data[0], ...icebreakerMissions]);
       setNewMissionText("");
@@ -856,7 +921,7 @@ const Admin = () => {
       const { data, error } = await supabase
         .from("icebreaker_missions")
         .insert(inserts)
-        .select();
+        .select("id, content");
       if (error) throw error;
       setIcebreakerMissions([...data, ...icebreakerMissions]);
       alert("החבילה נטענה!");
@@ -872,7 +937,7 @@ const Admin = () => {
     try {
       const { data } = await supabase
         .from("icebreaker_profiles")
-        .select("*")
+        .select("id, name")
         .eq("event_id", selectedEvent.id)
         .order("created_at", { ascending: false });
       setIcebreakerProfiles(data || []);
@@ -987,7 +1052,7 @@ const Admin = () => {
     try {
       const { data, error } = await supabase
         .from("reports")
-        .select("*")
+        .select("id, item_type, reported_item_id, created_at")
         .eq("event_id", selectedEvent.id)
         .eq("status", "pending")
         .order("created_at", { ascending: false });
@@ -1062,7 +1127,7 @@ const Admin = () => {
     try {
       const { data, error } = await supabase
         .from("blessings")
-        .select("*")
+        .select("id, guest_name, message, image_url, created_at")
         .eq("event_id", selectedEvent.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -2480,14 +2545,22 @@ const Admin = () => {
             </button>
           </div>
           <div className="flex-1 overflow-y-auto p-6 md:p-10 pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:pb-[calc(2.5rem+env(safe-area-inset-bottom))]">
+            {!galleryLoading && galleryPhotos.length === 0 && (
+              <p className="text-center text-white/70 font-medium text-lg py-20">
+                עדיין אין תמונות באלבום
+              </p>
+            )}
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
               {galleryPhotos.map((photo) => (
                 <div
                   key={photo.id}
-                  className="relative group rounded-2xl overflow-hidden aspect-square"
+                  className="relative group rounded-2xl overflow-hidden aspect-square bg-slate-800"
                 >
                   <img
                     src={photo.image_url}
+                    alt={`תמונה של ${photo.guest_name}`}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover"
                   />
                   <button
@@ -2500,6 +2573,26 @@ const Admin = () => {
                 </div>
               ))}
             </div>
+            {galleryLoading ? (
+              <div className="flex justify-center py-10">
+                <Loader2 className="animate-spin text-white" size={40} />
+              </div>
+            ) : (
+              galleryHasMore && (
+                <div className="flex justify-center pt-8">
+                  <button
+                    onClick={() =>
+                      loadGalleryPage(
+                        galleryPhotos[galleryPhotos.length - 1]?.created_at,
+                      )
+                    }
+                    className={`${CLAY_INK_BUTTON} px-8 py-3 rounded-full font-bold`}
+                  >
+                    טען עוד תמונות
+                  </button>
+                </div>
+              )
+            )}
           </div>
         </div>
       )}

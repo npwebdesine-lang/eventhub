@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { compressImage, isAllowedImageType } from "../lib/imageUtils";
@@ -64,17 +64,20 @@ const Icebreaker = () => {
     };
   }, []);
 
-  useEffect(() => {
-    if (!eventId || !guestName || !guestId || !isValidUUIDv4(guestId))
-      return navigate("/");
-    let isMounted = true;
-    checkStatus(isMounted);
-    return () => {
-      isMounted = false;
-    };
-  }, [eventId, guestId]);
+  const fetchFeed = useCallback(async (isActive = () => isMountedRef.current) => {
+    const { data, error } = await supabase
+      .from("icebreaker_matches")
+      .select("id, mission_text, photo_url, completed_at, guest1_id, guest2_id")
+      .eq("event_id", eventId)
+      .eq("status", "completed")
+      .order("completed_at", { ascending: false })
+      .limit(20);
 
-  const checkStatus = async (isMounted = true) => {
+    if (error) console.error("Error fetching feed:", error);
+    if (isActive()) setFeed(data || []);
+  }, [eventId]);
+
+  const checkStatus = useCallback(async (isActive = () => isMountedRef.current) => {
     try {
       const { data: event, error: eventError } = await supabase
         .from("events")
@@ -83,7 +86,7 @@ const Icebreaker = () => {
         .single();
 
       if (eventError) throw eventError;
-      if (!isMounted) return;
+      if (!isActive()) return;
       setEventData(event);
 
       const { data: profile, error: profileError } = await supabase
@@ -97,7 +100,7 @@ const Icebreaker = () => {
         console.error("Error fetching icebreaker profile:", profileError);
       }
 
-      if (!isMounted) return;
+      if (!isActive()) return;
 
       if (!profile) {
         setView("register");
@@ -135,32 +138,31 @@ const Icebreaker = () => {
           .eq("guest_id", partnerId)
           .maybeSingle();
 
-        if (isMounted) {
+        if (isActive()) {
           setCurrentMatch({ ...activeMatch, partner });
           setView("active_mission");
         }
       } else {
-        await fetchFeed(isMounted);
-        if (isMounted) setView("hub");
+        await fetchFeed(isActive);
+        if (isActive()) setView("hub");
       }
     } catch (err) {
       console.error("Icebreaker Init failed:", err);
-      if (isMounted) setView("register");
+      if (isActive()) setView("register");
     }
-  };
+  }, [eventId, guestId, fetchFeed]);
 
-  const fetchFeed = async (isMounted = true) => {
-    const { data, error } = await supabase
-      .from("icebreaker_matches")
-      .select("id, mission_text, photo_url, completed_at, guest1_id, guest2_id")
-      .eq("event_id", eventId)
-      .eq("status", "completed")
-      .order("completed_at", { ascending: false })
-      .limit(20);
-
-    if (error) console.error("Error fetching feed:", error);
-    if (isMounted) setFeed(data || []);
-  };
+  useEffect(() => {
+    if (!eventId || !guestName || !guestId || !isValidUUIDv4(guestId))
+      return navigate("/");
+    let isMounted = true;
+    // פונקציה ולא ערך: בוליאני עובר by value, וה-cleanup שמאפס אותו לא היה
+    // מגיע ל-checkStatus שכבר רצה — setState אחרי unmount / מעבר אירוע.
+    checkStatus(() => isMounted);
+    return () => {
+      isMounted = false;
+    };
+  }, [eventId, guestId, guestName, navigate, checkStatus]);
 
   useEffect(() => {
     if (view === "hub") {

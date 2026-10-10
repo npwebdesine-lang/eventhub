@@ -23,26 +23,18 @@ const AdminQRGenerator = ({
   const qrRef = useRef(null);
   const qrCodeInstance = useRef(null);
 
-  // סנכרון המידע כשמחליפים אירוע בלוח הבקרה
-  useEffect(() => {
-    setUrl(defaultUrl);
-    setDotsColor(defaultColor);
-  }, [defaultUrl, defaultColor]);
+  // אין effect שמסנכרן את ה-props ל-state: Admin מרנדר את הרכיב עם
+  // key={selectedEvent.id}, ולכן מעבר אירוע מרכיב אותו מחדש עם ה-defaults
+  // החדשים. ה-effect הקודם רק הוסיף רינדור כפול (setState בתוך effect).
 
+  // יצירה חד-פעמית עם האפשרויות הקבועות בלבד; הנתונים והצבעים מוחלים
+  // ב-effect הבא, שרץ מיד אחרי זה גם ב-mount.
   useEffect(() => {
     qrCodeInstance.current = new QRCodeStyling({
       width: 260,
       height: 260,
-      data: url,
-      image: imageUrl,
-      dotsOptions: {
-        color: dotsColor,
-        type: "dots",
-      },
-      cornersSquareOptions: {
-        type: "extra-rounded",
-        color: dotsColor,
-      },
+      dotsOptions: { type: "dots" },
+      cornersSquareOptions: { type: "extra-rounded" },
       imageOptions: {
         crossOrigin: "anonymous",
         margin: 10,

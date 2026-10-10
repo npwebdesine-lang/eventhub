@@ -7,7 +7,6 @@ import {
   Loader2,
   CalendarHeart,
   Clock,
-  Sparkles,
   Car,
   PartyPopper,
   Briefcase,
@@ -33,13 +32,15 @@ import {
   clayHeroStyle,
 } from "../lib/clay";
 import { useEventBackdrop } from "../lib/useEventBackdrop";
-
+import InviteCountdown from "../components/InviteCountdown";
 
 // שלב ייעודי ל"קישור קסם" (?guest_id=). 1-4 נשארים הזרימה העצמאית הקיימת.
 const RSVP_STEP_GUEST = 0;
 const MAGIC_STATUSES = ["confirmed", "canceled"];
 
-const PHONE_PATTERN = /^[0-9+\-\s]{7,15}$/; // זהה ל-check constraint על event_guests
+const PARTICLE_SIZES = [18, 26, 12, 22, 15, 28];
+
+const PHONE_PATTERN =/^[0-9+\-\s]{7,15}$/; // זהה ל-check constraint על event_guests
 
 // ה-RPC זורק raise exception; PostgREST מחזיר את הטקסט בתוך message.
 const RSVP_ERROR_COPY = {
@@ -64,7 +65,12 @@ const rsvpErrorCode = (error) => {
 //
 // מחזיר null כשאין מיקום, ולכן כל קורא אחראי גם למרווח התחתון שלו — ראו
 // המרווח המותנה על שורת התאריך, כדי שהפריסה לא תתכווץ כשאין כתובת.
-const LocationLine = ({ location, primaryColor, size = "md", className = "" }) => {
+const LocationLine = ({
+  location,
+  primaryColor,
+  size = "md",
+  className = "",
+}) => {
   const text = (location || "").trim();
   if (!text) return null;
   const isSmall = size === "sm";
@@ -208,12 +214,6 @@ const Invite = () => {
   const [eventData, setEventData] = useState(null);
   useEventBackdrop(eventData?.design_config?.colors?.background);
   const [loading, setLoading] = useState(true);
-  const [timeLeft, setTimeLeft] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-  });
 
   // ----------------------------------------
   // RSVP States (Multi-step Form)
@@ -239,7 +239,8 @@ const Invite = () => {
   // שאר בני החבורה — שורות אמיתיות ב-event_guests שחולקות את אותו טלפון.
   const [magicCompanions, setMagicCompanions] = useState([]);
   const [newCompanionName, setNewCompanionName] = useState("");
-  const [newCompanionDietary, setNewCompanionDietary] = useState(DEFAULT_DIETARY);
+  const [newCompanionDietary, setNewCompanionDietary] =
+    useState(DEFAULT_DIETARY);
   const [companionBusy, setCompanionBusy] = useState(false);
   const [magicNotes, setMagicNotes] = useState("");
   const [magicDietary, setMagicDietary] = useState(DEFAULT_DIETARY);
@@ -265,7 +266,8 @@ const Invite = () => {
       try {
         const { data, error } = await supabase
           .from("events")
-          .select("*")
+          // רק מה שהדף מציג — בלי owner_id/short_code שאין לאורח סיבה לקבל.
+          .select("id, name, event_date, location, design_config, active_modules")
           .eq("id", id)
           .single();
         if (error) throw error;
@@ -342,27 +344,6 @@ const Invite = () => {
       isMounted = false;
     };
   }, [magicGuestId, magicStatusHint, id]);
-
-  useEffect(() => {
-    if (!eventData?.event_date) return;
-    const targetDate = new Date(`${eventData.event_date}T19:00:00`);
-    const calculateTimeLeft = () => {
-      const difference = +targetDate - +new Date();
-      if (difference > 0) {
-        setTimeLeft({
-          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-          minutes: Math.floor((difference / 1000 / 60) % 60),
-          seconds: Math.floor((difference / 1000) % 60),
-        });
-      } else {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-      }
-    };
-    calculateTimeLeft();
-    const timer = setInterval(calculateTimeLeft, 1000);
-    return () => clearInterval(timer);
-  }, [eventData]);
 
   // --- קסם האנימציות של GSAP ---
   useEffect(() => {
@@ -677,17 +658,13 @@ const Invite = () => {
 
   if (loading)
     return (
-      <div
-        className="min-h-screen flex items-center justify-center bg-clay-gradient"
-      >
+      <div className="min-h-screen flex items-center justify-center bg-clay-gradient">
         <Loader2 className="animate-spin text-clay-muted" size={48} />
       </div>
     );
   if (!eventData)
     return (
-      <div
-        className="min-h-screen flex items-center justify-center text-clay-muted text-xl font-bold bg-clay-gradient"
-      >
+      <div className="min-h-screen flex items-center justify-center text-clay-muted text-xl font-bold bg-clay-gradient">
         ההזמנה לא נמצאה :(
       </div>
     );
@@ -697,12 +674,6 @@ const Invite = () => {
   const primaryColor = design_config?.colors?.primary || DEFAULT_PRIMARY;
   const template = design_config?.invite_template || "modern";
   const inviteImage = design_config?.invite_image;
-
-  const isHappeningNow =
-    timeLeft.days === 0 &&
-    timeLeft.hours === 0 &&
-    timeLeft.minutes === 0 &&
-    timeLeft.seconds === 0;
 
   const renderTemplate = () => {
     if (template === "elegant") {
@@ -719,8 +690,10 @@ const Invite = () => {
                 className="elegant-particle absolute rounded-full opacity-20 blur-[2px]"
                 style={{
                   backgroundColor: primaryColor,
-                  width: `${Math.random() * 20 + 10}px`,
-                  height: `${Math.random() * 20 + 10}px`,
+                  // גדלים קבועים: Math.random() בזמן רינדור הגריל גודל חדש
+                  // בכל רינדור (כל הקלדה בטופס ה-RSVP) והחלקיקים "קפצו".
+                  width: `${PARTICLE_SIZES[i]}px`,
+                  height: `${PARTICLE_SIZES[i]}px`,
                   top: `${[10, 20, 70, 80, 40, 60][i]}%`,
                   left: `${[10, 80, 20, 90, 50, 70][i]}%`,
                 }}
@@ -759,61 +732,11 @@ const Invite = () => {
                 </div>
               )}
             </div>
-            {!isHappeningNow ? (
-              <div
-                className="fade-up-item flex justify-center items-center gap-4 mb-10"
-                dir="ltr"
-              >
-                <div className="flex flex-col items-center">
-                  <span
-                    className="text-3xl font-bold"
-                    style={{ color: accentOn(primaryColor) }}
-                  >
-                    {timeLeft.seconds.toString().padStart(2, "0")}
-                  </span>
-                  <span className="text-xs font-bold text-clay-muted">
-                    שניות
-                  </span>
-                </div>
-                <div className="h-8 w-[1px] bg-slate-200"></div>
-                <div className="flex flex-col items-center">
-                  <span
-                    className="text-3xl font-bold"
-                    style={{ color: accentOn(primaryColor) }}
-                  >
-                    {timeLeft.minutes.toString().padStart(2, "0")}
-                  </span>
-                  <span className="text-xs font-bold text-clay-muted">דקות</span>
-                </div>
-                <div className="h-8 w-[1px] bg-slate-200"></div>
-                <div className="flex flex-col items-center">
-                  <span
-                    className="text-3xl font-bold"
-                    style={{ color: accentOn(primaryColor) }}
-                  >
-                    {timeLeft.hours.toString().padStart(2, "0")}
-                  </span>
-                  <span className="text-xs font-bold text-clay-muted">שעות</span>
-                </div>
-                <div className="h-8 w-[1px] bg-slate-200"></div>
-                <div className="flex flex-col items-center">
-                  <span
-                    className="text-3xl font-bold"
-                    style={{ color: accentOn(primaryColor) }}
-                  >
-                    {timeLeft.days.toString().padStart(2, "0")}
-                  </span>
-                  <span className="text-xs font-bold text-clay-muted">ימים</span>
-                </div>
-              </div>
-            ) : (
-              <h2
-                className="fade-up-item text-3xl font-bold mb-10"
-                style={{ color: accentOn(primaryColor) }}
-              >
-                היום זה קורה!
-              </h2>
-            )}
+            <InviteCountdown
+              eventDate={event_date}
+              variant="elegant"
+              primaryColor={primaryColor}
+            />
             <p
               className={`fade-up-item text-clay-muted font-medium ${
                 location ? "mb-2" : "mb-8"
@@ -896,49 +819,11 @@ const Invite = () => {
                   "9px 9px 24px rgba(0,0,0,0.16), -7px -7px 18px rgba(255,255,255,0.55), inset 2px 2px 5px rgba(255,255,255,0.25), inset -2px -2px 5px rgba(0,0,0,0.12)",
               }}
             >
-              {!isHappeningNow ? (
-                <div className="flex justify-between items-center" dir="ltr">
-                  <div className="flex flex-col items-center flex-1">
-                    <span className="text-4xl font-black tracking-tight">
-                      {timeLeft.days.toString().padStart(2, "0")}
-                    </span>
-                    <span className="text-[10px] font-bold uppercase mt-1">
-                      Days
-                    </span>
-                  </div>
-                  <span className="text-2xl font-bold opacity-50 mb-4">:</span>
-                  <div className="flex flex-col items-center flex-1">
-                    <span className="text-4xl font-black tracking-tight">
-                      {timeLeft.hours.toString().padStart(2, "0")}
-                    </span>
-                    <span className="text-[10px] font-bold uppercase mt-1">
-                      Hours
-                    </span>
-                  </div>
-                  <span className="text-2xl font-bold opacity-50 mb-4">:</span>
-                  <div className="flex flex-col items-center flex-1">
-                    <span className="text-4xl font-black tracking-tight">
-                      {timeLeft.minutes.toString().padStart(2, "0")}
-                    </span>
-                    <span className="text-[10px] font-bold uppercase mt-1">
-                      Min
-                    </span>
-                  </div>
-                  <span className="text-2xl font-bold opacity-50 mb-4">:</span>
-                  <div className="flex flex-col items-center flex-1">
-                    <span className="text-4xl font-black tracking-tight">
-                      {timeLeft.seconds.toString().padStart(2, "0")}
-                    </span>
-                    <span className="text-[10px] font-bold uppercase mt-1">
-                      Sec
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <div className="py-4">
-                  <h2 className="text-2xl font-black">האירוע מתחיל היום!</h2>
-                </div>
-              )}
+              <InviteCountdown
+                eventDate={event_date}
+                variant="corporate"
+                primaryColor={primaryColor}
+              />
             </div>
             <div
               className={`fade-up-item mt-8 p-6 rounded-clay relative z-30 ${CLAY_RAISED}`}
@@ -1025,68 +910,11 @@ const Invite = () => {
             className="fade-up-item mb-12"
           />
 
-          {!isHappeningNow ? (
-            <div
-              className="fade-up-item flex justify-center gap-3 md:gap-4 mb-12"
-              dir="ltr"
-            >
-              <div className="flex flex-col items-center">
-                <div
-                  className="w-16 h-16 md:w-20 md:h-20 rounded-[24px] flex items-center justify-center text-2xl md:text-3xl font-black bg-clay-well-deep shadow-clay-inset-deep"
-                  style={{ color: accentOn(primaryColor) }}
-                >
-                  {timeLeft.seconds.toString().padStart(2, "0")}
-                </div>
-                <span className="text-xs font-bold mt-3 text-clay-muted">
-                  שניות
-                </span>
-              </div>
-              <div className="flex flex-col items-center">
-                <div
-                  className="w-16 h-16 md:w-20 md:h-20 rounded-[24px] flex items-center justify-center text-2xl md:text-3xl font-black bg-clay-well-deep shadow-clay-inset-deep"
-                  style={{ color: accentOn(primaryColor) }}
-                >
-                  {timeLeft.minutes.toString().padStart(2, "0")}
-                </div>
-                <span className="text-xs font-bold mt-3 text-clay-muted">
-                  דקות
-                </span>
-              </div>
-              <div className="flex flex-col items-center">
-                <div
-                  className="w-16 h-16 md:w-20 md:h-20 rounded-[24px] flex items-center justify-center text-2xl md:text-3xl font-black bg-clay-well-deep shadow-clay-inset-deep"
-                  style={{ color: accentOn(primaryColor) }}
-                >
-                  {timeLeft.hours.toString().padStart(2, "0")}
-                </div>
-                <span className="text-xs font-bold mt-3 text-clay-muted">
-                  שעות
-                </span>
-              </div>
-              <div className="flex flex-col items-center">
-                <div
-                  className="w-16 h-16 md:w-20 md:h-20 rounded-[24px] flex items-center justify-center text-2xl md:text-3xl font-black bg-clay-well-deep shadow-clay-inset-deep"
-                  style={{ color: accentOn(primaryColor) }}
-                >
-                  {timeLeft.days.toString().padStart(2, "0")}
-                </div>
-                <span className="text-xs font-bold mt-3 text-clay-muted">
-                  ימים
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className={`fade-up-item mb-12 p-6 rounded-clay ${CLAY_RAISED}`}>
-              <Sparkles
-                className="mx-auto mb-3 text-yellow-400 animate-pulse"
-                size={48}
-              />
-              <h2 className={`text-3xl font-black ${headerTextColor} mb-2`}>
-                היום זה קורה!
-              </h2>
-              <p className={subTextColor}>ההמתנה הסתיימה. נתראה בקרוב.</p>
-            </div>
-          )}
+          <InviteCountdown
+            eventDate={event_date}
+            variant="modern"
+            primaryColor={primaryColor}
+          />
 
           <ActionButtons
             theme="light"
@@ -1142,7 +970,10 @@ const Invite = () => {
                   {magicGuest.status === "canceled" ? (
                     <X size={32} className="text-clay-muted" />
                   ) : (
-                    <CheckCircle2 size={32} style={{ color: accentOn(primaryColor) }} />
+                    <CheckCircle2
+                      size={32}
+                      style={{ color: accentOn(primaryColor) }}
+                    />
                   )}
                 </div>
                 <h2 className="text-2xl font-black text-slate-700 mb-1 text-center">
@@ -1175,7 +1006,9 @@ const Invite = () => {
                             ? "text-white active:scale-[0.97]"
                             : "text-slate-600 bg-clay-chip shadow-clay-md"
                         }`}
-                        style={active ? clayButtonStyle(primaryColor) : undefined}
+                        style={
+                          active ? clayButtonStyle(primaryColor) : undefined
+                        }
                       >
                         {option.label}
                       </button>

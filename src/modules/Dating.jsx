@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { compressImage, isAllowedImageType } from "../lib/imageUtils";
@@ -84,10 +84,14 @@ const Dating = () => {
   const [chatHistory, setChatHistory] = useState([]);
   const [unreadCounts, setUnreadCounts] = useState({});
 
-  const [blockedUsers, setBlockedUsers] = useState(() => {
+  // ref ולא state: הרשימה לא מוצגת, רק מסננת. כ-state, loadGalleryData
+  // שנקראה מיד אחרי החסימה קראה את הרשימה הישנה מה-closure, והאורח שנחסם
+  // נשאר ברשימת הצ'אטים עד רענון.
+  const [initialBlocked] = useState(() => {
     const stored = safeGetJSON("blocked_users", []);
     return Array.isArray(stored) ? stored : [];
   });
+  const blockedUsersRef = useRef(initialBlocked);
 
   const guestName = safeGetItem("guest_name");
   const guestId = getOrCreateDeviceId();
@@ -106,6 +110,62 @@ const Dating = () => {
   });
   const [uploading, setUploading] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  const loadGalleryData = useCallback(async (me, isActive = () => true) => {
+    const blockedUsers = blockedUsersRef.current;
+    let query = supabase
+      .from("dating_profiles")
+      .select(
+        "id, guest_id, name, age, gender, seeking, connection, location, bio, photo_url",
+      )
+      .eq("event_id", eventId)
+      .neq("guest_id", guestId)
+      .order("created_at", { ascending: false })
+      .limit(PROFILES_PAGE);
+
+    if (me.seeking !== "הכל") query = query.eq("gender", me.seeking);
+    const { data: others, error: othersError } = await query;
+
+    if (othersError) {
+      console.error("Error loading gallery data:", othersError);
+    }
+
+    const matched = (others || []).filter(
+      (p) =>
+        (p.seeking === me.gender || p.seeking === "הכל") &&
+        !blockedUsers.includes(p.guest_id),
+    );
+    if (isActive()) setProfiles(matched);
+
+    const { data: msgs, error: msgsError } = await supabase
+      .from("dating_messages")
+      .select("id, sender_id, receiver_id, message, is_read, created_at")
+      .eq("event_id", eventId)
+      .or(`sender_id.eq.${guestId},receiver_id.eq.${guestId}`)
+      .order("created_at", { ascending: false })
+      .limit(MESSAGES_LIMIT);
+
+    if (msgsError) {
+      console.error("Error loading messages:", msgsError);
+    }
+
+    if (msgs && isActive()) {
+      const historyIds = new Set();
+      const unreads = {};
+      msgs.forEach((m) => {
+        const otherId = m.sender_id === guestId ? m.receiver_id : m.sender_id;
+        historyIds.add(otherId);
+        if (m.receiver_id === guestId && !m.is_read) {
+          unreads[m.sender_id] = (unreads[m.sender_id] || 0) + 1;
+        }
+      });
+      setUnreadCounts(unreads);
+      const historyProfiles = (others || []).filter(
+        (p) => historyIds.has(p.guest_id) && !blockedUsers.includes(p.guest_id),
+      );
+      setChatHistory(historyProfiles);
+    }
+  }, [eventId, guestId]);
 
   // Initial load
   useEffect(() => {
@@ -144,7 +204,8 @@ const Dating = () => {
           setMyProfile(profile);
           setFormData(profile);
           setView("gallery");
-          await loadGalleryData(profile, isMounted);
+          // פונקציה ולא ערך — אחרת ה-cleanup לא מגיע ל-loadGalleryData.
+          await loadGalleryData(profile, () => isMounted);
         } else {
           setView("register");
         }
@@ -157,62 +218,7 @@ const Dating = () => {
     return () => {
       isMounted = false;
     };
-  }, [eventId, guestId, navigate]);
-
-  const loadGalleryData = async (me, isMounted = true) => {
-    let query = supabase
-      .from("dating_profiles")
-      .select(
-        "id, guest_id, name, age, gender, seeking, connection, location, bio, photo_url",
-      )
-      .eq("event_id", eventId)
-      .neq("guest_id", guestId)
-      .order("created_at", { ascending: false })
-      .limit(PROFILES_PAGE);
-
-    if (me.seeking !== "הכל") query = query.eq("gender", me.seeking);
-    const { data: others, error: othersError } = await query;
-
-    if (othersError) {
-      console.error("Error loading gallery data:", othersError);
-    }
-
-    const matched = (others || []).filter(
-      (p) =>
-        (p.seeking === me.gender || p.seeking === "הכל") &&
-        !blockedUsers.includes(p.guest_id),
-    );
-    if (isMounted) setProfiles(matched);
-
-    const { data: msgs, error: msgsError } = await supabase
-      .from("dating_messages")
-      .select("id, sender_id, receiver_id, message, is_read, created_at")
-      .eq("event_id", eventId)
-      .or(`sender_id.eq.${guestId},receiver_id.eq.${guestId}`)
-      .order("created_at", { ascending: false })
-      .limit(MESSAGES_LIMIT);
-
-    if (msgsError) {
-      console.error("Error loading messages:", msgsError);
-    }
-
-    if (msgs && isMounted) {
-      const historyIds = new Set();
-      const unreads = {};
-      msgs.forEach((m) => {
-        const otherId = m.sender_id === guestId ? m.receiver_id : m.sender_id;
-        historyIds.add(otherId);
-        if (m.receiver_id === guestId && !m.is_read) {
-          unreads[m.sender_id] = (unreads[m.sender_id] || 0) + 1;
-        }
-      });
-      setUnreadCounts(unreads);
-      const historyProfiles = (others || []).filter(
-        (p) => historyIds.has(p.guest_id) && !blockedUsers.includes(p.guest_id),
-      );
-      setChatHistory(historyProfiles);
-    }
-  };
+  }, [eventId, guestId, guestName, navigate, loadGalleryData]);
 
   // Animations
   useEffect(() => {
@@ -382,9 +388,9 @@ const Dating = () => {
     );
     if (!confirmed) return;
 
-    const newBlocked = [...blockedUsers, partnerId];
+    const newBlocked = [...blockedUsersRef.current, partnerId];
     safeSetItem("blocked_users", JSON.stringify(newBlocked));
-    setBlockedUsers(newBlocked);
+    blockedUsersRef.current = newBlocked;
 
     // החסימה מקומית ולכן תמיד מצליחה; הדיווח למנהל יכול להיכשל, ואז אומרים
     // את זה במפורש במקום להציג "הועבר לבדיקה" על דיווח שלא נשמר.

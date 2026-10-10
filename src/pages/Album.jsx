@@ -106,7 +106,7 @@ const Album = () => {
       try {
         const { data: event, error: eventError } = await supabase
           .from("events")
-          .select("*")
+          .select("id, name, design_config, active_modules")
           .eq("id", id)
           .single();
         if (eventError) throw eventError;

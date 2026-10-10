@@ -49,7 +49,17 @@
       "Bash(git log *)",
       "mcp__claude_ai_Supabase__execute_sql",
       "Bash(perl -pi -e 's/<div className=\"w-11 h-6 bg-slate-200 /<div className=\"relative w-11 h-6 bg-slate-200 /g' src/pages/Admin.jsx)",
-      "Bash(perl -pi -e 's/formData\\\\.design_config\\\\?\\\\.colors\\\\?\\\\.primary \\\\|\\\\| \"#3b82f6\"/formData.design_config?.colors?.primary || DEFAULT_PRIMARY/' src/pages/Admin.jsx)"
+      "Bash(perl -pi -e 's/formData\\\\.design_config\\\\?\\\\.colors\\\\?\\\\.primary \\\\|\\\\| \"#3b82f6\"/formData.design_config?.colors?.primary || DEFAULT_PRIMARY/' src/pages/Admin.jsx)",
+      "PowerShell(npx vite build 2>&1)",
+      "PowerShell(npx eslint src/pages/Admin.jsx 2>&1)",
+      "PowerShell(git push origin master)",
+      "PowerShell(npx eslint src 2>&1 | Out-String -Width 300 | Select-String -Pattern \"exhaustive-deps|\\\\.jsx|\\\\.js$|problems\" -AllMatches | ForEach-Object { $_.Line })",
+      "PowerShell(node \"C:\\\\Users\\\\npata\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-npata-OneDrive-Desktop-business-my-apps-eventtick\\\\a05ee1b5-d57b-4e7c-bb87-b39236aafc49\\\\scratchpad\\\\reorder-icebreaker.cjs\" src/modules/Icebreaker.jsx)",
+      "PowerShell(npx vite build 2>&1 | Select-Object -Last 3; npx eslint src 2>&1 | Out-String -Width 250 | Select-String -Pattern \"exhaustive-deps|set-state-in-effect|refs|InviteCountdown|Toast.jsx|Invite.jsx|Dating.jsx|Icebreaker.jsx|Album.jsx|problems\" | ForEach-Object { $_.Line })",
+      "PowerShell(npx vite --port 5179 --strictPort)",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "mcp__plugin_playwright_playwright__browser_evaluate",
+      "mcp__plugin_playwright_playwright__browser_console_messages"
     ]
   }
 }

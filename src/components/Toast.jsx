@@ -1,6 +1,8 @@
 import {
   useState,
   useCallback,
+  useEffect,
+  useMemo,
   createContext,
   useContext,
   useRef,
@@ -50,8 +52,19 @@ export const ToastProvider = ({ children }) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
+  // טיימרים שנשארו פתוחים היו מריצים setToasts אחרי unmount.
+  useEffect(() => {
+    const pending = timers.current;
+    return () => Object.values(pending).forEach(clearTimeout);
+  }, []);
+
+  // ערך יציב: אובייקט חדש בכל רינדור (value={{ showToast }}) גרם לכל צרכן
+  // של useToast() באפליקציה להתרנדר מחדש בכל פעם שטוסט הופיע או נעלם.
+  // children מגיע מבחוץ עם אותה זהות, ולכן רק רשימת הטוסטים מתרנדרת.
+  const value = useMemo(() => ({ showToast }), [showToast]);
+
   return (
-    <ToastContext.Provider value={{ showToast }}>
+    <ToastContext.Provider value={value}>
       {children}
 
       {/* Toast container — fixed top of screen, RTL-aware */}
