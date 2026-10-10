@@ -42,11 +42,12 @@ import {
   Palette,
   ShieldAlert,
   MessageCircle,
+  Trophy,
 } from "lucide-react";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import AdminQRGenerator from "./AdminQRGenerator";
-import { DEFAULT_PRIMARY } from "../lib/clay";
+import { CLAY_CARD, CLAY_INSET, DEFAULT_PRIMARY } from "../lib/clay";
 import { CLAY_PAGE_HEX } from "../lib/colors";
 
 const MISSION_PRESETS = {
@@ -94,6 +95,18 @@ const mustAffectRows = async (query) => {
 const throwIfError = async (query) => {
   const { error } = await query;
   if (error) throw error;
+};
+
+// ה-DB שומר את ה-URL הציבורי של הוכחת המשימה, אבל storage.remove() צריך את
+// הנתיב בתוך ה-bucket (proofs/<event_id>/<match_id>_<ts>.jpg).
+const ICEBREAKER_BUCKET = "icebreaker-uploads";
+const ICEBREAKER_PUBLIC_PREFIX = `/storage/v1/object/public/${ICEBREAKER_BUCKET}/`;
+const icebreakerStoragePath = (publicUrl) => {
+  const start = publicUrl?.indexOf(ICEBREAKER_PUBLIC_PREFIX) ?? -1;
+  if (start < 0) return null;
+  return decodeURIComponent(
+    publicUrl.slice(start + ICEBREAKER_PUBLIC_PREFIX.length).split("?")[0],
+  );
 };
 
 const Admin = () => {
@@ -148,6 +161,12 @@ const Admin = () => {
   const [icebreakerProfiles, setIcebreakerProfiles] = useState([]);
   const [icebreakerUsersLoading, setIcebreakerUsersLoading] = useState(false);
 
+  // --- ניהול קיר התהילה (משימות שהושלמו) ---
+  const [isWallOfFameOpen, setIsWallOfFameOpen] = useState(false);
+  const [wallEntries, setWallEntries] = useState([]);
+  const [wallLoading, setWallLoading] = useState(false);
+  const [deletingWallEntryId, setDeletingWallEntryId] = useState(null);
+
   const [isRideshareManagerOpen, setIsRideshareManagerOpen] = useState(false);
   const [rideshareList, setRideshareList] = useState([]);
   const [rideshareLoading, setRideshareLoading] = useState(false);
@@ -178,6 +197,7 @@ const Admin = () => {
     isDatingManagerOpen ||
     isIcebreakerModalOpen ||
     isIcebreakerUserManagerOpen ||
+    isWallOfFameOpen ||
     isRideshareManagerOpen ||
     isGuestListOpen ||
     isReportsModalOpen ||
@@ -192,6 +212,7 @@ const Admin = () => {
       setIsDatingManagerOpen(false);
       setIsIcebreakerModalOpen(false);
       setIsIcebreakerUserManagerOpen(false);
+      setIsWallOfFameOpen(false);
       setIsRideshareManagerOpen(false);
       setIsReportsModalOpen(false);
       setIsBlessingsManagerOpen(false);
@@ -872,6 +893,91 @@ const Admin = () => {
       console.error(error);
       alert("תקלה במחיקה");
     }
+  };
+
+  // קיר התהילה הציבורי מציג כל התאמה עם status = 'completed' (ראו fetchFeed
+  // ב-Icebreaker.jsx), ולכן זה גם מה שנטען כאן — בלי ה-limit של הפיד.
+  const openWallOfFameManager = async () => {
+    setIsWallOfFameOpen(true);
+    setWallLoading(true);
+    try {
+      const [matchesRes, profilesRes] = await Promise.all([
+        supabase
+          .from("icebreaker_matches")
+          .select("id, guest1_id, guest2_id, mission_text, photo_url, completed_at")
+          .eq("event_id", selectedEvent.id)
+          .eq("status", "completed")
+          .order("completed_at", { ascending: false }),
+        supabase
+          .from("icebreaker_profiles")
+          .select("guest_id, name")
+          .eq("event_id", selectedEvent.id),
+      ]);
+      if (matchesRes.error) throw matchesRes.error;
+      if (profilesRes.error) throw profilesRes.error;
+      // אורח שפרש מהמשחק כבר לא ב-icebreaker_profiles, אבל ההוכחה שלו נשארת.
+      const names = new Map(
+        (profilesRes.data || []).map((p) => [p.guest_id, p.name]),
+      );
+      setWallEntries(
+        (matchesRes.data || []).map((m) => ({
+          ...m,
+          guest1_name: names.get(m.guest1_id) || "אורח/ת שפרש/ה",
+          guest2_name: names.get(m.guest2_id) || "אורח/ת שפרש/ה",
+        })),
+      );
+    } catch (error) {
+      console.error(error);
+      showToast("לא הצלחנו לטעון את קיר התהילה", "error");
+    } finally {
+      setWallLoading(false);
+    }
+  };
+
+  // מוחקים את שורת ההתאמה ולא מאפסים אותה: למנהל יש רק DELETE על
+  // icebreaker_matches (UPDATE שמור למשתתפים), ואיפוס ל-pending היה מחזיר
+  // לשני האורחים "משימה פעילה" שכבר ביצעו. השורה נמחקת קודם — אם מחיקת
+  // הקובץ תיכשל אחריה, הקיר כבר נקי ונשאר רק קובץ יתום באחסון.
+  const handleDeleteWallEntry = async (entry) => {
+    if (
+      !window.confirm(
+        `להסיר את המשימה של ${entry.guest1_name} ו-${entry.guest2_name} מקיר התהילה? התמונה תימחק לצמיתות.`,
+      )
+    )
+      return;
+    setDeletingWallEntryId(entry.id);
+    try {
+      await mustAffectRows(
+        supabase.from("icebreaker_matches").delete().eq("id", entry.id),
+      );
+    } catch (error) {
+      console.error(error);
+      showToast(
+        error.message === NOT_APPLIED_MESSAGE
+          ? NOT_APPLIED_MESSAGE
+          : "המחיקה נכשלה, נסו שוב",
+        "error",
+      );
+      setDeletingWallEntryId(null);
+      return;
+    }
+    setWallEntries((prev) => prev.filter((e) => e.id !== entry.id));
+
+    const path = icebreakerStoragePath(entry.photo_url);
+    if (path) {
+      // כמו ב-RLS על טבלאות: מחיקה שנחסמה מחזירה מערך ריק בלי שגיאה.
+      const { data: removed, error: removeError } = await supabase.storage
+        .from(ICEBREAKER_BUCKET)
+        .remove([path]);
+      if (removeError || !removed?.length) {
+        console.error("Proof photo not removed:", removeError || path);
+        showToast("הוסר מקיר התהילה, אך קובץ התמונה לא נמחק מהאחסון", "warning");
+        setDeletingWallEntryId(null);
+        return;
+      }
+    }
+    showToast("המשימה הוסרה מקיר התהילה", "success");
+    setDeletingWallEntryId(null);
   };
 
   // פונקציות המודרציה
@@ -1954,6 +2060,12 @@ const Admin = () => {
                           >
                             <Users size={18} /> משתמשים
                           </button>
+                          <button
+                            onClick={openWallOfFameManager}
+                            className="flex-1 py-3 bg-clay-surface border border-cyan-200 text-cyan-800 font-bold rounded-xl hover:bg-cyan-50 transition-colors flex justify-center items-center gap-2 shadow-clay-sm"
+                          >
+                            <Trophy size={18} /> ניהול קיר התהילה
+                          </button>
                         </div>
                       )}
                   </div>
@@ -2809,6 +2921,118 @@ const Admin = () => {
           </div>
         </div>
       )}
+      {/* --- ניהול קיר התהילה --- */}
+      {isWallOfFameOpen && (
+        <div className="fixed inset-0 bg-clay-scrim flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] z-[200]">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="wall-of-fame-title"
+            className="bg-clay-surface w-full max-w-5xl rounded-clay-lg shadow-clay-modal flex flex-col overflow-hidden animate-in zoom-in-95 max-h-full"
+          >
+            <div className="p-6 md:p-8 border-b border-clay-well-deep flex justify-between items-center bg-cyan-50/50 shrink-0">
+              <div>
+                <h2
+                  id="wall-of-fame-title"
+                  className="text-2xl font-black text-slate-800 flex items-center gap-2"
+                >
+                  <Trophy className="text-cyan-800" /> ניהול קיר התהילה
+                </h2>
+                <p className="text-cyan-800 font-bold mt-1">
+                  משימות שמוצגות לאורחים: {wallEntries.length}
+                </p>
+              </div>
+              <button
+                onClick={() => setIsWallOfFameOpen(false)}
+                aria-label="סגור"
+                className="w-11 h-11 shrink-0 flex items-center justify-center hover:bg-cyan-100 text-cyan-800 rounded-full transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="flex-1 bg-clay-well p-6 md:p-8 overflow-y-auto">
+              {wallLoading ? (
+                <div className="flex justify-center py-20">
+                  <Loader2 className="animate-spin text-cyan-800" size={48} />
+                </div>
+              ) : wallEntries.length === 0 ? (
+                <div className="text-center py-20 text-clay-muted">
+                  <Trophy size={48} className="mx-auto mb-3 opacity-20" />
+                  <p className="font-medium text-lg">
+                    קיר התהילה ריק — עדיין לא הושלמו משימות.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {wallEntries.map((entry) => (
+                    <div
+                      key={entry.id}
+                      className={`${CLAY_CARD} overflow-hidden flex flex-col`}
+                    >
+                      <div className="aspect-square w-full p-2">
+                        {entry.photo_url ? (
+                          <img
+                            src={entry.photo_url}
+                            alt={`הוכחת משימה של ${entry.guest1_name} ו-${entry.guest2_name}`}
+                            loading="lazy"
+                            className="w-full h-full object-cover rounded-clay-field"
+                          />
+                        ) : (
+                          <div
+                            className={`w-full h-full rounded-clay-field flex flex-col items-center justify-center gap-2 text-clay-muted ${CLAY_INSET}`}
+                          >
+                            <ImageIcon size={36} className="opacity-40" />
+                            <span className="text-xs font-bold">
+                              ללא תמונת הוכחה
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="p-4 pt-2 flex flex-col flex-1 gap-3">
+                        <p className="font-black text-slate-800 flex items-center gap-2">
+                          <Users size={16} className="text-cyan-800 shrink-0" />
+                          <span className="line-clamp-1">
+                            {entry.guest1_name} & {entry.guest2_name}
+                          </span>
+                        </p>
+                        <div className={`p-3 rounded-2xl ${CLAY_INSET}`}>
+                          <p className="text-[10px] font-bold text-clay-muted uppercase tracking-widest mb-1">
+                            המשימה
+                          </p>
+                          <p className="text-sm font-bold text-slate-700 leading-snug">
+                            "{entry.mission_text}"
+                          </p>
+                        </div>
+                        {entry.completed_at && (
+                          <p className="text-xs text-clay-muted font-medium">
+                            הושלמה:{" "}
+                            {new Date(entry.completed_at).toLocaleString("he-IL")}
+                          </p>
+                        )}
+                        <button
+                          onClick={() => handleDeleteWallEntry(entry)}
+                          disabled={deletingWallEntryId === entry.id}
+                          className="mt-auto w-full min-h-11 bg-rose-700 hover:bg-rose-800 text-white font-black py-3 rounded-full shadow-clay-btn transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+                        >
+                          {deletingWallEntryId === entry.id ? (
+                            <Loader2 size={18} className="animate-spin" />
+                          ) : (
+                            <Trash2 size={18} />
+                          )}
+                          מחק
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {isIcebreakerModalOpen && (
         <div className="fixed inset-0 z-[200] bg-clay-page flex flex-col animate-in fade-in duration-300">
           <div className="p-6 md:p-8 pt-[calc(1.5rem+env(safe-area-inset-top))] md:pt-[calc(2rem+env(safe-area-inset-top))] flex justify-between items-center bg-clay-surface shadow-clay-sm z-10">
