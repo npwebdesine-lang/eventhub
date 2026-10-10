@@ -1449,6 +1449,10 @@ const Admin = () => {
                     <label className="text-sm font-bold text-slate-700 block">
                       צבע רקע (Background)
                     </label>
+                    <p className="text-xs text-clay-muted">
+                      צובע את רקע דפי האורחים. צבע כהה מוחל כגוון בהיר יותר,
+                      כדי שהטקסט יישאר קריא.
+                    </p>
                     <div className="flex items-center gap-3">
                       <div
                         className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-clay-line shrink-0 shadow-clay-sm transition-colors"
@@ -2641,7 +2645,7 @@ const Admin = () => {
                 key={selectedEvent.id}
                 defaultUrl={`${window.location.origin}/event/${selectedEvent.id}`}
                 defaultColor={
-                  formData.design_config?.colors?.primary || "#3b82f6"
+                  formData.design_config?.colors?.primary || DEFAULT_PRIMARY
                 }
               />
             </div>

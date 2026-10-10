@@ -48,7 +48,8 @@
       "Bash(perl -pi -e 's/hover:bg-current\\\\/20/hover:bg-[var\\(--hero-chip-strong\\)]/g; s/hover:bg-current\\\\/10/hover:bg-[var\\(--hero-chip\\)]/g; s/bg-current\\\\/10/bg-[var\\(--hero-chip\\)]/g' src/pages/Home.jsx src/pages/Album.jsx)",
       "Bash(git log *)",
       "mcp__claude_ai_Supabase__execute_sql",
-      "Bash(perl -pi -e 's/<div className=\"w-11 h-6 bg-slate-200 /<div className=\"relative w-11 h-6 bg-slate-200 /g' src/pages/Admin.jsx)"
+      "Bash(perl -pi -e 's/<div className=\"w-11 h-6 bg-slate-200 /<div className=\"relative w-11 h-6 bg-slate-200 /g' src/pages/Admin.jsx)",
+      "Bash(perl -pi -e 's/formData\\\\.design_config\\\\?\\\\.colors\\\\?\\\\.primary \\\\|\\\\| \"#3b82f6\"/formData.design_config?.colors?.primary || DEFAULT_PRIMARY/' src/pages/Admin.jsx)"
     ]
   }
 }

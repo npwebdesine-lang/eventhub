@@ -78,8 +78,9 @@ const backdropCache = new Map();
 // בהירות סוף המעבר המקורי — כל בדיקות הניגודיות (clay-muted, accentOn)
 // נמדדו מולו, ולכן רקע האירוע אסור שיהיה כהה ממנו.
 const MIN_PAGE_END_LUMINANCE = relativeLuminance(CLAY_PAGE_END_HEX);
-// סוף המעבר המקורי כהה מתחילתו בכ-6%; שומרים על אותו עומק.
-const PAGE_END_DEPTH = 0.06;
+// עומק המעבר: סוף הדף כהה מתחילתו ב-4%. ב-6% אפילו גוון החימר עצמו היה
+// נכשל בבדיקה (0.713 מול 0.724) וכל צבע נפל לברירת המחדל.
+const PAGE_END_DEPTH = 0.04;
 
 /**
  * רקע הדף לפי "צבע הרקע" שהמנהל בחר. מערבבים את גוון החימר עם הצבע שנבחר
@@ -92,15 +93,24 @@ export const eventBackdrop = (background) => {
   if (!isParsableColor(background)) return null;
   if (backdropCache.has(background)) return backdropCache.get(background);
 
-  let result = null;
-  for (let step = 20; step >= 1; step -= 1) {
-    const strength = step / 20;
-    const page = mix(CLAY_PAGE_HEX, background, strength);
+  const fits = (page) => {
     const pageEnd = darken(page, PAGE_END_DEPTH);
-    if (relativeLuminance(pageEnd) >= MIN_PAGE_END_LUMINANCE) {
-      result = { page, pageEnd };
-      break;
-    }
+    return relativeLuminance(pageEnd) >= MIN_PAGE_END_LUMINANCE
+      ? { page, pageEnd }
+      : null;
+  };
+
+  let result = null;
+  // 1. צבע בהיר: ערבוב עם גוון החימר, מהמלא (100%) ועד חצי — שומר על
+  //    החמימות של החימר.
+  for (let step = 20; step >= 10 && !result; step -= 1) {
+    result = fits(mix(CLAY_PAGE_HEX, background, step / 20));
+  }
+  // 2. צבע כהה (קרמל #c87740, כחול-לילה #020617): ערבוב עם החימר רק היה
+  //    מכהה את הדף, ולכן כמעט כלום לא עובר. במקום זה מבהירים את הצבע עצמו
+  //    עד שהוא עובר — הגוון נשמר והמנהל רואה את הבחירה שלו.
+  for (let step = 10; step <= 19 && !result; step += 1) {
+    result = fits(lighten(background, step / 20));
   }
   backdropCache.set(background, result);
   return result;
