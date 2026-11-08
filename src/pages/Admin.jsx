@@ -654,6 +654,9 @@ const Admin = () => {
   const removeRowFile = async ({ bucket, table, column, url, isOwnPath }) => {
     const path = storagePathFromUrl(bucket, url);
     if (!path || !isOwnPath(path, selectedEvent.id)) return true;
+    // כתובת לא קנונית (query, קידוד) מובילה לאותו קובץ אבל לא נספרת למטה.
+    if (supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl !== url)
+      return true;
     const { count, error: countError } = await supabase
       .from(table)
       .select("id", { count: "exact", head: true })
