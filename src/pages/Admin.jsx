@@ -125,6 +125,15 @@ const isEventPhotoPath = (path, eventId) =>
 const isEventProofPath = (path, eventId) =>
   new RegExp(`^proofs/${eventId}/[^/]+$`).test(path);
 
+const INVITE_IMAGE_EXTENSIONS = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+  "image/heic": "heic",
+  "image/heif": "heif",
+};
+
 const Admin = () => {
   const [session, setSession] = useState(null);
   const [email, setEmail] = useState("");
@@ -522,9 +531,14 @@ const Admin = () => {
       return;
     }
     const uploadEventId = selectedEvent.id;
+    // לאירוע שלא נשמר אין מזהה, ושם הקובץ חייב להיות קשור לאירוע.
+    if (!uploadEventId) return;
     setUploadingAsset(true);
     try {
-      const fileExt = file.name.split(".").pop();
+      // isAllowedImageType כבר הבטיח שהסוג או הסיומת ברשימה המותרת.
+      const fileExt =
+        INVITE_IMAGE_EXTENSIONS[file.type] ||
+        file.name.split(".").pop().toLowerCase();
       const fileName = `${uploadEventId}_${Date.now()}.${fileExt}`;
       const { error: uploadError } = await supabase.storage
         .from("event-assets")
@@ -1829,24 +1843,31 @@ const Admin = () => {
                       <label className="text-sm font-bold text-slate-800 block mb-2">
                         תמונה / לוגו להזמנה
                       </label>
-                      <div className="flex items-center gap-3">
-                        <label className="flex-1 cursor-pointer bg-clay-surface shadow-clay-sm hover:bg-clay-chip text-slate-700 font-bold py-3 px-4 rounded-xl transition-colors flex justify-center items-center gap-2">
-                          {uploadingAsset ? (
-                            <Loader2 className="animate-spin" size={18} />
-                          ) : (
-                            <>
-                              <UploadCloud size={18} /> בחר קובץ
-                            </>
-                          )}
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleInviteImageUpload}
-                            disabled={uploadingAsset}
-                            className="hidden"
-                          />
-                        </label>
-                      </div>
+                      {selectedEvent.isNew ? (
+                        <p className="text-sm font-medium text-clay-muted">
+                          אפשר להעלות תמונה אחרי שמירת האירוע. שמרו אותו ופתחו
+                          אותו שוב דרך "ניהול אירוע".
+                        </p>
+                      ) : (
+                        <div className="flex items-center gap-3">
+                          <label className="flex-1 cursor-pointer bg-clay-surface shadow-clay-sm hover:bg-clay-chip text-slate-700 font-bold py-3 px-4 rounded-xl transition-colors flex justify-center items-center gap-2">
+                            {uploadingAsset ? (
+                              <Loader2 className="animate-spin" size={18} />
+                            ) : (
+                              <>
+                                <UploadCloud size={18} /> בחר קובץ
+                              </>
+                            )}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleInviteImageUpload}
+                              disabled={uploadingAsset}
+                              className="hidden"
+                            />
+                          </label>
+                        </div>
+                      )}
                       {formData.design_config.invite_image && (
                         <div className="mt-3 relative w-full h-32 bg-clay-chip rounded-xl overflow-hidden shadow-clay-inset">
                           <img
