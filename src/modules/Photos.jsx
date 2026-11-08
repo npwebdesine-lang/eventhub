@@ -16,6 +16,7 @@ import {
   ChevronRight as ChevRight,
   ZoomIn,
   Flag,
+  FolderOpen,
   Video,
 } from "lucide-react";
 import { safeGetItem } from "../lib/safeStorage";
@@ -35,7 +36,13 @@ import { PhotoGridSkeleton } from "../components/SkeletonCard";
 import gsap from "gsap";
 import { isValidUUIDv4, getOrCreateDeviceId } from "../utils/deviceId";
 import { appendUnique, olderThan, orderNewestFirst } from "../lib/pagination";
-import { CLAY_CARD, CLAY_INSET, DEFAULT_PRIMARY, clayButtonStyle } from "../lib/clay";
+import {
+  CLAY_BUTTON,
+  CLAY_CARD,
+  CLAY_INSET,
+  DEFAULT_PRIMARY,
+  clayButtonStyle,
+} from "../lib/clay";
 import { accentOn } from "../lib/colors";
 import { useEventBackdrop } from "../lib/useEventBackdrop";
 
@@ -54,6 +61,27 @@ const timeAgo = (dateStr) => {
   const h = Math.floor(m / 60);
   if (h < 24) return `לפני ${h} שע'`;
   return `לפני ${Math.floor(h / 24)} ימים`;
+};
+
+const UploadChoice = ({ icon, label, accept, capture, onChange, colorStyle }) => {
+  const Icon = icon;
+  return (
+    <label
+      className={`min-h-14 px-2 py-3 rounded-full flex justify-center items-center gap-2 text-sm font-black leading-tight text-center cursor-pointer active:scale-[0.97] ${
+        colorStyle ? "text-white transition-all" : `text-slate-700 ${CLAY_BUTTON}`
+      }`}
+      style={colorStyle}
+    >
+      <Icon size={18} className="shrink-0" /> {label}
+      <input
+        type="file"
+        accept={accept}
+        capture={capture}
+        onChange={onChange}
+        className="hidden"
+      />
+    </label>
+  );
 };
 
 const Photos = () => {
@@ -579,33 +607,43 @@ const Photos = () => {
                     </div>
                   ) : (
                     <>
-                      {/* קלט נפרד לכל סוג ובלי capture: capture מדלג על הגלריה,
-                          ו-accept משולב גורם לחלק ממכשירי האנדרואיד (למשל
-                          שיאומי) לדלג על הבורר ולפתוח ישר את הגלריה. */}
+                      {/* כפתורים מפורשים למצלמה ולגלריה: בלי capture חלק ממכשירי
+                          האנדרואיד (למשל שיאומי) מדלגים על בורר המערכת ופותחים
+                          ישר את הגלריה, בלי דרך להגיע למצלמה. */}
                       {canUploadPhoto && (
-                        <label
-                          className="w-full font-black py-4 rounded-full flex justify-center items-center gap-2 cursor-pointer transition-all active:scale-[0.97] text-white"
-                          style={clayButtonStyle(primaryColor)}
-                        >
-                          <Camera size={22} /> צלם או העלה תמונה
-                          <input
-                            type="file"
+                        <div className="grid grid-cols-2 gap-3">
+                          <UploadChoice
+                            icon={Camera}
+                            label="מצלמה"
+                            accept="image/*"
+                            capture="environment"
+                            onChange={handleFileUpload}
+                            colorStyle={clayButtonStyle(primaryColor)}
+                          />
+                          <UploadChoice
+                            icon={ImageIcon}
+                            label="גלריה"
                             accept="image/*"
                             onChange={handleFileUpload}
-                            className="hidden"
                           />
-                        </label>
+                        </div>
                       )}
                       {canUploadVideo && (
-                        <label className="w-full font-bold min-h-11 py-3 rounded-full flex justify-center items-center gap-2 cursor-pointer text-slate-700 bg-clay-surface shadow-clay-md active:shadow-clay-pressed transition-all">
-                          <Video size={18} /> צלם או העלה סרטון
-                          <input
-                            type="file"
+                        <div className="grid grid-cols-2 gap-3">
+                          <UploadChoice
+                            icon={Video}
+                            label="צילום וידאו"
+                            accept="video/*"
+                            capture="environment"
+                            onChange={handleFileUpload}
+                          />
+                          <UploadChoice
+                            icon={FolderOpen}
+                            label="וידאו מהגלריה"
                             accept="video/*"
                             onChange={handleFileUpload}
-                            className="hidden"
                           />
-                        </label>
+                        </div>
                       )}
                     </>
                   )}
