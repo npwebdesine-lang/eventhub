@@ -244,6 +244,7 @@ const Admin = () => {
 
   useEffect(() => {
     if (selectedEvent && !selectedEvent.isNew) {
+      let isMounted = true;
       const fetchStats = async () => {
         const [rsvps, photos, dating, reports, blessings] = await Promise.all([
           // event_guests הוא מקור האמת היחיד למוזמנים — גם רשימה מיובאת מראש
@@ -271,6 +272,8 @@ const Admin = () => {
             .select("id", { count: "exact", head: true })
             .eq("event_id", selectedEvent.id),
         ]);
+        // תשובה מאוחרת של האירוע הקודם לא דורסת את המונים של הנוכחי.
+        if (!isMounted) return;
         setEventStats({
           rsvps: rsvps.data?.length ?? rsvps.count ?? 0,
           photos: photos.data?.length ?? photos.count ?? 0,
@@ -280,6 +283,9 @@ const Admin = () => {
         });
       };
       fetchStats();
+      return () => {
+        isMounted = false;
+      };
     }
   }, [selectedEvent]);
 
@@ -625,13 +631,17 @@ const Admin = () => {
     setSeatingText("");
     setIsSeatingModalOpen(true);
     setSeatingLoading(true);
+    const eventId = selectedEvent.id;
     try {
       const { data, count, error } = await supabase
         .from("seating")
         .select("id, guest_name, table_number", { count: "exact" })
-        .eq("event_id", selectedEvent.id)
+        .eq("event_id", eventId)
         .order("guest_name", { ascending: true });
       if (error) throw error;
+      // הרשימה הזו מזינה את ה-diff של ייבוא הקובץ: רשימה של אירוע קודם הייתה
+      // מעדכנת שורות שלו במקום להוסיף לאירוע הנוכחי.
+      if (activeEventIdRef.current !== eventId) return;
       setSeatingGuests(data || []);
       setSavedGuestsCount(count || 0);
     } catch (error) {
@@ -801,12 +811,14 @@ const Admin = () => {
   const openDatingManager = async () => {
     setIsDatingManagerOpen(true);
     setDatingLoading(true);
+    const eventId = selectedEvent.id;
     try {
       const { data } = await supabase
         .from("dating_profiles")
         .select("id, name, age, connection, location, bio, photo_url, seeking")
-        .eq("event_id", selectedEvent.id)
+        .eq("event_id", eventId)
         .order("created_at", { ascending: false });
+      if (activeEventIdRef.current !== eventId) return;
       setDatingProfiles(data || []);
     } catch (error) {
       console.error(error);
@@ -834,14 +846,16 @@ const Admin = () => {
   const openRideshareManager = async () => {
     setIsRideshareManagerOpen(true);
     setRideshareLoading(true);
+    const eventId = selectedEvent.id;
     try {
       const { data } = await supabase
         .from("rideshares")
         .select(
           "id, guest_name, phone, role, direction, from_location, to_location",
         )
-        .eq("event_id", selectedEvent.id)
+        .eq("event_id", eventId)
         .order("created_at", { ascending: false });
+      if (activeEventIdRef.current !== eventId) return;
       setRideshareList(data || []);
     } catch (error) {
       console.error(error);
@@ -864,12 +878,14 @@ const Admin = () => {
   const openIcebreakerManager = async () => {
     setIsIcebreakerModalOpen(true);
     setIcebreakerLoading(true);
+    const eventId = selectedEvent.id;
     try {
       const { data } = await supabase
         .from("icebreaker_missions")
         .select("id, content")
-        .eq("event_id", selectedEvent.id)
+        .eq("event_id", eventId)
         .order("created_at", { ascending: false });
+      if (activeEventIdRef.current !== eventId) return;
       setIcebreakerMissions(data || []);
     } catch (error) {
       console.error(error);
@@ -888,7 +904,7 @@ const Admin = () => {
         ])
         .select("id, content");
       if (error) throw error;
-      setIcebreakerMissions([data[0], ...icebreakerMissions]);
+      setIcebreakerMissions((prev) => [data[0], ...prev]);
       setNewMissionText("");
     } catch (error) {
       alert("שגיאה בהוספת משימה");
@@ -923,7 +939,7 @@ const Admin = () => {
         .insert(inserts)
         .select("id, content");
       if (error) throw error;
-      setIcebreakerMissions([...data, ...icebreakerMissions]);
+      setIcebreakerMissions((prev) => [...data, ...prev]);
       alert("החבילה נטענה!");
     } catch (error) {
       alert("שגיאה בטעינת החבילה");
@@ -934,12 +950,14 @@ const Admin = () => {
   const openIcebreakerUserManager = async () => {
     setIsIcebreakerUserManagerOpen(true);
     setIcebreakerUsersLoading(true);
+    const eventId = selectedEvent.id;
     try {
       const { data } = await supabase
         .from("icebreaker_profiles")
         .select("id, name")
-        .eq("event_id", selectedEvent.id)
+        .eq("event_id", eventId)
         .order("created_at", { ascending: false });
+      if (activeEventIdRef.current !== eventId) return;
       setIcebreakerProfiles(data || []);
     } catch (error) {
       console.error(error);
@@ -965,19 +983,21 @@ const Admin = () => {
   const openWallOfFameManager = async () => {
     setIsWallOfFameOpen(true);
     setWallLoading(true);
+    const eventId = selectedEvent.id;
     try {
       const [matchesRes, profilesRes] = await Promise.all([
         supabase
           .from("icebreaker_matches")
           .select("id, guest1_id, guest2_id, mission_text, photo_url, completed_at")
-          .eq("event_id", selectedEvent.id)
+          .eq("event_id", eventId)
           .eq("status", "completed")
           .order("completed_at", { ascending: false }),
         supabase
           .from("icebreaker_profiles")
           .select("guest_id, name")
-          .eq("event_id", selectedEvent.id),
+          .eq("event_id", eventId),
       ]);
+      if (activeEventIdRef.current !== eventId) return;
       if (matchesRes.error) throw matchesRes.error;
       if (profilesRes.error) throw profilesRes.error;
       // אורח שפרש מהמשחק כבר לא ב-icebreaker_profiles, אבל ההוכחה שלו נשארת.
@@ -1049,14 +1069,16 @@ const Admin = () => {
   const openReportsManager = async () => {
     setIsReportsModalOpen(true);
     setReportsLoading(true);
+    const eventId = selectedEvent.id;
     try {
       const { data, error } = await supabase
         .from("reports")
         .select("id, item_type, reported_item_id, created_at")
-        .eq("event_id", selectedEvent.id)
+        .eq("event_id", eventId)
         .eq("status", "pending")
         .order("created_at", { ascending: false });
       if (error) throw error;
+      if (activeEventIdRef.current !== eventId) return;
       setReportsList(data || []);
     } catch (error) {
       console.error(error);
@@ -1124,13 +1146,15 @@ const Admin = () => {
   const openBlessingsManager = async () => {
     setIsBlessingsManagerOpen(true);
     setBlessingsLoading(true);
+    const eventId = selectedEvent.id;
     try {
       const { data, error } = await supabase
         .from("blessings")
         .select("id, guest_name, message, image_url, created_at")
-        .eq("event_id", selectedEvent.id)
+        .eq("event_id", eventId)
         .order("created_at", { ascending: false });
       if (error) throw error;
+      if (activeEventIdRef.current !== eventId) return;
       setBlessingsList(data || []);
     } catch (error) {
       console.error(error);
@@ -2393,6 +2417,8 @@ const Admin = () => {
                               <img
                                 src={blessing.image_url}
                                 alt="Selfie"
+                                loading="lazy"
+                                decoding="async"
                                 className="w-full h-32 object-cover rounded-xl border border-clay-well-deep"
                               />
                             </div>
@@ -2902,6 +2928,8 @@ const Admin = () => {
                           <img
                             src={profile.photo_url}
                             alt={profile.name}
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-full object-cover"
                           />
                         ) : (

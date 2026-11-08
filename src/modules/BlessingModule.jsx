@@ -49,6 +49,7 @@ const BlessingModule = () => {
     if (savedName) setGuestName(savedName);
 
     if (!eventId) return;
+    let isMounted = true;
     const fetchEvent = async () => {
       try {
         const { data, error } = await supabase
@@ -57,14 +58,17 @@ const BlessingModule = () => {
           .eq("id", eventId)
           .single();
         if (error) throw error;
-        setEventData(data);
+        if (isMounted) setEventData(data);
       } catch (error) {
         console.error("Error fetching event:", error);
       } finally {
-        setLoadingEvent(false);
+        if (isMounted) setLoadingEvent(false);
       }
     };
     fetchEvent();
+    return () => {
+      isMounted = false;
+    };
   }, [eventId]);
 
   // Revoke the object URL when the preview changes or the component unmounts.
