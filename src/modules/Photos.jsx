@@ -110,6 +110,9 @@ const Photos = () => {
   const [myVideoCount, setMyVideoCount] = useState(0);
   // null, או סוג הקובץ שהועלה ("image" / "video") להודעת ההצלחה.
   const [uploadSuccess, setUploadSuccess] = useState(null);
+  // { file, reason } של קובץ שלא הועלה, עד שהאורח מוריד או מוותר עליו.
+  const [rejectedMedia, setRejectedMedia] = useState(null);
+  const rejectedInputRef = useRef(null);
 
   // Lightbox
   const [lightbox, setLightbox] = useState(null); // index into photos[]
@@ -337,6 +340,13 @@ const Photos = () => {
       .publicUrl;
   };
 
+  // קובץ שצולם דרך capture קיים רק בזיכרון הדפדפן, ולכן דחייה לא מוחקת אותו
+  // אלא מציעה להוריד אותו למכשיר.
+  const rejectMedia = (file, reason, input) => {
+    rejectedInputRef.current = input;
+    setRejectedMedia({ file, reason });
+  };
+
   const handleFileUpload = async (e) => {
     const input = e.target;
     const file = input.files?.[0];
@@ -345,8 +355,7 @@ const Photos = () => {
     const isVideo = file.type.startsWith("video/");
     const invalid = validateMedia(file, isVideo);
     if (invalid) {
-      showToast(...invalid);
-      input.value = null;
+      rejectMedia(file, invalid[0], input);
       return;
     }
 
@@ -361,13 +370,14 @@ const Photos = () => {
           duration = await readVideoDuration(file);
         } catch (err) {
           console.error(err);
-          showToast("לא הצלחנו לקרוא את הסרטון. נסו קובץ אחר", "error");
+          rejectMedia(file, "לא הצלחנו לקרוא את הסרטון.", input);
           return;
         }
         if (duration > MAX_VIDEO_SECONDS) {
-          showToast(
-            `הסרטון ארוך מדי (מקסימום ${MAX_VIDEO_SECONDS} שניות)`,
-            "error",
+          rejectMedia(
+            file,
+            `הסרטון ארוך מדי (מקסימום ${MAX_VIDEO_SECONDS} שניות).`,
+            input,
           );
           return;
         }
@@ -406,12 +416,33 @@ const Photos = () => {
         }, 3000),
       );
     } catch (err) {
-      showToast("שגיאה בהעלאה: " + (err.message || "נסו שוב"), "error");
+      console.error(err);
+      rejectMedia(file, "ההעלאה נכשלה.", input);
       setUploadProgress(0);
     } finally {
       setUploading(false);
-      input.value = null;
+      if (rejectedInputRef.current !== input) input.value = null;
     }
+  };
+
+  const closeRescue = () => {
+    if (rejectedInputRef.current) rejectedInputRef.current.value = null;
+    rejectedInputRef.current = null;
+    setRejectedMedia(null);
+  };
+
+  const downloadRejectedMedia = () => {
+    const { file } = rejectedMedia;
+    const url = URL.createObjectURL(file);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = file.name || `eventick_${Date.now()}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    // שחרור מיידי עלול לבטל הורדה של קובץ גדול במובייל.
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    closeRescue();
   };
 
   // supabase-js לא זורק — השגיאה חוזרת בתוצאה. בלי הבדיקה האורח ראה "הדיווח
@@ -469,6 +500,9 @@ const Photos = () => {
     onArrowRight: () => lightboxGo(-1),
     onArrowLeft: () => lightboxGo(1),
   });
+
+  // נעילת גלילה בלבד. בלי onClose: Escape היה מוחק את הקובץ בלי שהאורח בחר בכך.
+  useModalBehavior({ open: rejectedMedia !== null });
 
   if (loading || !eventData) {
     return (
@@ -783,6 +817,54 @@ const Photos = () => {
             ))}
         </div>
       </div>
+
+      {/* רשת ביטחון לקובץ שלא הועלה. נסגרת רק דרך הכפתורים. */}
+      {rejectedMedia && (
+        <div className="fixed inset-0 z-[210] bg-clay-scrim flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="media-rescue-title"
+            aria-describedby="media-rescue-body"
+            className="w-full max-w-sm max-h-full overflow-y-auto bg-clay-surface rounded-clay-lg shadow-clay-modal p-7 text-center"
+          >
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-clay-surface shadow-clay-inset-deep">
+              <AlertCircle size={28} className="text-rose-700" />
+            </div>
+            <h2
+              id="media-rescue-title"
+              className="text-2xl font-black text-slate-700 mb-3"
+            >
+              שמירת הרגע שצולם
+            </h2>
+            <div id="media-rescue-body" className="mb-6 space-y-2">
+              <p className="font-bold text-rose-700">{rejectedMedia.reason}</p>
+              <p className="font-medium text-sm leading-relaxed text-slate-600">
+                לא נוכל להעלות את הקובץ לאלבום האירוע, אך כדי שהרגע היקר שצילמת
+                לא יאבד, אנא הורד אותו למכשירך כעת.
+              </p>
+            </div>
+            <div className="space-y-3">
+              <button
+                type="button"
+                autoFocus
+                onClick={downloadRejectedMedia}
+                className="w-full font-black py-4 rounded-full flex justify-center items-center gap-2 text-white transition-all active:scale-[0.97]"
+                style={clayButtonStyle(primaryColor)}
+              >
+                <Download size={20} /> הורד למכשיר
+              </button>
+              <button
+                type="button"
+                onClick={closeRescue}
+                className={`w-full font-bold min-h-11 py-3 rounded-full text-slate-700 ${CLAY_BUTTON}`}
+              >
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Lightbox */}
       {lightbox !== null && photos[lightbox] && (
