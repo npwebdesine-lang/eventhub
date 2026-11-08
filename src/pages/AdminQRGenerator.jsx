@@ -26,6 +26,25 @@ const QR_IMAGE_OPTIONS = {
   imageSize: 0.4,
 };
 
+// קוד לייצוא (הדפסה או הורדה), נפרד מהתצוגה המקדימה הקטנה.
+const createExportQr = ({ type, margin, data, image, color }) => {
+  const exportColor = posterQrColor(color);
+  return new QRCodeStyling({
+    type,
+    width: 1000,
+    height: 1000,
+    margin,
+    data,
+    image,
+    dotsOptions: { type: "dots", color: exportColor },
+    cornersSquareOptions: { type: "extra-rounded", color: exportColor },
+    // מרכז מלא: ברירת המחדל יורשת "dots" ומפרקת אותו לנקודות, וסורקים
+    // מתקשים לזהות את ריבועי הפינה בקוד מודפס.
+    cornersDotOptions: { type: "dot", color: exportColor },
+    imageOptions: QR_IMAGE_OPTIONS,
+  });
+};
+
 const blobToDataUri = (blob) =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -93,12 +112,21 @@ const AdminQRGenerator = ({
     }
   };
 
-  const handleDownload = () => {
-    if (qrCodeInstance.current) {
-      qrCodeInstance.current.download({
-        name: "event-qr-code",
-        extension: "png",
-      });
+  const handleDownload = async () => {
+    setPosterError("");
+    try {
+      // שוליים לבנים בתוך התמונה: בעיצוב צבעוני (Canva) בלעדיהם אין לסורק
+      // אזור שקט סביב הקוד.
+      await createExportQr({
+        type: "canvas",
+        margin: 40,
+        data: url.trim(),
+        image: imageUrl,
+        color: dotsColor,
+      }).download({ name: "event-qr-code", extension: "png" });
+    } catch (error) {
+      console.error("Failed to download QR image", error);
+      setPosterError("הורדת הקוד נכשלה. בדקו את הקישור ונסו שוב.");
     }
   };
 
@@ -106,21 +134,13 @@ const AdminQRGenerator = ({
     setPosterError("");
     setIsPreparingPoster(true);
     try {
-      // מופע SVG נפרד מהתצוגה המקדימה: וקטור נשאר חד בכל גודל הדפסה.
-      const qrColor = posterQrColor(dotsColor);
-      const svgQr = new QRCodeStyling({
+      // SVG להדפסה: וקטור נשאר חד בכל גודל.
+      const svgQr = createExportQr({
         type: "svg",
-        width: 1000,
-        height: 1000,
         margin: 0,
         data: url.trim(),
         image: imageUrl,
-        dotsOptions: { type: "dots", color: qrColor },
-        cornersSquareOptions: { type: "extra-rounded", color: qrColor },
-        // מרכז מלא: ברירת המחדל יורשת "dots" ומפרקת אותו לנקודות, וסורקים
-        // מתקשים לזהות את ריבועי הפינה בקוד מודפס.
-        cornersDotOptions: { type: "dot", color: qrColor },
-        imageOptions: QR_IMAGE_OPTIONS,
+        color: dotsColor,
       });
       await printQrPoster({
         qrDataUri: await blobToDataUri(await svgQr.getRawData("svg")),
