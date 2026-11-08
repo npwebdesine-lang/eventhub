@@ -629,6 +629,8 @@ const Home = () => {
           .from("photos")
           .select("id, image_url")
           .eq("event_id", id)
+          // הקרוסלה מציגה רק img, וסרטון היה מופיע בה כתמונה שבורה.
+          .eq("media_type", "image")
           .order("created_at", { ascending: false })
           .limit(10);
         if (isMounted) setCarouselPhotos(data || []);
@@ -650,6 +652,7 @@ const Home = () => {
         },
         (payload) => {
           if (!isMounted || !payload?.new?.image_url) return;
+          if (payload.new.media_type === "video") return;
           setCarouselPhotos((prev) => [payload.new, ...prev].slice(0, 10));
         },
       )

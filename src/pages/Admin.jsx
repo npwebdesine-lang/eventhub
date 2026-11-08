@@ -3,6 +3,8 @@ import { supabase } from "../lib/supabase";
 import { useModalBehavior } from "../components/Modal";
 import { useToast } from "../components/Toast";
 import GuestListManager from "../components/GuestListManager";
+import VideoTile from "../components/VideoTile";
+import { isVideoMedia } from "../lib/videoUtils";
 import { parseSeatingFile, isValidSeatingRow } from "../lib/seatingImport";
 import {
   Settings,
@@ -105,16 +107,15 @@ const throwIfError = async (query) => {
   if (error) throw error;
 };
 
-// ה-DB שומר את ה-URL הציבורי של הוכחת המשימה, אבל storage.remove() צריך את
-// הנתיב בתוך ה-bucket (proofs/<event_id>/<match_id>_<ts>.jpg).
+// ה-DB שומר את ה-URL הציבורי של הקובץ, אבל storage.remove() צריך את הנתיב
+// בתוך ה-bucket (למשל proofs/<event_id>/<match_id>_<ts>.jpg).
 const ICEBREAKER_BUCKET = "icebreaker-uploads";
-const ICEBREAKER_PUBLIC_PREFIX = `/storage/v1/object/public/${ICEBREAKER_BUCKET}/`;
-const icebreakerStoragePath = (publicUrl) => {
-  const start = publicUrl?.indexOf(ICEBREAKER_PUBLIC_PREFIX) ?? -1;
+const EVENT_ASSETS_BUCKET = "event-assets";
+const storagePathFromUrl = (bucket, publicUrl) => {
+  const prefix = `/storage/v1/object/public/${bucket}/`;
+  const start = publicUrl?.indexOf(prefix) ?? -1;
   if (start < 0) return null;
-  return decodeURIComponent(
-    publicUrl.slice(start + ICEBREAKER_PUBLIC_PREFIX.length).split("?")[0],
-  );
+  return decodeURIComponent(publicUrl.slice(start + prefix.length).split("?")[0]);
 };
 
 const Admin = () => {
@@ -558,7 +559,7 @@ const Admin = () => {
     try {
       let query = supabase
         .from("photos")
-        .select("id, image_url, guest_name, created_at")
+        .select("id, image_url, guest_name, created_at, media_type")
         .eq("event_id", eventId)
         .order("created_at", { ascending: false })
         .limit(GALLERY_PAGE_SIZE);
@@ -612,18 +613,33 @@ const Admin = () => {
     }
   };
   const handleDeletePhoto = async (photo) => {
-    if (!window.confirm(`למחוק את התמונה של ${photo.guest_name}?`)) return;
+    const label = isVideoMedia(photo) ? "הסרטון" : "התמונה";
+    if (!window.confirm(`למחוק את ${label} של ${photo.guest_name}?`)) return;
     try {
       await mustAffectRows(
         supabase.from("photos").delete().eq("id", photo.id),
       );
-      setGalleryPhotos((prev) => prev.filter((p) => p.id !== photo.id));
-      setEventStats((prev) => ({
-        ...prev,
-        photos: Math.max(0, prev.photos - 1),
-      }));
     } catch (error) {
       alert(error.message);
+      return;
+    }
+    setGalleryPhotos((prev) => prev.filter((p) => p.id !== photo.id));
+    setEventStats((prev) => ({
+      ...prev,
+      photos: Math.max(0, prev.photos - 1),
+    }));
+
+    // השורה נמחקת קודם: אם מחיקת הקובץ תיכשל נשאר רק קובץ יתום, ולא שורה
+    // בגלריה שמצביעה על קובץ שאיננו.
+    const path = storagePathFromUrl(EVENT_ASSETS_BUCKET, photo.image_url);
+    if (!path) return;
+    // מחיקה שנחסמה מחזירה מערך ריק בלי שגיאה.
+    const { data: removed, error: removeError } = await supabase.storage
+      .from(EVENT_ASSETS_BUCKET)
+      .remove([path]);
+    if (removeError || !removed?.length) {
+      console.error("Photo file not removed:", removeError || path);
+      showToast("הוסר מהגלריה, אך הקובץ לא נמחק מהאחסון", "warning");
     }
   };
 
@@ -1048,7 +1064,7 @@ const Admin = () => {
     }
     setWallEntries((prev) => prev.filter((e) => e.id !== entry.id));
 
-    const path = icebreakerStoragePath(entry.photo_url);
+    const path = storagePathFromUrl(ICEBREAKER_BUCKET, entry.photo_url);
     if (path) {
       // כמו ב-RLS על טבלאות: מחיקה שנחסמה מחזירה מערך ריק בלי שגיאה.
       const { data: removed, error: removeError } = await supabase.storage
@@ -2582,13 +2598,20 @@ const Admin = () => {
                   key={photo.id}
                   className="relative group rounded-2xl overflow-hidden aspect-square bg-slate-800"
                 >
-                  <img
-                    src={photo.image_url}
-                    alt={`תמונה של ${photo.guest_name}`}
-                    loading="lazy"
-                    decoding="async"
-                    className="w-full h-full object-cover"
-                  />
+                  {isVideoMedia(photo) ? (
+                    <VideoTile
+                      src={photo.image_url}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={photo.image_url}
+                      alt={`תמונה של ${photo.guest_name}`}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover"
+                    />
+                  )}
                   <button
                     onClick={() => handleDeletePhoto(photo)}
                     aria-label="מחיקת התמונה"

@@ -16,11 +16,21 @@ import {
   ChevronRight as ChevRight,
   ZoomIn,
   Flag,
+  Video,
 } from "lucide-react";
 import { safeGetItem } from "../lib/safeStorage";
 import { compressImage, isAllowedImageType } from "../lib/imageUtils";
+import {
+  MAX_VIDEO_SECONDS,
+  MAX_VIDEO_SIZE_MB,
+  isAllowedVideoType,
+  isVideoMedia,
+  readVideoDuration,
+  videoExtension,
+} from "../lib/videoUtils";
 import { useToast } from "../components/Toast";
 import { useModalBehavior } from "../components/Modal";
+import VideoTile from "../components/VideoTile";
 import { PhotoGridSkeleton } from "../components/SkeletonCard";
 import gsap from "gsap";
 import { isValidUUIDv4, getOrCreateDeviceId } from "../utils/deviceId";
@@ -29,8 +39,10 @@ import { CLAY_CARD, CLAY_INSET, DEFAULT_PRIMARY, clayButtonStyle } from "../lib/
 import { accentOn } from "../lib/colors";
 import { useEventBackdrop } from "../lib/useEventBackdrop";
 
-const MAX_PHOTOS_PER_GUEST = 3;
+const MAX_PHOTOS_PER_GUEST = 10;
+const MAX_VIDEOS_PER_GUEST = 2;
 const PAGE_SIZE = 12;
+const PHOTO_COLUMNS = "id, image_url, guest_name, created_at, media_type";
 
 
 // Relative time helper
@@ -66,8 +78,10 @@ const Photos = () => {
 
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [myUploadCount, setMyUploadCount] = useState(0);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
+  const [myPhotoCount, setMyPhotoCount] = useState(0);
+  const [myVideoCount, setMyVideoCount] = useState(0);
+  // null, או סוג הקובץ שהועלה ("image" / "video") להודעת ההצלחה.
+  const [uploadSuccess, setUploadSuccess] = useState(null);
 
   // Lightbox
   const [lightbox, setLightbox] = useState(null); // index into photos[]
@@ -89,7 +103,7 @@ const Photos = () => {
       const query = orderNewestFirst(
         supabase
           .from("photos")
-          .select("id, image_url, guest_name, created_at")
+          .select(PHOTO_COLUMNS)
           .eq("event_id", eventId),
       ).limit(PAGE_SIZE);
       const { data, error } = await (reset
@@ -127,12 +141,21 @@ const Photos = () => {
         if (isMounted && !loaded) setLoadFailed(true);
 
         if (guestId && isValidUUIDv4(guestId)) {
-          const { count } = await supabase
-            .from("photos")
-            .select("id", { count: "exact", head: true })
-            .eq("event_id", eventId)
-            .eq("guest_id", guestId);
-          if (isMounted) setMyUploadCount(count || 0);
+          const countMine = (mediaType) =>
+            supabase
+              .from("photos")
+              .select("id", { count: "exact", head: true })
+              .eq("event_id", eventId)
+              .eq("guest_id", guestId)
+              .eq("media_type", mediaType);
+          const [images, videos] = await Promise.all([
+            countMine("image"),
+            countMine("video"),
+          ]);
+          if (isMounted) {
+            setMyPhotoCount(images.count || 0);
+            setMyVideoCount(videos.count || 0);
+          }
         }
       } catch (err) {
         console.error(err);
@@ -234,52 +257,96 @@ const Photos = () => {
     );
   };
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  // בדיקות שלא דורשות לקרוא את הקובץ. מחזיר ארגומנטים ל-showToast, או null
+  // כשהקובץ תקין.
+  const validateMedia = (file, isVideo) => {
+    if (isVideo) {
+      if (!isAllowedVideoType(file)) {
+        return ["יש להעלות סרטון בפורמט MP4, WEBM או MOV", "error"];
+      }
+      if (file.size > MAX_VIDEO_SIZE_MB * 1024 * 1024) {
+        return [
+          `הסרטון גדול מדי (מקסימום ${MAX_VIDEO_SIZE_MB}MB). נסו סרטון קצר יותר או צילום באיכות נמוכה יותר`,
+          "error",
+        ];
+      }
+      if (myVideoCount >= MAX_VIDEOS_PER_GUEST) {
+        return [`הגעתם למגבלת ${MAX_VIDEOS_PER_GUEST} סרטונים`, "warning"];
+      }
+      return null;
+    }
     if (!isAllowedImageType(file)) {
-      showToast("יש להעלות קובץ תמונה בלבד (JPG, PNG, WEBP)", "error");
-      e.target.value = null;
-      return;
+      return ["יש להעלות תמונה (JPG, PNG, WEBP) או סרטון", "error"];
     }
     if (file.size > 15 * 1024 * 1024) {
-      showToast("הקובץ גדול מדי (מקסימום 15MB)", "error");
-      e.target.value = null;
-      return;
+      return ["הקובץ גדול מדי (מקסימום 15MB)", "error"];
     }
-    if (myUploadCount >= MAX_PHOTOS_PER_GUEST) {
-      showToast(`הגעתם למגבלת ${MAX_PHOTOS_PER_GUEST} תמונות`, "warning");
-      e.target.value = null;
-      return;
+    if (myPhotoCount >= MAX_PHOTOS_PER_GUEST) {
+      return [`הגעתם למגבלת ${MAX_PHOTOS_PER_GUEST} תמונות`, "warning"];
     }
-    if (uploading) return;
+    return null;
+  };
 
+  // הדחיסה רק לתמונות; סרטון עולה כמו שהוא, אחרי בדיקת הגודל והמשך.
+  const uploadToStorage = async (file, isVideo) => {
+    const baseName = `${eventId}_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+    const path = isVideo
+      ? `photos/video_${baseName}.${videoExtension(file)}`
+      : `photos/photo_${baseName}.jpg`;
+    const body = isVideo
+      ? file
+      : await compressImage(file, { maxWidth: 1200, quality: 0.82 });
+
+    const { error } = await supabase.storage
+      .from("event-assets")
+      .upload(path, body, {
+        cacheControl: "3600",
+        upsert: false,
+        contentType: isVideo ? file.type : "image/jpeg",
+      });
+    if (error) throw error;
+    return supabase.storage.from("event-assets").getPublicUrl(path).data
+      .publicUrl;
+  };
+
+  const handleFileUpload = async (e) => {
+    const input = e.target;
+    const file = input.files?.[0];
+    if (!file || uploading) return;
+
+    const isVideo = file.type.startsWith("video/");
+    const invalid = validateMedia(file, isVideo);
+    if (invalid) {
+      showToast(...invalid);
+      input.value = null;
+      return;
+    }
+
+    // לפני קריאת המשך: הקריאה אסינכרונית, ובחירה נוספת בזמנה הייתה עוקפת את המכסה.
     setUploading(true);
     setUploadProgress(0);
-    simulateProgress();
 
     try {
-      const compressed = await compressImage(file, {
-        maxWidth: 1200,
-        quality: 0.82,
-      });
-      const fileName = `photo_${eventId}_${Date.now()}_${crypto.randomUUID().slice(0, 8)}.jpg`;
+      if (isVideo) {
+        let duration;
+        try {
+          duration = await readVideoDuration(file);
+        } catch (err) {
+          console.error(err);
+          showToast("לא הצלחנו לקרוא את הסרטון. נסו קובץ אחר", "error");
+          return;
+        }
+        if (duration > MAX_VIDEO_SECONDS) {
+          showToast(
+            `הסרטון ארוך מדי (מקסימום ${MAX_VIDEO_SECONDS} שניות)`,
+            "error",
+          );
+          return;
+        }
+      }
 
-      const { error: uploadError } = await supabase.storage
-        .from("event-assets")
-        .upload(`photos/${fileName}`, compressed, {
-          cacheControl: "3600",
-          upsert: false,
-          contentType: "image/jpeg",
-        });
-      if (uploadError) throw uploadError;
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage
-        .from("event-assets")
-        .getPublicUrl(`photos/${fileName}`);
+      simulateProgress();
+      const publicUrl = await uploadToStorage(file, isVideo);
 
       // השורה האמיתית חוזרת מה-insert — id מזויף (Date.now()) היה נשבר בדיווח
       // ובכל השוואה מול השרת. photos_select_public הוא using (true), ולכן
@@ -292,19 +359,21 @@ const Photos = () => {
             guest_id: guestId,
             guest_name: guestName || "אורח",
             image_url: publicUrl,
+            media_type: isVideo ? "video" : "image",
           },
         ])
-        .select("id, image_url, guest_name, created_at")
+        .select(PHOTO_COLUMNS)
         .single();
       if (dbError) throw dbError;
 
       setUploadProgress(100);
       setPhotos((prev) => [newPhoto, ...prev]);
-      setMyUploadCount((prev) => prev + 1);
-      setUploadSuccess(true);
+      if (isVideo) setMyVideoCount((prev) => prev + 1);
+      else setMyPhotoCount((prev) => prev + 1);
+      setUploadSuccess(isVideo ? "video" : "image");
       timeoutsRef.current.push(
         setTimeout(() => {
-          setUploadSuccess(false);
+          setUploadSuccess(null);
           setUploadProgress(0);
         }, 3000),
       );
@@ -313,19 +382,20 @@ const Photos = () => {
       setUploadProgress(0);
     } finally {
       setUploading(false);
-      e.target.value = null;
+      input.value = null;
     }
   };
 
   // supabase-js לא זורק — השגיאה חוזרת בתוצאה. בלי הבדיקה האורח ראה "הדיווח
   // התקבל" גם כשהדיווח מעולם לא נשמר.
-  const handleReport = async (photoId) => {
-    if (!window.confirm("לדווח על התמונה הזו כפוגענית?")) return;
+  const handleReport = async (photo) => {
+    const label = isVideoMedia(photo) ? "הסרטון הזה כפוגעני" : "התמונה הזו כפוגענית";
+    if (!window.confirm(`לדווח על ${label}?`)) return;
     try {
       const { error } = await supabase.from("reports").insert([
         {
           event_id: eventId,
-          reported_item_id: photoId,
+          reported_item_id: photo.id,
           item_type: "photo",
           reporter_id: guestId,
         },
@@ -338,17 +408,21 @@ const Photos = () => {
     }
   };
 
-  const handleDownload = async (url) => {
+  const handleDownload = async (photo) => {
     try {
-      const res = await fetch(url);
+      const res = await fetch(photo.image_url);
       const blob = await res.blob();
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = `eventick_photo_${Date.now()}.jpg`;
+      // סיומת הסרטון כבר בכתובת שלו (mp4 / webm / mov).
+      const extension = isVideoMedia(photo)
+        ? photo.image_url.split(".").pop()
+        : "jpg";
+      a.download = `eventick_photo_${Date.now()}.${extension}`;
       a.click();
       URL.revokeObjectURL(a.href);
     } catch {
-      showToast("לא ניתן להוריד את התמונה", "error");
+      showToast("לא ניתן להוריד את הקובץ", "error");
     }
   };
 
@@ -379,7 +453,15 @@ const Photos = () => {
   }
 
   const primaryColor = eventData.design_config?.colors?.primary || DEFAULT_PRIMARY;
-  const canUploadMore = myUploadCount < MAX_PHOTOS_PER_GUEST;
+  const canUploadPhoto = myPhotoCount < MAX_PHOTOS_PER_GUEST;
+  const canUploadVideo = myVideoCount < MAX_VIDEOS_PER_GUEST;
+  const canUploadMore = canUploadPhoto || canUploadVideo;
+  // הבורר מציע רק את מה שעוד נשאר במכסה. video/* ולא רשימת סוגים: חלק ממכשירי
+  // המובייל לא מציעים סרטונים עם רשימה מפורטת. הסוג עצמו נבדק אחרי הבחירה.
+  const uploadAccept = [canUploadPhoto && "image/*", canUploadVideo && "video/*"]
+    .filter(Boolean)
+    .join(",");
+  const quotaColor = (isFull) => (isFull ? "#be123c" : accentOn(primaryColor));
 
   return (
     <div
@@ -441,7 +523,7 @@ const Photos = () => {
                 className="font-black text-slate-700 text-xl"
                 style={{ fontFamily: "'Assistant', sans-serif" }}
               >
-                התמונה הועלתה! ✨
+                {uploadSuccess === "video" ? "הסרטון הועלה!" : "התמונה הועלתה!"} ✨
               </h3>
               <p className="text-clay-muted font-medium text-sm mt-2">
                 נוספה בהצלחה לאלבום המשותף
@@ -456,21 +538,23 @@ const Photos = () => {
                 className="text-2xl font-black text-slate-700 mb-2"
                 style={{ fontFamily: "'Assistant', sans-serif" }}
               >
-                צלמו או העלו תמונה
+                צלמו או העלו תמונה או סרטון
               </h2>
               <p className="text-clay-muted font-medium text-sm mb-6">
                 <span
                   className="font-black text-lg"
-                  style={{
-                    color:
-                      myUploadCount >= MAX_PHOTOS_PER_GUEST
-                        ? "#be123c"
-                        : accentOn(primaryColor),
-                  }}
+                  style={{ color: quotaColor(!canUploadPhoto) }}
                 >
-                  {myUploadCount}/{MAX_PHOTOS_PER_GUEST}
+                  {myPhotoCount}/{MAX_PHOTOS_PER_GUEST}
                 </span>{" "}
-                תמונות הועלו
+                תמונות,{" "}
+                <span
+                  className="font-black text-lg"
+                  style={{ color: quotaColor(!canUploadVideo) }}
+                >
+                  {myVideoCount}/{MAX_VIDEOS_PER_GUEST}
+                </span>{" "}
+                סרטונים
               </p>
 
               {/* Progress bar — debossed track with filled pill */}
@@ -490,30 +574,48 @@ const Photos = () => {
               )}
 
               {canUploadMore ? (
-                <label
-                  className="w-full font-black py-4 rounded-full flex justify-center items-center gap-2 cursor-pointer transition-all active:scale-[0.97] text-white"
-                  style={clayButtonStyle(primaryColor)}
-                >
-                  {uploading ? (
-                    <>
-                      <Loader2 className="animate-spin" size={20} /> מעלה...
-                    </>
-                  ) : (
-                    <>
-                      <Camera size={22} /> צלם / גלריה
-                    </>
+                <div className="space-y-3">
+                  <label
+                    className="w-full font-black py-4 rounded-full flex justify-center items-center gap-2 cursor-pointer transition-all active:scale-[0.97] text-white"
+                    style={clayButtonStyle(primaryColor)}
+                  >
+                    {uploading ? (
+                      <>
+                        <Loader2 className="animate-spin" size={20} /> מעלה...
+                      </>
+                    ) : (
+                      <>
+                        <Camera size={22} /> צלם / גלריה
+                      </>
+                    )}
+                    {/* בלי capture: הכפתור מבטיח "צלם / גלריה", ו-capture פותח
+                        במובייל את המצלמה ישירות בלי אפשרות לבחור מהגלריה.
+                        בלעדיו מערכת ההפעלה מציגה בורר עם שתי האפשרויות. */}
+                    <input
+                      type="file"
+                      accept={uploadAccept}
+                      onChange={handleFileUpload}
+                      disabled={uploading}
+                      className="hidden"
+                    />
+                  </label>
+                  {canUploadVideo && !uploading && (
+                    <label className="w-full font-bold min-h-11 py-3 rounded-full flex justify-center items-center gap-2 cursor-pointer text-slate-700 bg-clay-surface shadow-clay-md active:shadow-clay-pressed transition-all">
+                      <Video size={18} /> צלם סרטון
+                      {/* כאן capture במקומו: הכפתור מבטיח צילום בלבד. */}
+                      <input
+                        type="file"
+                        accept="video/*"
+                        capture="camcorder"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
+                    </label>
                   )}
-                  {/* בלי capture: הכפתור מבטיח "צלם / גלריה", ו-capture פותח
-                      במובייל את המצלמה ישירות בלי אפשרות לבחור מהגלריה.
-                      בלעדיו מערכת ההפעלה מציגה בורר עם שתי האפשרויות. */}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    disabled={uploading}
-                    className="hidden"
-                  />
-                </label>
+                  <p className="text-clay-muted font-medium text-xs">
+                    סרטון: עד {MAX_VIDEO_SECONDS} שניות ועד {MAX_VIDEO_SIZE_MB}MB
+                  </p>
+                </div>
               ) : (
                 <div className="text-rose-700 font-bold py-4 rounded-full flex justify-center items-center gap-2 bg-clay-surface shadow-clay-inset">
                   <AlertCircle size={20} /> הגעתם למכסה המקסימלית
@@ -569,39 +671,53 @@ const Photos = () => {
                   onClick={() => setLightbox(idx)}
                   style={{ breakInside: "avoid", padding: "8px" }}
                 >
-                  <img
-                    src={photo.image_url}
-                    alt={`תמונה של ${photo.guest_name}`}
-                    className="w-full object-cover rounded-clay-field transition-all duration-700 group-hover:scale-105"
-                    loading="lazy"
-                    style={{
-                      aspectRatio:
-                        idx % 3 === 0 ? "4/5" : idx % 3 === 1 ? "1/1" : "4/3",
-                      boxShadow: "inset 2px 2px 6px rgba(0,0,0,0.15)",
-                    }}
-                    onError={(e) => {
-                      e.target.style.minHeight = "120px";
-                    }}
-                  />
-                  {/* Overlay */}
-                  <div className="absolute inset-2 rounded-clay-field bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
-                    <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-white text-sm font-black truncate flex items-center gap-1.5">
-                          <Heart
-                            size={12}
-                            className="fill-current"
-                            style={{ color: accentOn(primaryColor) }}
-                          />
-                          {photo.guest_name}
-                        </p>
-                        <ZoomIn size={14} className="text-white/80" />
-                      </div>
-                      <p className="text-white/60 text-[11px] font-medium">
-                        {timeAgo(photo.created_at)}
-                      </p>
-                    </div>
-                  </div>
+                  {isVideoMedia(photo) ? (
+                    <VideoTile
+                      src={photo.image_url}
+                      className="w-full object-cover rounded-clay-field"
+                      style={{
+                        aspectRatio:
+                          idx % 3 === 0 ? "4/5" : idx % 3 === 1 ? "1/1" : "4/3",
+                      }}
+                      onExpand={() => setLightbox(idx)}
+                    />
+                  ) : (
+                    <>
+                        <img
+                          src={photo.image_url}
+                          alt={`תמונה של ${photo.guest_name}`}
+                          className="w-full object-cover rounded-clay-field transition-all duration-700 group-hover:scale-105"
+                          loading="lazy"
+                          style={{
+                            aspectRatio:
+                              idx % 3 === 0 ? "4/5" : idx % 3 === 1 ? "1/1" : "4/3",
+                            boxShadow: "inset 2px 2px 6px rgba(0,0,0,0.15)",
+                          }}
+                          onError={(e) => {
+                            e.target.style.minHeight = "120px";
+                          }}
+                        />
+                        {/* Overlay */}
+                        <div className="absolute inset-2 rounded-clay-field bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
+                          <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                            <div className="flex items-center justify-between mb-1">
+                              <p className="text-white text-sm font-black truncate flex items-center gap-1.5">
+                                <Heart
+                                  size={12}
+                                  className="fill-current"
+                                  style={{ color: accentOn(primaryColor) }}
+                                />
+                                {photo.guest_name}
+                              </p>
+                              <ZoomIn size={14} className="text-white/80" />
+                            </div>
+                            <p className="text-white/60 text-[11px] font-medium">
+                              {timeAgo(photo.created_at)}
+                            </p>
+                          </div>
+                        </div>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
@@ -672,7 +788,7 @@ const Photos = () => {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                handleDownload(photos[lightbox].image_url);
+                handleDownload(photos[lightbox]);
               }}
               className="text-white/60 hover:text-white transition-colors flex items-center gap-1.5 min-h-11 px-3 rounded-full"
               title="הורד תמונה"
@@ -682,7 +798,7 @@ const Photos = () => {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                handleReport(photos[lightbox].id);
+                handleReport(photos[lightbox]);
               }}
               className="text-white/60 hover:text-white transition-colors flex items-center gap-1.5 min-h-11 px-3 rounded-full"
               aria-label="דיווח על תמונה פוגענית"
@@ -712,12 +828,24 @@ const Photos = () => {
               </button>
             )}
 
-            <img
-              src={photos[lightbox].image_url}
-              alt="תמונה מוגדלת"
-              className="max-w-full max-h-[85%] object-contain rounded-[2rem] shadow-[0_0_80px_rgba(0,0,0,0.7)] animate-in zoom-in-95 duration-300"
-              onClick={(e) => e.stopPropagation()}
-            />
+            {isVideoMedia(photos[lightbox]) ? (
+              <video
+                key={photos[lightbox].id}
+                src={photos[lightbox].image_url}
+                className="max-w-full max-h-[85%] object-contain rounded-[2rem] shadow-[0_0_80px_rgba(0,0,0,0.7)] animate-in zoom-in-95 duration-300"
+                controls
+                playsInline
+                preload="metadata"
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <img
+                src={photos[lightbox].image_url}
+                alt="תמונה מוגדלת"
+                className="max-w-full max-h-[85%] object-contain rounded-[2rem] shadow-[0_0_80px_rgba(0,0,0,0.7)] animate-in zoom-in-95 duration-300"
+                onClick={(e) => e.stopPropagation()}
+              />
+            )}
 
             {lightbox < photos.length - 1 && (
               <button

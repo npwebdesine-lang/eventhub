@@ -14,10 +14,12 @@ import {
 } from "lucide-react";
 import gsap from "gsap";
 import { useModalBehavior } from "../components/Modal";
+import VideoTile from "../components/VideoTile";
 import { appendUnique, olderThan, orderNewestFirst } from "../lib/pagination";
 import { DEFAULT_PRIMARY, clayButtonStyle, clayHeroStyle } from "../lib/clay";
 import { accentOn } from "../lib/colors";
 import { useEventBackdrop } from "../lib/useEventBackdrop";
+import { isVideoMedia } from "../lib/videoUtils";
 
 const PAGE_SIZE = 24;
 
@@ -55,7 +57,7 @@ const Album = () => {
       const query = orderNewestFirst(
         supabase
           .from("photos")
-          .select("id, image_url, guest_name, created_at")
+          .select("id, image_url, guest_name, created_at, media_type")
           .eq("event_id", id),
       ).limit(PAGE_SIZE);
       const { data, error } = await (reset
@@ -392,31 +394,41 @@ const Album = () => {
                   onClick={() => setSelectedIndex(index)}
                   className="media-card relative break-inside-avoid rounded-[24px] overflow-hidden cursor-pointer group p-[7px] bg-clay-surface shadow-clay-md transform-gpu card-hover"
                 >
-                  <img
-                    src={photo.image_url}
-                    alt={`Photo by ${photo.guest_name}`}
-                    className="w-full h-auto object-cover transition-all duration-700 group-hover:scale-[1.03] bg-clay-well rounded-[18px] shadow-[inset_2px_2px_6px_rgba(0,0,0,0.2)]"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                  <div className="absolute inset-[7px] rounded-[18px] bg-gradient-to-t from-slate-950/95 via-slate-900/30 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-6">
-                    <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                      <p className="text-white/70 text-[11px] font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
-                        <Heart
-                          size={12}
-                          className="fill-rose-500"
-                          style={{ color: accentOn(primaryColor) }}
-                        />{" "}
-                        צולם ע"י
-                      </p>
-                      <p
-                        className="text-white text-lg font-black tracking-tight"
-                        style={{ fontFamily: "'Assistant', sans-serif" }}
-                      >
-                        {photo.guest_name}
-                      </p>
-                    </div>
-                  </div>
+                  {isVideoMedia(photo) ? (
+                    <VideoTile
+                      src={photo.image_url}
+                      className="w-full h-auto object-cover bg-clay-well rounded-[18px]"
+                      onExpand={() => setSelectedIndex(index)}
+                    />
+                  ) : (
+                    <>
+                        <img
+                          src={photo.image_url}
+                          alt={`Photo by ${photo.guest_name}`}
+                          className="w-full h-auto object-cover transition-all duration-700 group-hover:scale-[1.03] bg-clay-well rounded-[18px] shadow-[inset_2px_2px_6px_rgba(0,0,0,0.2)]"
+                          loading="lazy"
+                          decoding="async"
+                        />
+                        <div className="absolute inset-[7px] rounded-[18px] bg-gradient-to-t from-slate-950/95 via-slate-900/30 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-6">
+                          <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                            <p className="text-white/70 text-[11px] font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
+                              <Heart
+                                size={12}
+                                className="fill-rose-500"
+                                style={{ color: accentOn(primaryColor) }}
+                              />{" "}
+                              צולם ע"י
+                            </p>
+                            <p
+                              className="text-white text-lg font-black tracking-tight"
+                              style={{ fontFamily: "'Assistant', sans-serif" }}
+                            >
+                              {photo.guest_name}
+                            </p>
+                          </div>
+                        </div>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
@@ -567,12 +579,23 @@ const Album = () => {
                 className="group-hover:scale-125 transition-transform"
               />
             </button>
-            <img
-              key={selectedIndex}
-              src={photos[selectedIndex].image_url}
-              className="max-w-full max-h-[85%] object-contain rounded-[2rem] shadow-[0_0_80px_rgba(0,0,0,0.7)] animate-in zoom-in-95 duration-300"
-              alt="Enlarged moment"
-            />
+            {isVideoMedia(photos[selectedIndex]) ? (
+              <video
+                key={selectedIndex}
+                src={photos[selectedIndex].image_url}
+                className="max-w-full max-h-[85%] object-contain rounded-[2rem] shadow-[0_0_80px_rgba(0,0,0,0.7)] animate-in zoom-in-95 duration-300"
+                controls
+                playsInline
+                preload="metadata"
+              />
+            ) : (
+              <img
+                key={selectedIndex}
+                src={photos[selectedIndex].image_url}
+                className="max-w-full max-h-[85%] object-contain rounded-[2rem] shadow-[0_0_80px_rgba(0,0,0,0.7)] animate-in zoom-in-95 duration-300"
+                alt="Enlarged moment"
+              />
+            )}
             <button
               onClick={handlePrev}
               className="absolute left-[max(1.5rem,env(safe-area-inset-left))] md:left-12 z-50 text-white/40 hover:text-white bg-white/10 hover:bg-white/20 p-5 rounded-[1.5rem] transition-all group button-pulse"
