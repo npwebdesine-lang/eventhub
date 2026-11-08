@@ -650,14 +650,15 @@ const Admin = () => {
 
   // רצה אחרי מחיקת השורה. שורה מזויפת יכולה להצביע על קובץ של אורח אחר,
   // ולכן הקובץ נמחק רק אם הוא שייך לאירוע ואף שורה אחרת לא משתמשת בו.
+  // מחזיר false רק כשקובץ שהיה צריך להימחק נשאר באחסון.
   const removeRowFile = async ({ bucket, table, column, url, isOwnPath }) => {
     const path = storagePathFromUrl(bucket, url);
-    if (!path || !isOwnPath(path, selectedEvent.id)) return;
+    if (!path || !isOwnPath(path, selectedEvent.id)) return true;
     const { count, error: countError } = await supabase
       .from(table)
       .select("id", { count: "exact", head: true })
       .eq(column, url);
-    if (!countError && count > 0) return;
+    if (!countError && count > 0) return true;
     // מחיקה שנחסמה מחזירה מערך ריק בלי שגיאה.
     const { data: removed, error: removeError } = countError
       ? { error: countError }
@@ -665,7 +666,9 @@ const Admin = () => {
     if (removeError || !removed?.length) {
       console.error("File not removed:", removeError || path);
       showToast("התוכן הוסר, אך הקובץ לא נמחק מהאחסון", "warning");
+      return false;
     }
+    return true;
   };
 
   const openSeatingManager = async () => {
@@ -1089,20 +1092,14 @@ const Admin = () => {
     }
     setWallEntries((prev) => prev.filter((e) => e.id !== entry.id));
 
-    const path = storagePathFromUrl(ICEBREAKER_BUCKET, entry.photo_url);
-    if (path) {
-      // כמו ב-RLS על טבלאות: מחיקה שנחסמה מחזירה מערך ריק בלי שגיאה.
-      const { data: removed, error: removeError } = await supabase.storage
-        .from(ICEBREAKER_BUCKET)
-        .remove([path]);
-      if (removeError || !removed?.length) {
-        console.error("Proof photo not removed:", removeError || path);
-        showToast("הוסר מקיר התהילה, אך קובץ התמונה לא נמחק מהאחסון", "warning");
-        setDeletingWallEntryId(null);
-        return;
-      }
-    }
-    showToast("המשימה הוסרה מקיר התהילה", "success");
+    const fileRemoved = await removeRowFile({
+      bucket: ICEBREAKER_BUCKET,
+      table: "icebreaker_matches",
+      column: "photo_url",
+      url: entry.photo_url,
+      isOwnPath: isEventProofPath,
+    });
+    if (fileRemoved) showToast("המשימה הוסרה מקיר התהילה", "success");
     setDeletingWallEntryId(null);
   };
 
