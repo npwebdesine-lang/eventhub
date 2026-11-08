@@ -414,9 +414,9 @@ const Photos = () => {
       const blob = await res.blob();
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      // סיומת הסרטון כבר בכתובת שלו (mp4 / webm / mov).
+      // לפי סוג הקובץ שהתקבל ולא לפי הכתובת, שנכתבת על ידי האורח.
       const extension = isVideoMedia(photo)
-        ? photo.image_url.split(".").pop()
+        ? videoExtension(blob) || "mp4"
         : "jpg";
       a.download = `eventick_photo_${Date.now()}.${extension}`;
       a.click();

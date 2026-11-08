@@ -5,6 +5,7 @@ import { useToast } from "../components/Toast";
 import GuestListManager from "../components/GuestListManager";
 import VideoTile from "../components/VideoTile";
 import { isVideoMedia } from "../lib/videoUtils";
+import { removeAllEventFiles } from "../lib/eventFiles";
 import { parseSeatingFile, isValidSeatingRow } from "../lib/seatingImport";
 import {
   Settings,
@@ -117,6 +118,12 @@ const storagePathFromUrl = (bucket, publicUrl) => {
   if (start < 0) return null;
   return decodeURIComponent(publicUrl.slice(start + prefix.length).split("?")[0]);
 };
+
+// כתובת הקובץ נכתבת על ידי האורח, ולכן לא סומכים עליה כנתיב למחיקה.
+const isEventPhotoPath = (path, eventId) =>
+  new RegExp(`^photos/(photo|video)_${eventId}_[^/]+$`).test(path);
+const isEventProofPath = (path, eventId) =>
+  new RegExp(`^proofs/${eventId}/[^/]+$`).test(path);
 
 const Admin = () => {
   const [session, setSession] = useState(null);
@@ -469,6 +476,7 @@ const Admin = () => {
           ),
         ),
       );
+      await removeAllEventFiles(selectedEvent.id);
       await mustAffectRows(
         supabase.from("events").delete().eq("id", selectedEvent.id),
       );
@@ -631,15 +639,32 @@ const Admin = () => {
 
     // השורה נמחקת קודם: אם מחיקת הקובץ תיכשל נשאר רק קובץ יתום, ולא שורה
     // בגלריה שמצביעה על קובץ שאיננו.
-    const path = storagePathFromUrl(EVENT_ASSETS_BUCKET, photo.image_url);
-    if (!path) return;
+    await removeRowFile({
+      bucket: EVENT_ASSETS_BUCKET,
+      table: "photos",
+      column: "image_url",
+      url: photo.image_url,
+      isOwnPath: isEventPhotoPath,
+    });
+  };
+
+  // רצה אחרי מחיקת השורה. שורה מזויפת יכולה להצביע על קובץ של אורח אחר,
+  // ולכן הקובץ נמחק רק אם הוא שייך לאירוע ואף שורה אחרת לא משתמשת בו.
+  const removeRowFile = async ({ bucket, table, column, url, isOwnPath }) => {
+    const path = storagePathFromUrl(bucket, url);
+    if (!path || !isOwnPath(path, selectedEvent.id)) return;
+    const { count, error: countError } = await supabase
+      .from(table)
+      .select("id", { count: "exact", head: true })
+      .eq(column, url);
+    if (!countError && count > 0) return;
     // מחיקה שנחסמה מחזירה מערך ריק בלי שגיאה.
-    const { data: removed, error: removeError } = await supabase.storage
-      .from(EVENT_ASSETS_BUCKET)
-      .remove([path]);
+    const { data: removed, error: removeError } = countError
+      ? { error: countError }
+      : await supabase.storage.from(bucket).remove([path]);
     if (removeError || !removed?.length) {
-      console.error("Photo file not removed:", removeError || path);
-      showToast("הוסר מהגלריה, אך הקובץ לא נמחק מהאחסון", "warning");
+      console.error("File not removed:", removeError || path);
+      showToast("התוכן הוסר, אך הקובץ לא נמחק מהאחסון", "warning");
     }
   };
 
@@ -1127,13 +1152,32 @@ const Admin = () => {
             .from(table)
             .delete()
             .eq("id", itemId)
-            .select("id");
+            .select(itemType === "photo" ? "id, image_url" : "id, photo_url");
           if (deleteError) throw deleteError;
           alert(
             deleted?.length
               ? "התוכן הפוגעני נמחק בהצלחה."
               : "התוכן כבר לא קיים במערכת — הדיווח ייסגר.",
           );
+          if (deleted?.length) {
+            await removeRowFile(
+              itemType === "photo"
+                ? {
+                    bucket: EVENT_ASSETS_BUCKET,
+                    table,
+                    column: "image_url",
+                    url: deleted[0].image_url,
+                    isOwnPath: isEventPhotoPath,
+                  }
+                : {
+                    bucket: ICEBREAKER_BUCKET,
+                    table,
+                    column: "photo_url",
+                    url: deleted[0].photo_url,
+                    isOwnPath: isEventProofPath,
+                  },
+            );
+          }
         }
       }
 
