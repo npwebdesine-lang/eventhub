@@ -456,11 +456,6 @@ const Photos = () => {
   const canUploadPhoto = myPhotoCount < MAX_PHOTOS_PER_GUEST;
   const canUploadVideo = myVideoCount < MAX_VIDEOS_PER_GUEST;
   const canUploadMore = canUploadPhoto || canUploadVideo;
-  // הבורר מציע רק את מה שעוד נשאר במכסה. video/* ולא רשימת סוגים: חלק ממכשירי
-  // המובייל לא מציעים סרטונים עם רשימה מפורטת. הסוג עצמו נבדק אחרי הבחירה.
-  const uploadAccept = [canUploadPhoto && "image/*", canUploadVideo && "video/*"]
-    .filter(Boolean)
-    .join(",");
   const quotaColor = (isFull) => (isFull ? "#be123c" : accentOn(primaryColor));
 
   return (
@@ -575,42 +570,44 @@ const Photos = () => {
 
               {canUploadMore ? (
                 <div className="space-y-3">
-                  <label
-                    className="w-full font-black py-4 rounded-full flex justify-center items-center gap-2 cursor-pointer transition-all active:scale-[0.97] text-white"
-                    style={clayButtonStyle(primaryColor)}
-                  >
-                    {uploading ? (
-                      <>
-                        <Loader2 className="animate-spin" size={20} /> מעלה...
-                      </>
-                    ) : (
-                      <>
-                        <Camera size={22} /> צלם / גלריה
-                      </>
-                    )}
-                    {/* בלי capture: הכפתור מבטיח "צלם / גלריה", ו-capture פותח
-                        במובייל את המצלמה ישירות בלי אפשרות לבחור מהגלריה.
-                        בלעדיו מערכת ההפעלה מציגה בורר עם שתי האפשרויות. */}
-                    <input
-                      type="file"
-                      accept={uploadAccept}
-                      onChange={handleFileUpload}
-                      disabled={uploading}
-                      className="hidden"
-                    />
-                  </label>
-                  {canUploadVideo && !uploading && (
-                    <label className="w-full font-bold min-h-11 py-3 rounded-full flex justify-center items-center gap-2 cursor-pointer text-slate-700 bg-clay-surface shadow-clay-md active:shadow-clay-pressed transition-all">
-                      <Video size={18} /> צלם סרטון
-                      {/* כאן capture במקומו: הכפתור מבטיח צילום בלבד. */}
-                      <input
-                        type="file"
-                        accept="video/*"
-                        capture="camcorder"
-                        onChange={handleFileUpload}
-                        className="hidden"
-                      />
-                    </label>
+                  {uploading ? (
+                    <div
+                      className="w-full font-black py-4 rounded-full flex justify-center items-center gap-2 text-white"
+                      style={clayButtonStyle(primaryColor)}
+                    >
+                      <Loader2 className="animate-spin" size={20} /> מעלה...
+                    </div>
+                  ) : (
+                    <>
+                      {/* קלט נפרד לכל סוג ובלי capture: capture מדלג על הגלריה,
+                          ו-accept משולב גורם לחלק ממכשירי האנדרואיד (למשל
+                          שיאומי) לדלג על הבורר ולפתוח ישר את הגלריה. */}
+                      {canUploadPhoto && (
+                        <label
+                          className="w-full font-black py-4 rounded-full flex justify-center items-center gap-2 cursor-pointer transition-all active:scale-[0.97] text-white"
+                          style={clayButtonStyle(primaryColor)}
+                        >
+                          <Camera size={22} /> צלם או העלה תמונה
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileUpload}
+                            className="hidden"
+                          />
+                        </label>
+                      )}
+                      {canUploadVideo && (
+                        <label className="w-full font-bold min-h-11 py-3 rounded-full flex justify-center items-center gap-2 cursor-pointer text-slate-700 bg-clay-surface shadow-clay-md active:shadow-clay-pressed transition-all">
+                          <Video size={18} /> צלם או העלה סרטון
+                          <input
+                            type="file"
+                            accept="video/*"
+                            onChange={handleFileUpload}
+                            className="hidden"
+                          />
+                        </label>
+                      )}
+                    </>
                   )}
                   <p className="text-clay-muted font-medium text-xs">
                     סרטון: עד {MAX_VIDEO_SECONDS} שניות ועד {MAX_VIDEO_SIZE_MB}MB
