@@ -2,23 +2,53 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import QRCodeStyling from "qr-code-styling";
+import { Capacitor } from "@capacitor/core";
 import { DEFAULT_PRIMARY } from "../lib/clay";
+import {
+  POSTER_SIZES,
+  posterQrColor,
+  printQrPoster,
+} from "../lib/qrPoster";
 import {
   DownloadCloud,
   Image as ImageIcon,
   Link,
+  Loader2,
   Palette,
+  Printer,
   Upload,
   X,
 } from "lucide-react";
 
+const QR_IMAGE_OPTIONS = {
+  crossOrigin: "anonymous",
+  margin: 10,
+  imageSize: 0.4,
+};
+
+const blobToDataUri = (blob) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+
 const AdminQRGenerator = ({
   defaultUrl = "https://example.com",
   defaultColor = DEFAULT_PRIMARY,
+  eventName = "",
+  backgroundColor = "",
 }) => {
   const [url, setUrl] = useState(defaultUrl);
   const [imageUrl, setImageUrl] = useState("");
   const [dotsColor, setDotsColor] = useState(defaultColor);
+  const [posterSize, setPosterSize] = useState("A4");
+  const [isPreparingPoster, setIsPreparingPoster] = useState(false);
+  const [posterError, setPosterError] = useState("");
+
+  // WebView של אנדרואיד מתעלם מ-window.print, והכפתור היה פשוט לא עושה כלום.
+  const canPrint = !Capacitor.isNativePlatform();
 
   const qrRef = useRef(null);
   const qrCodeInstance = useRef(null);
@@ -35,11 +65,7 @@ const AdminQRGenerator = ({
       height: 260,
       dotsOptions: { type: "dots" },
       cornersSquareOptions: { type: "extra-rounded" },
-      imageOptions: {
-        crossOrigin: "anonymous",
-        margin: 10,
-        imageSize: 0.4,
-      },
+      imageOptions: QR_IMAGE_OPTIONS,
     });
 
     if (qrRef.current) {
@@ -73,6 +99,41 @@ const AdminQRGenerator = ({
         name: "event-qr-code",
         extension: "png",
       });
+    }
+  };
+
+  const handlePrintPoster = async () => {
+    setPosterError("");
+    setIsPreparingPoster(true);
+    try {
+      // מופע SVG נפרד מהתצוגה המקדימה: וקטור נשאר חד בכל גודל הדפסה.
+      const qrColor = posterQrColor(dotsColor);
+      const svgQr = new QRCodeStyling({
+        type: "svg",
+        width: 1000,
+        height: 1000,
+        margin: 0,
+        data: url.trim(),
+        image: imageUrl,
+        dotsOptions: { type: "dots", color: qrColor },
+        cornersSquareOptions: { type: "extra-rounded", color: qrColor },
+        // מרכז מלא: ברירת המחדל יורשת "dots" ומפרקת אותו לנקודות, וסורקים
+        // מתקשים לזהות את ריבועי הפינה בקוד מודפס.
+        cornersDotOptions: { type: "dot", color: qrColor },
+        imageOptions: QR_IMAGE_OPTIONS,
+      });
+      await printQrPoster({
+        qrDataUri: await blobToDataUri(await svgQr.getRawData("svg")),
+        eventName,
+        color: defaultColor,
+        background: backgroundColor,
+        size: posterSize,
+      });
+    } catch (error) {
+      console.error("Failed to create QR poster", error);
+      setPosterError("יצירת הפוסטר נכשלה. בדקו את הקישור ונסו שוב.");
+    } finally {
+      setIsPreparingPoster(false);
     }
   };
 
@@ -159,12 +220,64 @@ const AdminQRGenerator = ({
         />
       </div>
 
-      <button
-        onClick={handleDownload}
-        className="w-full text-white font-black py-4 rounded-full flex justify-center items-center gap-2 transition-all active:scale-95 bg-clay-ink hover:bg-clay-ink-hover shadow-clay-btn"
-      >
-        <DownloadCloud size={22} /> הורד QR מוכן (PNG)
-      </button>
+      <fieldset>
+        <legend className="text-sm font-bold text-slate-700 mb-3">
+          גודל הפוסטר
+        </legend>
+        <div className="grid grid-cols-2 gap-1 p-1 bg-clay-well rounded-full shadow-clay-inset">
+          {Object.keys(POSTER_SIZES).map((size) => (
+            <label
+              key={size}
+              className="min-h-11 flex items-center justify-center rounded-full font-black text-clay-muted cursor-pointer transition-all has-[:checked]:bg-clay-surface has-[:checked]:text-slate-800 has-[:checked]:shadow-clay-sm has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-clay-ink/40"
+              dir="ltr"
+            >
+              <input
+                type="radio"
+                name="poster-size"
+                value={size}
+                checked={posterSize === size}
+                onChange={() => setPosterSize(size)}
+                className="sr-only"
+              />
+              {size}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <div className="space-y-2">
+        <div className="flex items-stretch gap-2">
+          <button
+            onClick={handlePrintPoster}
+            disabled={!canPrint || isPreparingPoster || !url.trim()}
+            className="flex-1 min-w-0 text-white font-black py-4 rounded-full flex justify-center items-center gap-2 transition-all active:scale-95 bg-clay-ink hover:bg-clay-ink-hover shadow-clay-btn disabled:opacity-50 disabled:active:scale-100"
+          >
+            {isPreparingPoster ? (
+              <Loader2 size={22} className="animate-spin" />
+            ) : (
+              <Printer size={22} />
+            )}
+            הפק פוסטר
+          </button>
+          <button
+            onClick={handleDownload}
+            disabled={!url.trim()}
+            className="shrink-0 px-4 min-h-11 rounded-full text-sm font-bold text-slate-700 flex justify-center items-center gap-1.5 bg-clay-surface shadow-clay-md active:shadow-clay-pressed transition-all disabled:opacity-50"
+          >
+            <DownloadCloud size={16} /> הורד קוד QR נקי
+          </button>
+        </div>
+        {!canPrint && (
+          <p className="text-sm font-bold text-clay-muted text-center">
+            הדפסת הפוסטר זמינה בדפדפן בלבד. פתחו את פאנל הניהול במחשב.
+          </p>
+        )}
+        {posterError && (
+          <p role="alert" className="text-sm font-bold text-rose-700 text-center">
+            {posterError}
+          </p>
+        )}
+      </div>
     </div>
   );
 };

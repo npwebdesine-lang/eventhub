@@ -2852,6 +2852,8 @@ const Admin = () => {
                 defaultColor={
                   formData.design_config?.colors?.primary || DEFAULT_PRIMARY
                 }
+                eventName={formData.name}
+                backgroundColor={formData.design_config?.colors?.background}
               />
             </div>
           </div>
