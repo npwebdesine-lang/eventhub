@@ -46,6 +46,8 @@ import {
 import { accentOn } from "../lib/colors";
 import { useEventBackdrop } from "../lib/useEventBackdrop";
 
+// כבוי זמנית. מסתיר רק את ההעלאה: סרטונים קיימים ממשיכים להיות מוצגים באלבום.
+const ENABLE_VIDEO_UPLOAD = false;
 const MAX_PHOTOS_PER_GUEST = 10;
 const MAX_VIDEOS_PER_GUEST = 2;
 const PAGE_SIZE = 12;
@@ -307,7 +309,10 @@ const Photos = () => {
       return null;
     }
     if (!isAllowedImageType(file)) {
-      return ["יש להעלות תמונה (JPG, PNG, WEBP) או סרטון", "error"];
+      return [
+        `יש להעלות תמונה (JPG, PNG, WEBP)${ENABLE_VIDEO_UPLOAD ? " או סרטון" : ""}`,
+        "error",
+      ];
     }
     if (file.size > 15 * 1024 * 1024) {
       return ["הקובץ גדול מדי (מקסימום 15MB)", "error"];
@@ -352,7 +357,8 @@ const Photos = () => {
     const file = input.files?.[0];
     if (!file || uploading) return;
 
-    const isVideo = file.type.startsWith("video/");
+    // accept הוא רק רמז לבורר הקבצים, וחלק מהמכשירים מאפשרים לבחור בו גם סרטון.
+    const isVideo = ENABLE_VIDEO_UPLOAD && file.type.startsWith("video/");
     const invalid = validateMedia(file, isVideo);
     if (invalid) {
       rejectMedia(file, invalid[0], input);
@@ -516,7 +522,8 @@ const Photos = () => {
 
   const primaryColor = eventData.design_config?.colors?.primary || DEFAULT_PRIMARY;
   const canUploadPhoto = myPhotoCount < MAX_PHOTOS_PER_GUEST;
-  const canUploadVideo = myVideoCount < MAX_VIDEOS_PER_GUEST;
+  const canUploadVideo =
+    ENABLE_VIDEO_UPLOAD && myVideoCount < MAX_VIDEOS_PER_GUEST;
   const canUploadMore = canUploadPhoto || canUploadVideo;
   const quotaColor = (isFull) => (isFull ? "#be123c" : accentOn(primaryColor));
 
@@ -595,7 +602,9 @@ const Photos = () => {
                 className="text-2xl font-black text-slate-700 mb-2"
                 style={{ fontFamily: "'Assistant', sans-serif" }}
               >
-                צלמו או העלו תמונה או סרטון
+                {ENABLE_VIDEO_UPLOAD
+                  ? "צלמו או העלו תמונה או סרטון"
+                  : "צלמו או העלו תמונה"}
               </h2>
               <p className="text-clay-muted font-medium text-sm mb-6">
                 <span
@@ -604,14 +613,19 @@ const Photos = () => {
                 >
                   {myPhotoCount}/{MAX_PHOTOS_PER_GUEST}
                 </span>{" "}
-                תמונות,{" "}
-                <span
-                  className="font-black text-lg"
-                  style={{ color: quotaColor(!canUploadVideo) }}
-                >
-                  {myVideoCount}/{MAX_VIDEOS_PER_GUEST}
-                </span>{" "}
-                סרטונים
+                תמונות
+                {ENABLE_VIDEO_UPLOAD && (
+                  <>
+                    ,{" "}
+                    <span
+                      className="font-black text-lg"
+                      style={{ color: quotaColor(!canUploadVideo) }}
+                    >
+                      {myVideoCount}/{MAX_VIDEOS_PER_GUEST}
+                    </span>{" "}
+                    סרטונים
+                  </>
+                )}
               </p>
 
               {/* Progress bar — debossed track with filled pill */}
@@ -681,9 +695,11 @@ const Photos = () => {
                       )}
                     </>
                   )}
-                  <p className="text-clay-muted font-medium text-xs">
-                    סרטון: עד {MAX_VIDEO_SECONDS} שניות ועד {MAX_VIDEO_SIZE_MB}MB
-                  </p>
+                  {ENABLE_VIDEO_UPLOAD && (
+                    <p className="text-clay-muted font-medium text-xs">
+                      סרטון: עד {MAX_VIDEO_SECONDS} שניות ועד {MAX_VIDEO_SIZE_MB}MB
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div className="text-rose-700 font-bold py-4 rounded-full flex justify-center items-center gap-2 bg-clay-surface shadow-clay-inset">

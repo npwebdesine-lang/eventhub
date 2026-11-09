@@ -117,7 +117,7 @@ ${appStyles}
           <span class="block text-[3.2rem] font-normal">ברוכים הבאים לאירוע</span>
           ${name ? `<span class="mt-[0.5rem] line-clamp-3 font-medium ${nameSizeClass(name)}"><bdi>${escapeHtml(name)}</bdi></span>` : ""}
         </h1>
-        <p class="mt-[1.5rem] text-[2.1rem] font-semibold text-slate-800 text-balance">סרקו את הקוד לכניסה לאלבום ולספר הברכות</p>
+        <p class="mt-[1.5rem] text-[2.1rem] font-semibold text-slate-800 text-balance">לכניסה לאפליקציית האירוע סרקו את הקוד</p>
       </div>
       <div class="flex-none mt-[2rem] w-[31rem] h-[31rem] p-[2rem] bg-white rounded-[1.5rem] border-[0.04rem] border-current">
         <img class="block w-full h-full" src="${qrDataUri}" alt="קוד QR לכניסה לאירוע">
