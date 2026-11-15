@@ -154,7 +154,7 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
       const { data, error } = await supabase
         .from("event_guests")
         .select(
-          "id, guest_name, phone, status, guests_count, notes, dietary, responded_at",
+          "id, guest_name, phone, status, guests_count, under_5_count, notes, dietary, responded_at",
         )
         .eq("event_id", eventId)
         .order("created_at", { ascending: true });
@@ -260,12 +260,19 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
     return sizes;
   }, [guests]);
 
-  // המספר היחיד שאולם או קייטרינג מבקשים
-  const confirmedSeats = useMemo(
+  // המספר שהאולם מבקש: מנות בתשלום בלבד (מגיל 5 ומעלה). ילדים עד גיל 5
+  // נספרים בנפרד — הם לא מנה, אבל צריכים כיסא תינוק / מקום לעגלה.
+  const { confirmedSeats, confirmedUnder5 } = useMemo(
     () =>
       guests
         .filter((g) => g.status === "confirmed")
-        .reduce((sum, g) => sum + (g.guests_count || 0), 0),
+        .reduce(
+          (totals, g) => ({
+            confirmedSeats: totals.confirmedSeats + (g.guests_count || 0),
+            confirmedUnder5: totals.confirmedUnder5 + (g.under_5_count || 0),
+          }),
+          { confirmedSeats: 0, confirmedUnder5: 0 },
+        ),
     [guests],
   );
 
@@ -345,6 +352,15 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
       }
     }
 
+    if (field === "under_5_count") {
+      value = Number(rawValue);
+      if (!Number.isInteger(value) || value < 0 || value > 20) {
+        showToast("מספר הילדים עד גיל 5 חייב להיות בין 0 ל-20", "warning");
+        setGuests((prev) => [...prev]);
+        return;
+      }
+    }
+
     if (field === "notes") {
       value = String(rawValue ?? "").trim() || null;
       if (value && value.length > 500) {
@@ -417,7 +433,8 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
       "שם",
       "טלפון",
       "סטטוס",
-      "כמות אורחים",
+      "מנות (מעל גיל 5)",
+      "תינוקות/ילדים עד גיל 5 (ללא מנה)",
       "העדפת תזונה",
       "הערות",
     ];
@@ -427,6 +444,7 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
         g.phone || "",
         STATUS_LABEL[g.status] || g.status,
         g.guests_count,
+        g.under_5_count ?? 0,
         dietaryLabelOf(g.dietary),
         g.notes || "",
       ]
@@ -462,7 +480,8 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
               רשימת מוזמנים
             </h2>
             <p className="mt-1 font-bold text-emerald-800">
-              {confirmedSeats} מקומות אושרו · {counts.all} מוזמנים
+              סה״כ מנות (מעל גיל 5): {confirmedSeats} · תינוקות (ללא מנה):{" "}
+              {confirmedUnder5} · {counts.all} מוזמנים
               {sentIds.size > 0 && (
                 <span className="text-clay-muted">
                   {" "}
@@ -743,13 +762,14 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1040px] border-separate border-spacing-y-2 text-right">
+              <table className="w-full min-w-[1140px] border-separate border-spacing-y-2 text-right">
                 <thead>
                   <tr className="text-xs font-bold text-clay-muted">
                     <th className="px-3 pb-1">שם</th>
                     <th className="px-3 pb-1">טלפון</th>
                     <th className="px-3 pb-1">סטטוס</th>
-                    <th className="px-3 pb-1">כמות</th>
+                    <th className="px-3 pb-1">מנות (5+)</th>
+                    <th className="px-3 pb-1">עד גיל 5</th>
                     <th className="px-3 pb-1">העדפת תזונה</th>
                     <th className="px-3 pb-1">הערות</th>
                     <th className="px-3 pb-1">קישור קסם</th>
@@ -832,8 +852,32 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                                 event.target.value,
                               )
                             }
-                            aria-label="כמות אורחים"
+                            aria-label="מנות (מגיל 5 ומעלה)"
                             className={`${CLAY_INSET} w-16 rounded-xl bg-clay-surface px-2 min-h-11 text-center text-sm font-bold text-slate-700 focus:outline-none`}
+                          />
+                        </td>
+                        <td className="px-3 py-3">
+                          {/* מודגש כשיש ילדים — כך רואים במבט אילו משפחות
+                              צריכות כיסא תינוק בסידורי ההושבה. */}
+                          <input
+                            key={`under5-${guest.id}-${guest.under_5_count}`}
+                            type="number"
+                            min={0}
+                            max={20}
+                            defaultValue={guest.under_5_count ?? 0}
+                            onBlur={(event) =>
+                              saveField(
+                                guest,
+                                "under_5_count",
+                                event.target.value,
+                              )
+                            }
+                            aria-label="תינוקות/ילדים עד גיל 5 (ללא מנה)"
+                            className={`${CLAY_INSET} w-16 rounded-xl px-2 min-h-11 text-center text-sm font-bold focus:outline-none ${
+                              (guest.under_5_count || 0) > 0
+                                ? "bg-amber-100 text-amber-800"
+                                : "bg-clay-surface text-clay-muted"
+                            }`}
                           />
                         </td>
                         <td className="px-3 py-3">

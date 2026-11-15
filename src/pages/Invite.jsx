@@ -47,6 +47,7 @@ const RSVP_ERROR_COPY = {
   invalid_guest_name: "השם חייב להכיל בין תו אחד ל-100 תווים.",
   invalid_phone: "מספר הטלפון אינו תקין.",
   invalid_guests_count: "מספר האורחים חייב להיות בין 0 ל-20.",
+  invalid_under_5_count: "מספר הילדים עד גיל 5 חייב להיות בין 0 ל-20.",
   invalid_dietary: "העדפת התזונה אינה תקינה.",
   event_not_found: "האירוע לא נמצא.",
   network: "שגיאה בשמירת אישור ההגעה",
@@ -139,6 +140,44 @@ const DietaryPicker = ({
   </div>
 );
 
+// ילדים עד גיל 5 מגיעים אבל לא נספרים כמנה בתשלום, ולכן יש שני מונים נפרדים:
+// הראשי (מגיל 5 ומעלה = מנות לאולם) והמשני (עד גיל 5 = כיסאות תינוק בלבד).
+const MAX_UNDER_5 = 10;
+const MAIN_COUNT_LABEL = "מספר מגיעים (מגיל 5 ומעלה)";
+const UNDER_5_LABEL = "תינוקות/ילדים עד גיל 5 (ללא מנה)";
+
+const CountStepper = ({ label, value, min, max, onChange, disabled }) => (
+  <div className="rounded-clay-field p-4 bg-clay-well shadow-clay-inset">
+    <p className="text-sm font-bold text-slate-600 text-center mb-3">{label}</p>
+    <div className="flex items-center justify-center gap-6">
+      <button
+        type="button"
+        disabled={disabled || value <= min}
+        onClick={() => onChange(Math.max(min, value - 1))}
+        aria-label={`פחות — ${label}`}
+        className="w-12 h-12 rounded-full text-slate-600 font-black text-2xl flex items-center justify-center transition-all bg-clay-chip shadow-clay-md active:shadow-clay-pressed disabled:opacity-40"
+      >
+        -
+      </button>
+      <span
+        className="text-4xl font-black text-slate-700 w-12 text-center"
+        aria-live="polite"
+      >
+        {value}
+      </span>
+      <button
+        type="button"
+        disabled={disabled || value >= max}
+        onClick={() => onChange(Math.min(max, value + 1))}
+        aria-label={`עוד — ${label}`}
+        className="w-12 h-12 rounded-full text-slate-600 font-black text-2xl flex items-center justify-center transition-all bg-clay-chip shadow-clay-md active:shadow-clay-pressed disabled:opacity-40"
+      >
+        +
+      </button>
+    </div>
+  </div>
+);
+
 // כפתורי פעולה משותפים (Moved outside to prevent re-mounting)
 const ActionButtons = ({
   theme,
@@ -221,6 +260,8 @@ const Invite = () => {
   const [showRsvp, setShowRsvp] = useState(false);
   const [rsvpStep, setRsvpStep] = useState(1);
   const [guestCount, setGuestCount] = useState(1);
+  // ילדים עד גיל 5 של כל החבורה — נשמר פעם אחת, על השורה של הנרשם הראשי.
+  const [under5Count, setUnder5Count] = useState(0);
   const [guestNames, setGuestNames] = useState([""]);
   const [submitterPhone, setSubmitterPhone] = useState("");
   const [duplicateWarnings, setDuplicateWarnings] = useState([]);
@@ -244,6 +285,7 @@ const Invite = () => {
   const [companionBusy, setCompanionBusy] = useState(false);
   const [magicNotes, setMagicNotes] = useState("");
   const [magicDietary, setMagicDietary] = useState(DEFAULT_DIETARY);
+  const [magicUnder5, setMagicUnder5] = useState(0);
   const [magicSaving, setMagicSaving] = useState(false);
   const [magicSaved, setMagicSaved] = useState(false);
 
@@ -331,6 +373,7 @@ const Invite = () => {
         setMagicGuest(finalRow);
         setMagicNotes(finalRow.notes ?? "");
         setMagicDietary(finalRow.dietary ?? DEFAULT_DIETARY);
+        setMagicUnder5(finalRow.under_5_count ?? 0);
         setMagicCompanions(rows.filter((entry) => !entry.is_self));
         setShowRsvp(true);
         setRsvpStep(RSVP_STEP_GUEST);
@@ -440,6 +483,8 @@ const Invite = () => {
       count: null,
       notes: overrides.notes ?? magicNotes,
       dietary: overrides.dietary ?? magicDietary,
+      // null = להשאיר את הערך השמור, כמו count.
+      under5: overrides.under5 ?? null,
     };
     setMagicSaving(true);
     try {
@@ -449,6 +494,7 @@ const Invite = () => {
         p_guests_count: payload.count,
         p_notes: payload.notes || null,
         p_dietary: payload.dietary,
+        p_under_5_count: payload.under5,
       });
       if (error) throw error;
       const row = (Array.isArray(data) ? data[0] : data) || null;
@@ -456,6 +502,7 @@ const Invite = () => {
         setMagicGuest(row);
         setMagicNotes(row.notes ?? "");
         setMagicDietary(row.dietary ?? DEFAULT_DIETARY);
+        setMagicUnder5(row.under_5_count ?? 0);
       }
       setMagicSaved(true);
       return row;
@@ -473,6 +520,15 @@ const Invite = () => {
     setMagicDietary(value); // אופטימי
     const row = await saveMagicResponse({ dietary: value });
     if (!row) setMagicDietary(previous);
+  };
+
+  // המונה נשמר על השורה שהקישור שייך לה. הכפתורים ננעלים בזמן השמירה
+  // (magicSaving), ולכן אין צורך ב-debounce ואין מרוץ בין שתי לחיצות.
+  const changeMagicUnder5 = async (value) => {
+    const previous = magicUnder5;
+    setMagicUnder5(value); // אופטימי
+    const row = await saveMagicResponse({ under5: value });
+    if (!row) setMagicUnder5(previous);
   };
 
   // הגדלת החבורה מוסיפה שורה אמיתית ולא מגדילה מונה: לאדם החדש יש שם משלו
@@ -636,6 +692,7 @@ const Invite = () => {
         p_phone: submitterPhone.trim(),
         p_guests: party,
         p_notes: null,
+        p_under_5_count: under5Count,
       });
       if (error) throw error;
 
@@ -644,6 +701,7 @@ const Invite = () => {
         setShowRsvp(false);
         setRsvpStep(1);
         setGuestCount(1);
+        setUnder5Count(0);
         setGuestNames([""]);
         setGuestDietaries([DEFAULT_DIETARY]);
         setSubmitterPhone("");
@@ -674,6 +732,12 @@ const Invite = () => {
   const primaryColor = design_config?.colors?.primary || DEFAULT_PRIMARY;
   const template = design_config?.invite_template || "modern";
   const inviteImage = design_config?.invite_image;
+  // ילדים עד גיל 5 שנרשמו על שורות אחרות בחבורה (למשל על הנרשם הראשי) —
+  // מוצגים כדי שמי שפתח קישור של בן לוויה לא ירשום אותם פעם שנייה.
+  const othersUnder5 = magicCompanions.reduce(
+    (sum, companion) => sum + (companion.under_5_count || 0),
+    0,
+  );
 
   const renderTemplate = () => {
     if (template === "elegant") {
@@ -1034,6 +1098,9 @@ const Invite = () => {
 
                     {/* כל מי שמגיע איתך הוא שורה נפרדת עם העדפה משלו */}
                     <div className="rounded-clay-field p-4 mb-4 bg-clay-well shadow-clay-inset">
+                      <p className="text-sm font-bold text-slate-600 mb-1">
+                        {MAIN_COUNT_LABEL}: {magicCompanions.length + 1}
+                      </p>
                       <p className="text-xs font-bold text-clay-muted mb-3">
                         מי מגיע איתך? ({magicCompanions.length})
                       </p>
@@ -1101,6 +1168,23 @@ const Invite = () => {
                       </div>
                     </div>
 
+                    {/* לא נספרים כמנה — רק כדי שנדע להכין כיסא תינוק / מקום לעגלה */}
+                    <div className="mb-4">
+                      <CountStepper
+                        label={UNDER_5_LABEL}
+                        value={magicUnder5}
+                        min={0}
+                        max={MAX_UNDER_5}
+                        onChange={changeMagicUnder5}
+                        disabled={magicSaving}
+                      />
+                      {othersUnder5 > 0 && (
+                        <p className="mt-2 text-center text-xs font-bold text-clay-muted">
+                          ועוד {othersUnder5} שנרשמו על ידי שאר בני החבורה
+                        </p>
+                      )}
+                    </div>
+
                     <textarea
                       value={magicNotes}
                       onChange={(e) => setMagicNotes(e.target.value)}
@@ -1131,28 +1215,25 @@ const Invite = () => {
                 <h2 className="text-2xl font-black text-slate-700 mb-2 text-center">
                   אישור הגעה
                 </h2>
-                <p className="text-clay-muted font-medium text-center mb-8 text-sm">
-                  כמה תגיעו סך הכל? (כולל אותך)
+                <p className="text-clay-muted font-medium text-center mb-6 text-sm">
+                  כמה תגיעו? (כולל אותך)
                 </p>
 
-                <div className="flex items-center justify-center gap-6 mb-10">
-                  <button
-                    type="button"
-                    onClick={() => setGuestCount(Math.max(1, guestCount - 1))}
-                    className="w-14 h-14 rounded-full text-slate-600 font-black text-2xl flex items-center justify-center transition-all bg-clay-chip shadow-clay-md active:shadow-clay-pressed"
-                  >
-                    -
-                  </button>
-                  <span className="text-5xl font-black text-slate-700 w-12 text-center">
-                    {guestCount}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setGuestCount(Math.min(10, guestCount + 1))}
-                    className="w-14 h-14 rounded-full text-slate-600 font-black text-2xl flex items-center justify-center transition-all bg-clay-chip shadow-clay-md active:shadow-clay-pressed"
-                  >
-                    +
-                  </button>
+                <div className="space-y-4 mb-8">
+                  <CountStepper
+                    label={MAIN_COUNT_LABEL}
+                    value={guestCount}
+                    min={1}
+                    max={10}
+                    onChange={setGuestCount}
+                  />
+                  <CountStepper
+                    label={UNDER_5_LABEL}
+                    value={under5Count}
+                    min={0}
+                    max={MAX_UNDER_5}
+                    onChange={setUnder5Count}
+                  />
                 </div>
 
                 <button

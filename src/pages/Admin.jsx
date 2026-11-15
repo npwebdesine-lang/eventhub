@@ -46,7 +46,34 @@ import {
   ShieldAlert,
   MessageCircle,
   Trophy,
+  Baby,
 } from "lucide-react";
+
+// סכומי האישורים לאולם: מנות בתשלום (מגיל 5 ומעלה) ותינוקות/ילדים עד גיל 5
+// (ללא מנה). PostgREST מחזיר עד 1000 שורות בבקשה, ולכן הקריאה בעמודים —
+// אחרת אירוע גדול היה מציג סכום חתוך בלי שום שגיאה.
+const GUEST_TOTALS_PAGE = 1000;
+const fetchConfirmedGuestTotals = async (eventId) => {
+  const totals = { meals: 0, under5: 0 };
+  for (let from = 0; ; from += GUEST_TOTALS_PAGE) {
+    const { data, error } = await supabase
+      .from("event_guests")
+      .select("guests_count, under_5_count")
+      .eq("event_id", eventId)
+      .eq("status", "confirmed")
+      .order("id", { ascending: true })
+      .range(from, from + GUEST_TOTALS_PAGE - 1);
+    if (error) {
+      console.error(error);
+      return totals;
+    }
+    (data || []).forEach((row) => {
+      totals.meals += row.guests_count || 0;
+      totals.under5 += row.under_5_count || 0;
+    });
+    if (!data || data.length < GUEST_TOTALS_PAGE) return totals;
+  }
+};
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import AdminQRGenerator from "./AdminQRGenerator";
@@ -252,7 +279,8 @@ const Admin = () => {
   });
 
   const [eventStats, setEventStats] = useState({
-    rsvps: 0,
+    meals: 0,
+    under5: 0,
     photos: 0,
     dating: 0,
     reports: 0,
@@ -263,14 +291,10 @@ const Admin = () => {
     if (selectedEvent && !selectedEvent.isNew) {
       let isMounted = true;
       const fetchStats = async () => {
-        const [rsvps, photos, dating, reports, blessings] = await Promise.all([
+        const [guestTotals, photos, dating, reports, blessings] = await Promise.all([
           // event_guests הוא מקור האמת היחיד למוזמנים — גם רשימה מיובאת מראש
           // וגם הרשמות מדף ההזמנה. rsvps מכיל רק היסטוריה מלפני האיחוד.
-          supabase
-            .from("event_guests")
-            .select("id", { count: "exact", head: true })
-            .eq("event_id", selectedEvent.id)
-            .eq("status", "confirmed"),
+          fetchConfirmedGuestTotals(selectedEvent.id),
           supabase
             .from("photos")
             .select("id", { count: "exact", head: true })
@@ -292,7 +316,8 @@ const Admin = () => {
         // תשובה מאוחרת של האירוע הקודם לא דורסת את המונים של הנוכחי.
         if (!isMounted) return;
         setEventStats({
-          rsvps: rsvps.data?.length ?? rsvps.count ?? 0,
+          meals: guestTotals.meals,
+          under5: guestTotals.under5,
           photos: photos.data?.length ?? photos.count ?? 0,
           dating: dating.data?.length ?? dating.count ?? 0,
           reports: reports.data?.length ?? reports.count ?? 0,
@@ -304,7 +329,9 @@ const Admin = () => {
         isMounted = false;
       };
     }
-  }, [selectedEvent]);
+    // isGuestListOpen: עריכה במסך המוזמנים משנה את הסכומים, ולכן טוענים מחדש
+    // כשהוא נסגר — אחרת המספר לאולם נשאר ישן עד רענון הדף.
+  }, [selectedEvent, isGuestListOpen]);
 
   // events_select_public הוא using (true) כי האורחים קוראים אירוע לפי id, ולכן
   // RLS לא מסנן כאן כלום — בלי הסינון לפי owner_id כל מנהל רואה את האירועים
@@ -1500,17 +1527,31 @@ const Admin = () => {
             </div>
 
             {!selectedEvent.isNew && (
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 p-8 md:p-10 pb-0">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-8 md:p-10 pb-0">
+                {/* המספר לאולם: מנות בתשלום בלבד, בלי ילדים עד גיל 5 */}
                 <div className="bg-clay-surface shadow-clay-sm p-4 rounded-2xl flex items-center gap-4 hover:shadow-clay-md transition-shadow">
                   <div className="bg-blue-500 text-white p-3 rounded-xl">
                     <Users size={20} />
                   </div>
                   <div>
                     <p className="text-xs font-bold text-clay-muted">
-                      אישורי הגעה
+                      סה״כ מנות (מעל גיל 5)
                     </p>
                     <p className="text-2xl font-black text-blue-700">
-                      {eventStats.rsvps}
+                      {eventStats.meals}
+                    </p>
+                  </div>
+                </div>
+                <div className="bg-clay-surface shadow-clay-sm p-4 rounded-2xl flex items-center gap-4 hover:shadow-clay-md transition-shadow">
+                  <div className="bg-amber-500 text-white p-3 rounded-xl">
+                    <Baby size={20} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-clay-muted">
+                      תינוקות (ללא מנה)
+                    </p>
+                    <p className="text-2xl font-black text-amber-700">
+                      {eventStats.under5}
                     </p>
                   </div>
                 </div>

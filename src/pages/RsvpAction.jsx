@@ -39,6 +39,7 @@ const ERROR_COPY = {
   guest_not_found: "הקישור אינו תקין — לא מצאנו את ההזמנה הזו.",
   invalid_status: "הקישור אינו תקין.",
   invalid_guests_count: "מספר האורחים חייב להיות בין 0 ל-20.",
+  invalid_under_5_count: "מספר הילדים עד גיל 5 חייב להיות בין 0 ל-20.",
   invalid_notes: "ההערה ארוכה מדי.",
   invalid_dietary: "העדפת התזונה אינה תקינה.",
   invalid_link: "הקישור אינו תקין.",
@@ -69,14 +70,17 @@ export default function RsvpAction() {
   const [loading, setLoading] = useState(linkIsValid);
   const [saving, setSaving] = useState(false);
   const [guestsCount, setGuestsCount] = useState(1);
+  // ילדים עד גיל 5: מגיעים, אבל לא נספרים כמנה בתשלום.
+  const [under5Count, setUnder5Count] = useState(0);
   const [notes, setNotes] = useState("");
   const [dietary, setDietary] = useState(DEFAULT_DIETARY);
 
   const confettiRef = useRef(null);
   const countTimeoutRef = useRef(null);
+  const under5TimeoutRef = useRef(null);
 
   const respond = useCallback(
-    async ({ status, count, guestNotes, mealChoice }) => {
+    async ({ status, count, guestNotes, mealChoice, under5 }) => {
       const { data, error } = await supabase.rpc("rsvp_respond", {
         p_guest_id: guestId,
         p_status: status,
@@ -85,6 +89,7 @@ export default function RsvpAction() {
         // null משאיר את הבחירה הקיימת (coalesce ב-RPC) — כך שעדכון כמות
         // או הערה לא דורס את העדפת התזונה.
         p_dietary: mealChoice ?? null,
+        p_under_5_count: under5 ?? null,
       });
       if (error) throw error;
       // returns table(...) → מערך עם שורה אחת
@@ -104,6 +109,7 @@ export default function RsvpAction() {
         if (!isMounted) return;
         setResult(row);
         setGuestsCount(row?.guests_count ?? 1);
+        setUnder5Count(row?.under_5_count ?? 0);
         setNotes(row?.notes ?? "");
         setDietary(row?.dietary ?? DEFAULT_DIETARY);
       } catch (error) {
@@ -146,7 +152,10 @@ export default function RsvpAction() {
   }, [result?.status]);
 
   useEffect(() => {
-    return () => clearTimeout(countTimeoutRef.current);
+    return () => {
+      clearTimeout(countTimeoutRef.current);
+      clearTimeout(under5TimeoutRef.current);
+    };
   }, []);
 
   // מחזיר את השורה שנשמרה, או null בכישלון, כדי שבחירה בדידה (תזונה)
@@ -173,6 +182,19 @@ export default function RsvpAction() {
     clearTimeout(countTimeoutRef.current);
     countTimeoutRef.current = setTimeout(
       () => persist({ count: next, guestNotes: notes }),
+      700,
+    );
+  };
+
+  // טיימר נפרד מזה של המונה הראשי, כדי ששינוי באחד לא יבטל שמירה ממתינה
+  // של השני. נשלח רק השדה הזה — השאר נשארים כפי שהם (coalesce ב-RPC).
+  const changeUnder5 = (delta) => {
+    const next = Math.min(20, Math.max(0, under5Count + delta));
+    if (next === under5Count) return;
+    setUnder5Count(next);
+    clearTimeout(under5TimeoutRef.current);
+    under5TimeoutRef.current = setTimeout(
+      () => persist({ under5: next }),
       700,
     );
   };
@@ -285,7 +307,7 @@ export default function RsvpAction() {
           <>
             <div className={`${CLAY_INSET} mb-5 rounded-3xl p-4`}>
               <p className="mb-3 text-sm font-semibold text-clay-muted">
-                כמה אורחים?
+                מספר מגיעים (מגיל 5 ומעלה)
               </p>
               <div className="flex items-center justify-center gap-5">
                 <button
@@ -303,6 +325,33 @@ export default function RsvpAction() {
                   type="button"
                   onClick={() => changeCount(1)}
                   aria-label="עוד אורחים"
+                  className={`${BUTTON} grid h-11 w-11 place-items-center`}
+                >
+                  <Plus size={18} className="text-slate-600" />
+                </button>
+              </div>
+            </div>
+
+            <div className={`${CLAY_INSET} mb-5 rounded-3xl p-4`}>
+              <p className="mb-3 text-sm font-semibold text-clay-muted">
+                תינוקות/ילדים עד גיל 5 (ללא מנה)
+              </p>
+              <div className="flex items-center justify-center gap-5">
+                <button
+                  type="button"
+                  onClick={() => changeUnder5(-1)}
+                  aria-label="פחות ילדים עד גיל 5"
+                  className={`${BUTTON} grid h-11 w-11 place-items-center`}
+                >
+                  <Minus size={18} className="text-slate-600" />
+                </button>
+                <span className="w-10 text-2xl font-bold text-slate-700">
+                  {under5Count}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => changeUnder5(1)}
+                  aria-label="עוד ילדים עד גיל 5"
                   className={`${BUTTON} grid h-11 w-11 place-items-center`}
                 >
                   <Plus size={18} className="text-slate-600" />
