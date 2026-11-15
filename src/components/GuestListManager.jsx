@@ -69,8 +69,22 @@ export const toWhatsAppPhone = (phone) => {
 // מעביר את האורח להזמנה המאוחדת, ו-Invite.jsx מחיל את הסטטוס מיד עם
 // הטעינה, ולכן לחיצה אחת מספיקה. הסטטוס חייב להישאר בכתובת: בלעדיו
 // "לאישור" ו"לביטול" היו אותה כתובת בדיוק.
+//
+// ההודעה נבנית כמערך שורות שמחובר ב-"\n", ולא כמחרוזת אחת עם שבירות בתוך
+// הקוד: כך אין רווחים נגררים לפני שבירת שורה, ופורמט אוטומטי של הקובץ לא
+// יכול לשנות את ההודעה. שורה ריקה = "". מי שבונה קישור wa.me חייב לעטוף
+// ב-encodeURIComponent (ה-"\n" הופך ל-%0A) — אחרת וואטסאפ מקבל שורה אחת.
 export const buildRsvpMessage = (guest, origin) =>
-  `היי ${guest.guest_name}, מתרגשים לקראת האירוע! נשמח לאישור סופי. לאישור: ${buildRsvpLink(origin, guest.id, "confirmed")} | לביטול: ${buildRsvpLink(origin, guest.id, "canceled")}`;
+  [
+    `היי ${String(guest.guest_name ?? "").trim()},`,
+    "אנחנו מתרגשים מאוד לקראת האירוע ונשמח לאישור סופי! 💍",
+    "",
+    "לאישור הגעה לחצו כאן:",
+    buildRsvpLink(origin, guest.id, "confirmed"),
+    "",
+    "לעדכון על חוסר יכולת להגיע:",
+    buildRsvpLink(origin, guest.id, "canceled"),
+  ].join("\n");
 
 // "שם, טלפון, כמות" בכל שורה. טלפון וכמות אופציונליים.
 export const parseGuestLines = (text) => {
