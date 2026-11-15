@@ -33,6 +33,7 @@ import {
 } from "../lib/clay";
 import { useEventBackdrop } from "../lib/useEventBackdrop";
 import InviteCountdown from "../components/InviteCountdown";
+import Under5Disclosure from "../components/Under5Disclosure";
 
 // שלב ייעודי ל"קישור קסם" (?guest_id=). 1-4 נשארים הזרימה העצמאית הקיימת.
 const RSVP_STEP_GUEST = 0;
@@ -40,7 +41,7 @@ const MAGIC_STATUSES = ["confirmed", "canceled"];
 
 const PARTICLE_SIZES = [18, 26, 12, 22, 15, 28];
 
-const PHONE_PATTERN =/^[0-9+\-\s]{7,15}$/; // זהה ל-check constraint על event_guests
+const PHONE_PATTERN = /^[0-9+\-\s]{7,15}$/; // זהה ל-check constraint על event_guests
 
 // ה-RPC זורק raise exception; PostgREST מחזיר את הטקסט בתוך message.
 const RSVP_ERROR_COPY = {
@@ -142,9 +143,13 @@ const DietaryPicker = ({
 
 // ילדים עד גיל 5 מגיעים אבל לא נספרים כמנה בתשלום, ולכן יש שני מונים נפרדים:
 // הראשי (מגיל 5 ומעלה = מנות לאולם) והמשני (עד גיל 5 = כיסאות תינוק בלבד).
+// המשני מוסתר כברירת מחדל (Under5Disclosure) — רוב האורחים לא צריכים אותו.
 const MAX_UNDER_5 = 10;
-const MAIN_COUNT_LABEL = "מספר מגיעים (מגיל 5 ומעלה)";
-const UNDER_5_LABEL = "תינוקות/ילדים עד גיל 5 (ללא מנה)";
+// ההבהרה "(מגיל 5 ומעלה)" מופיעה רק כשהמונה המשני פתוח: רק אז יש חשש
+// שיספרו את אותו ילד פעמיים, ועד אז היא סתם רעש.
+const mainCountLabel = (under5Open) =>
+  under5Open ? "מספר מגיעים (מגיל 5 ומעלה)" : "מספר מגיעים";
+const UNDER_5_LABEL = "תינוקות/ילדים עד גיל 5";
 
 const CountStepper = ({ label, value, min, max, onChange, disabled }) => (
   <div className="rounded-clay-field p-4 bg-clay-well shadow-clay-inset">
@@ -262,6 +267,7 @@ const Invite = () => {
   const [guestCount, setGuestCount] = useState(1);
   // ילדים עד גיל 5 של כל החבורה — נשמר פעם אחת, על השורה של הנרשם הראשי.
   const [under5Count, setUnder5Count] = useState(0);
+  const [under5Open, setUnder5Open] = useState(false);
   const [guestNames, setGuestNames] = useState([""]);
   const [submitterPhone, setSubmitterPhone] = useState("");
   const [duplicateWarnings, setDuplicateWarnings] = useState([]);
@@ -286,6 +292,7 @@ const Invite = () => {
   const [magicNotes, setMagicNotes] = useState("");
   const [magicDietary, setMagicDietary] = useState(DEFAULT_DIETARY);
   const [magicUnder5, setMagicUnder5] = useState(0);
+  const [magicUnder5Opened, setMagicUnder5Opened] = useState(false);
   const [magicSaving, setMagicSaving] = useState(false);
   const [magicSaved, setMagicSaved] = useState(false);
 
@@ -309,7 +316,9 @@ const Invite = () => {
         const { data, error } = await supabase
           .from("events")
           // רק מה שהדף מציג — בלי owner_id/short_code שאין לאורח סיבה לקבל.
-          .select("id, name, event_date, location, design_config, active_modules")
+          .select(
+            "id, name, event_date, location, design_config, active_modules",
+          )
           .eq("id", id)
           .single();
         if (error) throw error;
@@ -526,6 +535,7 @@ const Invite = () => {
   // (magicSaving), ולכן אין צורך ב-debounce ואין מרוץ בין שתי לחיצות.
   const changeMagicUnder5 = async (value) => {
     const previous = magicUnder5;
+    setMagicUnder5Opened(true); // נשאר פתוח גם אם ירד ל-0 תוך כדי עריכה
     setMagicUnder5(value); // אופטימי
     const row = await saveMagicResponse({ under5: value });
     if (!row) setMagicUnder5(previous);
@@ -702,6 +712,7 @@ const Invite = () => {
         setRsvpStep(1);
         setGuestCount(1);
         setUnder5Count(0);
+        setUnder5Open(false);
         setGuestNames([""]);
         setGuestDietaries([DEFAULT_DIETARY]);
         setSubmitterPhone("");
@@ -738,6 +749,10 @@ const Invite = () => {
     (sum, companion) => sum + (companion.under_5_count || 0),
     0,
   );
+  // פתוח מראש כשכבר נשמר ערך — אצל האורח עצמו או אצל שאר בני החבורה —
+  // כדי שעריכת אישור קיים לא תסתיר מידע שכבר נמסר.
+  const magicUnder5Open =
+    magicUnder5Opened || magicUnder5 > 0 || othersUnder5 > 0;
 
   const renderTemplate = () => {
     if (template === "elegant") {
@@ -1099,7 +1114,8 @@ const Invite = () => {
                     {/* כל מי שמגיע איתך הוא שורה נפרדת עם העדפה משלו */}
                     <div className="rounded-clay-field p-4 mb-4 bg-clay-well shadow-clay-inset">
                       <p className="text-sm font-bold text-slate-600 mb-1">
-                        {MAIN_COUNT_LABEL}: {magicCompanions.length + 1}
+                        {mainCountLabel(magicUnder5Open)}:{" "}
+                        {magicCompanions.length + 1}
                       </p>
                       <p className="text-xs font-bold text-clay-muted mb-3">
                         מי מגיע איתך? ({magicCompanions.length})
@@ -1169,20 +1185,26 @@ const Invite = () => {
                     </div>
 
                     {/* לא נספרים כמנה — רק כדי שנדע להכין כיסא תינוק / מקום לעגלה */}
-                    <div className="mb-4">
-                      <CountStepper
-                        label={UNDER_5_LABEL}
-                        value={magicUnder5}
-                        min={0}
-                        max={MAX_UNDER_5}
-                        onChange={changeMagicUnder5}
+                    <div className="mb-4 -mt-2">
+                      <Under5Disclosure
+                        open={magicUnder5Open}
+                        onOpen={() => setMagicUnder5Opened(true)}
                         disabled={magicSaving}
-                      />
-                      {othersUnder5 > 0 && (
-                        <p className="mt-2 text-center text-xs font-bold text-clay-muted">
-                          ועוד {othersUnder5} שנרשמו על ידי שאר בני החבורה
-                        </p>
-                      )}
+                      >
+                        <CountStepper
+                          label={UNDER_5_LABEL}
+                          value={magicUnder5}
+                          min={0}
+                          max={MAX_UNDER_5}
+                          onChange={changeMagicUnder5}
+                          disabled={magicSaving}
+                        />
+                        {othersUnder5 > 0 && (
+                          <p className="mt-2 text-center text-xs font-bold text-clay-muted">
+                            ועוד {othersUnder5} שנרשמו על ידי שאר בני החבורה
+                          </p>
+                        )}
+                      </Under5Disclosure>
                     </div>
 
                     <textarea
@@ -1219,21 +1241,26 @@ const Invite = () => {
                   כמה תגיעו? (כולל אותך)
                 </p>
 
-                <div className="space-y-4 mb-8">
+                <div className="mb-8">
                   <CountStepper
-                    label={MAIN_COUNT_LABEL}
+                    label={mainCountLabel(under5Open)}
                     value={guestCount}
                     min={1}
                     max={10}
                     onChange={setGuestCount}
                   />
-                  <CountStepper
-                    label={UNDER_5_LABEL}
-                    value={under5Count}
-                    min={0}
-                    max={MAX_UNDER_5}
-                    onChange={setUnder5Count}
-                  />
+                  <Under5Disclosure
+                    open={under5Open}
+                    onOpen={() => setUnder5Open(true)}
+                  >
+                    <CountStepper
+                      label={UNDER_5_LABEL}
+                      value={under5Count}
+                      min={0}
+                      max={MAX_UNDER_5}
+                      onChange={setUnder5Count}
+                    />
+                  </Under5Disclosure>
                 </div>
 
                 <button

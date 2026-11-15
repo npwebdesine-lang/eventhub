@@ -6,9 +6,15 @@ import { supabase } from "../lib/supabase";
 import { DEFAULT_DIETARY, DIETARY_OPTIONS } from "../lib/dietary";
 import { isValidUUIDv4 } from "../utils/deviceId";
 import { useToast } from "../components/Toast";
-import { CLAY_BUTTON, CLAY_INSET, CLAY_RAISED, DEFAULT_PRIMARY } from "../lib/clay";
+import {
+  CLAY_BUTTON,
+  CLAY_INSET,
+  CLAY_RAISED,
+  DEFAULT_PRIMARY,
+} from "../lib/clay";
 import { accentOn } from "../lib/colors";
 import { useEventBackdrop } from "../lib/useEventBackdrop";
+import Under5Disclosure from "../components/Under5Disclosure";
 
 // עיבוד "קישור קסם" מוואטסאפ: /rsvp-action?id=<uuid>&status=confirmed|canceled
 // ה-UUID עצמו הוא ההרשאה — אין ל-anon גישה ישירה לטבלת event_guests, וכל
@@ -72,6 +78,9 @@ export default function RsvpAction() {
   const [guestsCount, setGuestsCount] = useState(1);
   // ילדים עד גיל 5: מגיעים, אבל לא נספרים כמנה בתשלום.
   const [under5Count, setUnder5Count] = useState(0);
+  // המונה מוסתר עד שמבקשים אותו — או פתוח מראש כשכבר נשמר ערך.
+  const [under5Opened, setUnder5Opened] = useState(false);
+  const under5Open = under5Opened || under5Count > 0;
   const [notes, setNotes] = useState("");
   const [dietary, setDietary] = useState(DEFAULT_DIETARY);
 
@@ -192,11 +201,9 @@ export default function RsvpAction() {
     const next = Math.min(20, Math.max(0, under5Count + delta));
     if (next === under5Count) return;
     setUnder5Count(next);
+    setUnder5Opened(true); // נשאר פתוח גם אם ירד ל-0 תוך כדי עריכה
     clearTimeout(under5TimeoutRef.current);
-    under5TimeoutRef.current = setTimeout(
-      () => persist({ under5: next }),
-      700,
-    );
+    under5TimeoutRef.current = setTimeout(() => persist({ under5: next }), 700);
   };
 
   const saveNotes = () => {
@@ -307,7 +314,7 @@ export default function RsvpAction() {
           <>
             <div className={`${CLAY_INSET} mb-5 rounded-3xl p-4`}>
               <p className="mb-3 text-sm font-semibold text-clay-muted">
-                מספר מגיעים (מגיל 5 ומעלה)
+                {under5Open ? "מספר מגיעים (מגיל 5 ומעלה)" : "מספר מגיעים"}
               </p>
               <div className="flex items-center justify-center gap-5">
                 <button
@@ -332,31 +339,38 @@ export default function RsvpAction() {
               </div>
             </div>
 
-            <div className={`${CLAY_INSET} mb-5 rounded-3xl p-4`}>
-              <p className="mb-3 text-sm font-semibold text-clay-muted">
-                תינוקות/ילדים עד גיל 5 (ללא מנה)
-              </p>
-              <div className="flex items-center justify-center gap-5">
-                <button
-                  type="button"
-                  onClick={() => changeUnder5(-1)}
-                  aria-label="פחות ילדים עד גיל 5"
-                  className={`${BUTTON} grid h-11 w-11 place-items-center`}
-                >
-                  <Minus size={18} className="text-slate-600" />
-                </button>
-                <span className="w-10 text-2xl font-bold text-slate-700">
-                  {under5Count}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => changeUnder5(1)}
-                  aria-label="עוד ילדים עד גיל 5"
-                  className={`${BUTTON} grid h-11 w-11 place-items-center`}
-                >
-                  <Plus size={18} className="text-slate-600" />
-                </button>
-              </div>
+            <div className="-mt-5 mb-5">
+              <Under5Disclosure
+                open={under5Open}
+                onOpen={() => setUnder5Opened(true)}
+              >
+                <div className={`${CLAY_INSET} rounded-3xl p-4`}>
+                  <p className="mb-3 text-sm font-semibold text-clay-muted">
+                    תינוקות/ילדים עד גיל 5
+                  </p>
+                  <div className="flex items-center justify-center gap-5">
+                    <button
+                      type="button"
+                      onClick={() => changeUnder5(-1)}
+                      aria-label="פחות ילדים עד גיל 5"
+                      className={`${BUTTON} grid h-11 w-11 place-items-center`}
+                    >
+                      <Minus size={18} className="text-slate-600" />
+                    </button>
+                    <span className="w-10 text-2xl font-bold text-slate-700">
+                      {under5Count}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => changeUnder5(1)}
+                      aria-label="עוד ילדים עד גיל 5"
+                      className={`${BUTTON} grid h-11 w-11 place-items-center`}
+                    >
+                      <Plus size={18} className="text-slate-600" />
+                    </button>
+                  </div>
+                </div>
+              </Under5Disclosure>
             </div>
 
             <div className={`${CLAY_INSET} mb-5 rounded-3xl p-4`}>
