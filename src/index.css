@@ -347,3 +347,41 @@ body {
     animation: none;
   }
 }
+
+/* פס גלילה בסגנון Clay לגיליון אישור ההגעה. פס הגלילה של הדפדפן (אפור,
+   עם חיצים) נראה זר על המשטח הבהיר. כאן הוא דק, מעוגל ובצבע ידית הגרירה;
+   המסילה שקופה ומתקצרת בקצוות כדי לא לחתוך את הפינות המעוגלות. */
+.clay-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+
+.clay-scroll::-webkit-scrollbar-track {
+  background: transparent;
+  margin-block: 30px;
+}
+
+.clay-scroll::-webkit-scrollbar-thumb {
+  background-color: #cfcabc;
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+
+.clay-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: #b9b3a3;
+}
+
+.clay-scroll::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Firefox: אין ::-webkit-scrollbar. רק שם — בכרום, scrollbar-color מבטל את
+   כל העיצוב שלמעלה ומחזיר פס סטנדרטי. */
+@supports not selector(::-webkit-scrollbar) {
+  .clay-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: #cfcabc transparent;
+  }
+}

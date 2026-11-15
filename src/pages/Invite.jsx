@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { DEFAULT_DIETARY, DIETARY_OPTIONS } from "../lib/dietary";
+import {
+  DEFAULT_DIETARY,
+  DIETARY_OPTIONS,
+  PRIMARY_DIETARY_OPTIONS,
+  UNDER_5_DIETARY,
+} from "../lib/dietary";
 import { isValidUUIDv4 } from "../utils/deviceId";
 import {
   Loader2,
@@ -16,6 +21,7 @@ import {
   AlertTriangle,
   Users,
   UserPlus,
+  Save,
   Navigation,
   MapPin,
 } from "lucide-react";
@@ -32,7 +38,6 @@ import {
 } from "../lib/clay";
 import { useEventBackdrop } from "../lib/useEventBackdrop";
 import InviteCountdown from "../components/InviteCountdown";
-import Under5Disclosure from "../components/Under5Disclosure";
 
 // שלב ייעודי ל"קישור קסם" (?guest_id=). 1-4 נשארים הזרימה העצמאית הקיימת.
 const RSVP_STEP_GUEST = 0;
@@ -110,7 +115,10 @@ const LocationLine = ({
 
 // בורר העדפת תזונה — משמש גם בכרטיס קישור הקסם וגם לכל אורח בזרימה העצמאית.
 // compact=true מקטין לשורת גלולות צרה שמתאימה מתחת לשדה שם.
+// options: הנרשם עצמו מקבל PRIMARY_DIETARY_OPTIONS (בלי "מתחת לגיל 5");
+// אורחים שנוספו מקבלים את הרשימה המלאה.
 const DietaryPicker = ({
+  options = DIETARY_OPTIONS,
   value,
   onChange,
   primaryColor,
@@ -122,7 +130,7 @@ const DietaryPicker = ({
     aria-label="העדפת תזונה"
     className={`flex flex-wrap gap-2 ${compact ? "" : "justify-center"}`}
   >
-    {DIETARY_OPTIONS.map((option) => {
+    {options.map((option) => {
       const active = (value || DEFAULT_DIETARY) === option.value;
       return (
         <button
@@ -148,20 +156,16 @@ const DietaryPicker = ({
   </div>
 );
 
-// ילדים עד גיל 5 מגיעים אבל לא נספרים כמנה בתשלום, ולכן יש שני מונים נפרדים:
-// הראשי (מגיל 5 ומעלה = מנות לאולם) והמשני (עד גיל 5 = כיסאות תינוק בלבד).
-// המשני מוסתר כברירת מחדל (Under5Disclosure) — רוב האורחים לא צריכים אותו.
-const MAX_UNDER_5 = 10;
-// ההבהרה "(מגיל 5 ומעלה)" מופיעה רק כשמונה התינוקות מוצג: רק אז יש חשש
-// שיספרו את אותו ילד פעמיים, ועד אז היא סתם רעש.
-const mainCountLabel = (under5Shown) =>
-  under5Shown ? "מספר מגיעים (מגיל 5 ומעלה)" : "מספר מגיעים";
-const UNDER_5_LABEL = "תינוקות/ילדים עד גיל 5 (ללא מנה)";
+// ילדים מתחת לגיל 5 מגיעים אבל אינם מנה בתשלום. אין להם מונה נפרד: הם
+// נוספים בכפתור "הוסף אורח" כמו כל אורח, עם העדפת התזונה "ילדים מתחת לגיל 5
+// (ללא מנה)" (UNDER_5_DIETARY). ה-DB גוזר מזה את הספירה — ראו lib/dietary.js.
 
 // השלב היחיד של הזרימה העצמאית לפני השליחה: טופס אחד עם כל בני החבורה.
 const RSVP_STEP_FORM = 1;
 const RSVP_STEP_DUPLICATES = 3;
 const RSVP_STEP_SUCCESS = 4;
+// מסך האישור אחרי "שמור" בקישור קסם.
+const RSVP_STEP_MAGIC_DONE = 5;
 
 // תואם לתקרה של rsvp_self_register (עד 20 שורות לחבורה).
 const MAX_PARTY = 20;
@@ -170,38 +174,6 @@ const newGuestDraft = (key) => ({ key, name: "", dietary: DEFAULT_DIETARY });
 
 const ADD_GUEST_BUTTON =
   "w-full min-h-12 rounded-full flex items-center justify-center gap-2 font-bold text-slate-600 bg-clay-chip shadow-clay-md active:shadow-clay-pressed transition-all disabled:opacity-40";
-
-const CountStepper = ({ label, value, min, max, onChange, disabled }) => (
-  <div className="rounded-clay-field p-4 bg-clay-well shadow-clay-inset">
-    <p className="text-sm font-bold text-slate-600 text-center mb-3">{label}</p>
-    <div className="flex items-center justify-center gap-6">
-      <button
-        type="button"
-        disabled={disabled || value <= min}
-        onClick={() => onChange(Math.max(min, value - 1))}
-        aria-label={`פחות — ${label}`}
-        className="w-12 h-12 rounded-full text-slate-600 font-black text-2xl flex items-center justify-center transition-all bg-clay-chip shadow-clay-md active:shadow-clay-pressed disabled:opacity-40"
-      >
-        -
-      </button>
-      <span
-        className="text-4xl font-black text-slate-700 w-12 text-center"
-        aria-live="polite"
-      >
-        {value}
-      </span>
-      <button
-        type="button"
-        disabled={disabled || value >= max}
-        onClick={() => onChange(Math.min(max, value + 1))}
-        aria-label={`עוד — ${label}`}
-        className="w-12 h-12 rounded-full text-slate-600 font-black text-2xl flex items-center justify-center transition-all bg-clay-chip shadow-clay-md active:shadow-clay-pressed disabled:opacity-40"
-      >
-        +
-      </button>
-    </div>
-  </div>
-);
 
 // כפתורי פעולה משותפים (Moved outside to prevent re-mounting)
 const ActionButtons = ({
@@ -289,9 +261,6 @@ const Invite = () => {
   // שהסרת אורח מאמצע הרשימה לא תעביר את מה שהוקלד אצל השכן לכרטיס אחר.
   const guestKeyRef = useRef(1);
   const [guests, setGuests] = useState(() => [newGuestDraft(0)]);
-  // ילדים עד גיל 5 של כל החבורה — נשמר פעם אחת, על השורה של הנרשם הראשי.
-  const [under5Count, setUnder5Count] = useState(0);
-  const [under5Open, setUnder5Open] = useState(false);
   // הערה אחת לכל החבורה — נשמרת על השורה של הנרשם הראשי.
   const [rsvpNotes, setRsvpNotes] = useState("");
   const [submitterPhone, setSubmitterPhone] = useState("");
@@ -314,13 +283,7 @@ const Invite = () => {
   const [companionBusy, setCompanionBusy] = useState(false);
   const [magicNotes, setMagicNotes] = useState("");
   const [magicDietary, setMagicDietary] = useState(DEFAULT_DIETARY);
-  const [magicUnder5, setMagicUnder5] = useState(0);
-  // בקישור קסם (אישור סופי, סמוך לאירוע) מונה התינוקות מוצג רק למי שכבר
-  // נרשמו אצלו תינוקות. נקבע פעם אחת בטעינה, כדי שהמונה לא ייעלם באמצע
-  // עריכה אם האורח מוריד אותו ל-0.
-  const [magicUnder5Visible, setMagicUnder5Visible] = useState(false);
   const [magicSaving, setMagicSaving] = useState(false);
-  const [magicSaved, setMagicSaved] = useState(false);
 
   // Refs לאנימציות רקע
   const bgDecor1 = useRef(null);
@@ -416,8 +379,6 @@ const Invite = () => {
         setMagicGuest(finalRow);
         setMagicNotes(finalRow.notes ?? "");
         setMagicDietary(finalRow.dietary ?? DEFAULT_DIETARY);
-        setMagicUnder5(finalRow.under_5_count ?? 0);
-        setMagicUnder5Visible((finalRow.under_5_count ?? 0) > 0);
         setMagicCompanions(rows.filter((entry) => !entry.is_self));
         setShowRsvp(true);
         setRsvpStep(RSVP_STEP_GUEST);
@@ -529,8 +490,6 @@ const Invite = () => {
       count: status === "confirmed" ? MAGIC_CONFIRMED_COUNT : null,
       notes: overrides.notes ?? magicNotes,
       dietary: overrides.dietary ?? magicDietary,
-      // null = להשאיר את הערך השמור.
-      under5: overrides.under5 ?? null,
     };
     setMagicSaving(true);
     try {
@@ -540,7 +499,6 @@ const Invite = () => {
         p_guests_count: payload.count,
         p_notes: payload.notes || null,
         p_dietary: payload.dietary,
-        p_under_5_count: payload.under5,
       });
       if (error) throw error;
       const row = (Array.isArray(data) ? data[0] : data) || null;
@@ -548,9 +506,7 @@ const Invite = () => {
         setMagicGuest(row);
         setMagicNotes(row.notes ?? "");
         setMagicDietary(row.dietary ?? DEFAULT_DIETARY);
-        setMagicUnder5(row.under_5_count ?? 0);
       }
-      setMagicSaved(true);
       return row;
     } catch (err) {
       console.error("Magic RSVP error:", err);
@@ -568,29 +524,20 @@ const Invite = () => {
     if (!row) setMagicDietary(previous);
   };
 
-  // המונה נשמר על השורה שהקישור שייך לה. הכפתורים ננעלים בזמן השמירה
-  // (magicSaving), ולכן אין צורך ב-debounce ואין מרוץ בין שתי לחיצות.
-  const changeMagicUnder5 = async (value) => {
-    const previous = magicUnder5;
-    setMagicUnder5(value); // אופטימי
-    const row = await saveMagicResponse({ under5: value });
-    if (!row) setMagicUnder5(previous);
-  };
-
   // הגדלת החבורה מוסיפה שורה אמיתית ולא מגדילה מונה: לאדם החדש יש שם משלו
   // והעדפת תזונה משלו. השורה הראשית נשארת guests_count = 1.
   const addCompanion = async () => {
     const name = newCompanionName.trim();
     if (!name) {
       showToast("אנא הזינו שם", "warning");
-      return;
+      return false;
     }
     // רשת ביטחון: אם השורה הראשית עדיין נושאת כמות גדולה מ-1 (נחיתה בלי
     // status על שורה שכבר אושרה), מאפסים אותה לפני שנוספת שורה לבן לוויה —
     // אחרת אותו אדם נספר פעמיים, פעם במונה ופעם בשמו.
     if ((magicGuest?.guests_count ?? 1) !== MAGIC_CONFIRMED_COUNT) {
       const row = await saveMagicResponse();
-      if (!row) return;
+      if (!row) return false;
     }
     setCompanionBusy(true);
     try {
@@ -614,10 +561,11 @@ const Invite = () => {
       setNewCompanionName("");
       setNewCompanionDietary(DEFAULT_DIETARY);
       setCompanionDraftOpen(false);
-      setMagicSaved(true);
+      return true;
     } catch (err) {
       console.error("add companion:", err);
       showToast(RSVP_ERROR_COPY[rsvpErrorCode(err)], "error");
+      return false;
     } finally {
       setCompanionBusy(false);
     }
@@ -665,6 +613,39 @@ const Invite = () => {
         ),
       );
     }
+  };
+
+  // "שמור": הבחירות עצמן כבר נשמרות תוך כדי (סטטוס, תזונה, אורחים), כך
+  // שסגירת הדף בלי ללחוץ לא מאבדת כלום. הכפתור שומר את מה שעוד פתוח — הערה
+  // שלא יצאו ממנה, אורח שהוקלד ולא נשמר — ומציג אישור ברור שהתשובה התקבלה.
+  //
+  // הכפתור לא מושבת בזמן שמירה אוטומטית אחרת (magicSaving), ומבנה התוכן שלו
+  // לא מתחלף לספינר: יציאה משדה ההערות מפעילה שמירה ברגע הלחיצה (mousedown),
+  // וכפתור שהופך ל-disabled או שהאלמנט שנלחץ נעלם ממנו לפני ה-mouseup בולע
+  // את הלחיצה — האורח היה לוחץ "שמור" ושום דבר לא קרה. כפילות נמנעת ב-ref.
+  const magicSaveInFlight = useRef(false);
+  const handleMagicSave = async () => {
+    if (!MAGIC_STATUSES.includes(magicGuest?.status)) return;
+    if (magicSaveInFlight.current) return;
+    magicSaveInFlight.current = true;
+    try {
+      await runMagicSave();
+    } finally {
+      magicSaveInFlight.current = false;
+    }
+  };
+
+  const runMagicSave = async () => {
+    if (
+      magicGuest.status === "confirmed" &&
+      companionDraftOpen &&
+      newCompanionName.trim()
+    ) {
+      const added = await addCompanion();
+      if (!added) return;
+    }
+    const row = await saveMagicResponse();
+    if (row) setRsvpStep(RSVP_STEP_MAGIC_DONE);
   };
 
   const closeCompanionDraft = () => {
@@ -739,7 +720,6 @@ const Invite = () => {
         p_phone: submitterPhone.trim(),
         p_guests: party,
         p_notes: rsvpNotes.trim() || null,
-        p_under_5_count: under5Count,
       });
       if (error) throw error;
 
@@ -749,8 +729,6 @@ const Invite = () => {
         setRsvpStep(RSVP_STEP_FORM);
         guestKeyRef.current = 1;
         setGuests([newGuestDraft(0)]);
-        setUnder5Count(0);
-        setUnder5Open(false);
         setRsvpNotes("");
         setSubmitterPhone("");
       }, 4000);
@@ -1055,7 +1033,7 @@ const Invite = () => {
           }}
         >
           <div
-            className="bg-clay-sheet w-full max-w-lg md:rounded-clay-lg rounded-t-[38px] p-6 md:p-8 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-[0_-14px_40px_rgba(0,0,0,0.16)] relative max-h-full overflow-y-auto hide-scrollbar"
+            className="bg-clay-sheet w-full max-w-lg md:rounded-clay-lg rounded-t-[38px] p-6 md:p-8 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-[0_-14px_40px_rgba(0,0,0,0.16)] relative max-h-full overflow-y-auto clay-scroll"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Grab handle */}
@@ -1130,6 +1108,11 @@ const Invite = () => {
                         העדפת התזונה שלך
                       </p>
                       <DietaryPicker
+                        options={
+                          magicDietary === UNDER_5_DIETARY
+                            ? DIETARY_OPTIONS
+                            : PRIMARY_DIETARY_OPTIONS
+                        }
                         value={magicDietary}
                         onChange={changeMagicDietary}
                         primaryColor={primaryColor}
@@ -1140,12 +1123,8 @@ const Invite = () => {
 
                     {/* כל מי שמגיע איתך הוא שורה נפרדת עם העדפה משלו */}
                     <div className="rounded-clay-field p-4 mb-4 bg-clay-well shadow-clay-inset">
-                      <p className="text-sm font-bold text-slate-600 mb-1">
-                        {mainCountLabel(magicUnder5Visible)}:{" "}
-                        {magicCompanions.length + 1}
-                      </p>
                       <p className="text-xs font-bold text-clay-muted mb-3">
-                        מי מגיע איתך? ({magicCompanions.length})
+                        מי מגיע איתך?
                       </p>
 
                       <div className="space-y-3">
@@ -1242,22 +1221,6 @@ const Invite = () => {
                       )}
                     </div>
 
-                    {/* לא נספרים כמנה — רק כדי שנדע להכין כיסא תינוק / מקום
-                        לעגלה. בקישור קסם מוצג רק למי שכבר נרשמו אצלו
-                        תינוקות; אין כאן כפתור "מגיעים עם תינוקות?". */}
-                    {magicUnder5Visible && (
-                      <div className="mb-4">
-                        <CountStepper
-                          label={UNDER_5_LABEL}
-                          value={magicUnder5}
-                          min={0}
-                          max={MAX_UNDER_5}
-                          onChange={changeMagicUnder5}
-                          disabled={magicSaving}
-                        />
-                      </div>
-                    )}
-
                     {/* הערה כללית אחת לכל החבורה — תמיד אחרונה בטופס */}
                     <label
                       htmlFor="magic-notes"
@@ -1282,9 +1245,73 @@ const Invite = () => {
                   </>
                 )}
 
-                <p className="h-5 text-center text-xs font-bold text-clay-muted">
-                  {magicSaving ? "שומר..." : magicSaved ? "נשמר ✓" : ""}
+                <button
+                  type="button"
+                  onClick={handleMagicSave}
+                  disabled={!MAGIC_STATUSES.includes(magicGuest.status)}
+                  aria-busy={magicSaving || companionBusy}
+                  className="mt-4 w-full text-white font-black text-lg py-4 rounded-full flex justify-center items-center gap-2 active:scale-[0.97] transition-all disabled:opacity-50"
+                  style={clayButtonStyle(primaryColor)}
+                >
+                  {/* שני האייקונים תמיד ב-DOM ורק מוחלפים בנראות — ראו
+                      handleMagicSave למה התוכן לא מתחלף. */}
+                  <Loader2
+                    aria-hidden="true"
+                    className={`animate-spin ${magicSaving || companionBusy ? "" : "hidden"}`}
+                    size={20}
+                  />
+                  <Save
+                    aria-hidden="true"
+                    className={magicSaving || companionBusy ? "hidden" : ""}
+                    size={20}
+                  />
+                  שמור
+                </button>
+                {!MAGIC_STATUSES.includes(magicGuest.status) && (
+                  <p className="mt-2 text-center text-xs font-bold text-clay-muted">
+                    בחרו "מגיע/ה" או "לא אגיע" כדי לשמור
+                  </p>
+                )}
+              </div>
+            )}
+
+            {rsvpStep === RSVP_STEP_MAGIC_DONE && magicGuest && (
+              <div className="step-anim py-10 text-center" role="status">
+                <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 bg-clay-well shadow-clay-inset-deep">
+                  {magicGuest.status === "confirmed" ? (
+                    <CheckCircle2 size={48} className="text-[#7d9a86]" />
+                  ) : (
+                    <CalendarHeart
+                      size={44}
+                      style={{ color: accentOn(primaryColor) }}
+                    />
+                  )}
+                </div>
+                <h2 className="text-3xl font-black text-slate-700 mb-2">
+                  {magicGuest.status === "confirmed"
+                    ? "נתראה בחתונה!"
+                    : "לא נורא, נתראה בשמחות"}
+                </h2>
+                <p className="text-clay-muted font-medium mb-8">
+                  התשובה נשמרה. אפשר לעדכן אותה בכל שלב דרך אותו קישור.
                 </p>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setRsvpStep(RSVP_STEP_GUEST)}
+                    className="flex-1 text-slate-600 font-bold py-4 rounded-full transition-all bg-clay-chip shadow-clay-md active:shadow-clay-pressed"
+                  >
+                    עריכה
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowRsvp(false)}
+                    className="flex-1 text-white font-bold py-4 rounded-full transition-all active:scale-[0.97]"
+                    style={clayButtonStyle(primaryColor)}
+                  >
+                    סגירה
+                  </button>
+                </div>
               </div>
             )}
 
@@ -1324,7 +1351,8 @@ const Invite = () => {
                   </div>
 
                   {/* כרטיס לכל אדם: שם + העדפת תזונה. הראשון הוא הנרשם עצמו;
-                      כל לחיצה על "הוסף אורח" מוסיפה כרטיס נוסף. */}
+                      כל לחיצה על "הוסף אורח" מוסיפה כרטיס נוסף — גם לתינוק,
+                      שנבחרת לו ההעדפה "ילדים מתחת לגיל 5 (ללא מנה)". */}
                   <div className="space-y-3">
                     {guests.map((guest, index) => {
                       const title =
@@ -1368,6 +1396,11 @@ const Invite = () => {
                           />
                           <div className="mt-3">
                             <DietaryPicker
+                              options={
+                                index === 0
+                                  ? PRIMARY_DIETARY_OPTIONS
+                                  : DIETARY_OPTIONS
+                              }
                               value={guest.dietary}
                               onChange={(value) =>
                                 updateGuest(guest.key, { dietary: value })
@@ -1390,22 +1423,6 @@ const Invite = () => {
                       <UserPlus size={18} /> הוסף אורח
                     </button>
                   )}
-
-                  <Under5Disclosure
-                    open={under5Open}
-                    onOpen={() => setUnder5Open(true)}
-                  >
-                    <CountStepper
-                      label={UNDER_5_LABEL}
-                      value={under5Count}
-                      min={0}
-                      max={MAX_UNDER_5}
-                      onChange={setUnder5Count}
-                    />
-                    <p className="mt-2 text-center text-xs font-medium text-clay-muted">
-                      אין צורך להוסיף אותם גם כאורחים בשמם
-                    </p>
-                  </Under5Disclosure>
 
                   {/* הערה כללית אחת לכל החבורה — תמיד אחרונה בטופס */}
                   <div className="space-y-1">
@@ -1495,12 +1512,10 @@ const Invite = () => {
                   <CheckCircle2 size={48} className="text-[#7d9a86]" />
                 </div>
                 <h2 className="text-3xl font-black text-slate-700 mb-2">
-                  איזה כיף!
+                  נתראה בחתונה!
                 </h2>
                 <p className="text-clay-muted font-medium text-lg">
                   אישור ההגעה נקלט בהצלחה.
-                  <br />
-                  נתראה באירוע!
                 </p>
               </div>
             )}

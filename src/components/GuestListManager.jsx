@@ -21,6 +21,7 @@ import {
   DEFAULT_DIETARY,
   DIETARY_OPTIONS,
   dietaryLabelOf,
+  UNDER_5_DIETARY,
 } from "../lib/dietary";
 import { parseGuestFile, isValidGuestRow } from "../lib/guestImport";
 import { buildRsvpLink } from "../lib/rsvpLink";
@@ -391,8 +392,36 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
 
     if ((previous ?? "") === (value ?? "")) return;
 
+    // שורה של ילד מתחת לגיל 5 היא תמיד 0 מנות וילד אחד — הטריגר
+    // event_guests_sync_under_5 כופה את זה ב-DB, כך שעריכת הכמות הייתה
+    // "נשמרת" על המסך ומתבטלת בשקט בשרת.
+    if (
+      (field === "guests_count" || field === "under_5_count") &&
+      guest.dietary === UNDER_5_DIETARY
+    ) {
+      showToast(
+        "זו שורה של ילד מתחת לגיל 5 (ללא מנה). לשינוי הכמות שנו קודם את העדפת התזונה",
+        "warning",
+      );
+      setGuests((prev) => [...prev]);
+      return;
+    }
+
+    // אותו טריגר מעדכן את הכמויות כשהעדפת התזונה עוברת אל "מתחת לגיל 5" או
+    // ממנה. משקפים את זה מקומית כדי שהסכומים בכותרת יתעדכנו בלי טעינה מחדש.
+    const localPatch = { [field]: value };
+    if (field === "dietary") {
+      if (value === UNDER_5_DIETARY) {
+        localPatch.guests_count = 0;
+        localPatch.under_5_count = 1;
+      } else if (previous === UNDER_5_DIETARY) {
+        localPatch.under_5_count = 0;
+        if ((guest.guests_count || 0) === 0) localPatch.guests_count = 1;
+      }
+    }
+
     setGuests((prev) =>
-      prev.map((g) => (g.id === guest.id ? { ...g, [field]: value } : g)),
+      prev.map((g) => (g.id === guest.id ? { ...g, ...localPatch } : g)),
     );
     const { error } = await supabase
       .from("event_guests")
@@ -401,9 +430,8 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
     if (error) {
       console.error(error);
       showToast("השינוי לא נשמר", "error");
-      setGuests((prev) =>
-        prev.map((g) => (g.id === guest.id ? { ...g, [field]: previous } : g)),
-      );
+      // החזרת השורה כולה, כולל הכמויות שעודכנו יחד עם העדפת התזונה.
+      setGuests((prev) => prev.map((g) => (g.id === guest.id ? guest : g)));
     }
   };
 
