@@ -1038,15 +1038,6 @@ const Invite = () => {
           >
             {/* Grab handle */}
             <div className="w-[52px] h-1.5 rounded-full bg-[#cfcabc] mx-auto mb-2 shadow-[inset_1px_1px_2px_rgba(0,0,0,0.12)]" />
-            {rsvpStep !== RSVP_STEP_SUCCESS && (
-              <button
-                onClick={() => setShowRsvp(false)}
-                className="absolute top-5 right-5 w-11 h-11 flex items-center justify-center rounded-full text-clay-muted z-10 bg-clay-chip shadow-clay-sm active:shadow-clay-pressed transition-all"
-                aria-label="סגור"
-              >
-                <X size={20} />
-              </button>
-            )}
 
             {rsvpStep === RSVP_STEP_GUEST && magicGuest && (
               <div className="step-anim pt-4">
@@ -1060,16 +1051,20 @@ const Invite = () => {
                     />
                   )}
                 </div>
-                <h2 className="text-2xl font-black text-slate-700 mb-1 text-center">
+                <h2
+                  className={`text-2xl font-black text-slate-700 text-center ${
+                    magicGuest.status === "confirmed" ? "mb-6" : "mb-1"
+                  }`}
+                >
                   היי {magicGuest.guest_name},
                 </h2>
-                <p className="text-clay-muted font-medium text-center mb-6 text-sm">
-                  {magicGuest.status === "confirmed"
-                    ? "אישרנו את הגעתך! 🎉"
-                    : magicGuest.status === "canceled"
+                {magicGuest.status !== "confirmed" && (
+                  <p className="text-clay-muted font-medium text-center mb-6 text-sm">
+                    {magicGuest.status === "canceled"
                       ? "תודה על העדכון, תחסרו לנו מאוד! ניפגש בשמחות."
                       : "נשמח לדעת אם תגיעו"}
-                </p>
+                  </p>
+                )}
 
                 <div className="flex gap-3 mb-6">
                   {[
