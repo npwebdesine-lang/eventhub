@@ -38,6 +38,12 @@ import Under5Disclosure from "../components/Under5Disclosure";
 const RSVP_STEP_GUEST = 0;
 const MAGIC_STATUSES = ["confirmed", "canceled"];
 
+// אדם אחד = שורה אחת. מוזמן שיובא עם כמות (למשל "דוד כהן, 2") נושא את
+// הכמות על השורה שלו, אבל בקישור הקסם בני הלוויה נרשמים בשמם, כל אחד בשורה
+// משלו. לכן אישור דרך הקישור מאפס את guests_count של השורה ל-1; בלי זה
+// "2" מהייבוא ועוד שורה לבן הזוג היו נספרים כ-3 מנות.
+const MAGIC_CONFIRMED_COUNT = 1;
+
 const PARTICLE_SIZES = [18, 26, 12, 22, 15, 28];
 
 const PHONE_PATTERN = /^[0-9+\-\s]{7,15}$/; // זהה ל-check constraint על event_guests
@@ -379,17 +385,24 @@ const Invite = () => {
         // ההודעה בוואטסאפ מבטיחה "לאישור / לביטול" בלחיצה אחת, ולכן status
         // שמגיע ב-URL מוחל מיד. הקישור הקצר (/r/<code>?s=1) מגיע לכאן דרך
         // RsvpLink.jsx, שמתרגם אותו לפרמטרים האלה.
+        //
+        // אישור דרך קישור קסם מאפס את guests_count של השורה ל-1 (ראו
+        // MAGIC_CONFIRMED_COUNT). לכן קישור "לאישור" מוחל גם כשהסטטוס כבר
+        // confirmed אבל המונה עדיין גדול מ-1 — למשל מוזמן שיובא עם כמות 2
+        // וסומן כמאושר ידנית על ידי המנהל.
+        const confirming = magicStatusHint === "confirmed";
         let finalRow = row;
         if (
           MAGIC_STATUSES.includes(magicStatusHint) &&
-          row.status !== magicStatusHint
+          (row.status !== magicStatusHint ||
+            (confirming && row.guests_count !== MAGIC_CONFIRMED_COUNT))
         ) {
           const { data: applied, error: applyError } = await supabase.rpc(
             "rsvp_respond",
             {
               p_guest_id: magicGuestId,
               p_status: magicStatusHint,
-              p_guests_count: null,
+              p_guests_count: confirming ? MAGIC_CONFIRMED_COUNT : null,
               p_notes: null,
               p_dietary: null,
             },
@@ -507,14 +520,16 @@ const Invite = () => {
   // עדכון כמות לא דורס תזונה ולהפך.
   const saveMagicResponse = async (overrides = {}) => {
     if (!magicGuest) return null;
+    const status = overrides.status ?? magicGuest.status;
     const payload = {
-      status: overrides.status ?? magicGuest.status,
-      // כל שורה היא אדם אחד, ולכן guests_count תמיד 1. null משאיר את הערך
-      // הקיים (coalesce ב-RPC) ומונע החייאה של המונה הישן.
-      count: null,
+      status,
+      // שורה מאושרת היא תמיד אדם אחד (MAGIC_CONFIRMED_COUNT). בביטול נשלח
+      // null, שמשאיר את הערך הקיים (coalesce ב-RPC): שורה מבוטלת לא נספרת
+      // במנות, ואין סיבה למחוק את הכמות שהמנהל הזין בייבוא.
+      count: status === "confirmed" ? MAGIC_CONFIRMED_COUNT : null,
       notes: overrides.notes ?? magicNotes,
       dietary: overrides.dietary ?? magicDietary,
-      // null = להשאיר את הערך השמור, כמו count.
+      // null = להשאיר את הערך השמור.
       under5: overrides.under5 ?? null,
     };
     setMagicSaving(true);
@@ -569,6 +584,13 @@ const Invite = () => {
     if (!name) {
       showToast("אנא הזינו שם", "warning");
       return;
+    }
+    // רשת ביטחון: אם השורה הראשית עדיין נושאת כמות גדולה מ-1 (נחיתה בלי
+    // status על שורה שכבר אושרה), מאפסים אותה לפני שנוספת שורה לבן לוויה —
+    // אחרת אותו אדם נספר פעמיים, פעם במונה ופעם בשמו.
+    if ((magicGuest?.guests_count ?? 1) !== MAGIC_CONFIRMED_COUNT) {
+      const row = await saveMagicResponse();
+      if (!row) return;
     }
     setCompanionBusy(true);
     try {
