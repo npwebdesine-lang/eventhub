@@ -346,7 +346,7 @@ export default function RsvpAction() {
               >
                 <div className={`${CLAY_INSET} rounded-3xl p-4`}>
                   <p className="mb-3 text-sm font-semibold text-clay-muted">
-                    תינוקות/ילדים עד גיל 5
+                    תינוקות/ילדים עד גיל 5 (ללא מנה)
                   </p>
                   <div className="flex items-center justify-center gap-5">
                     <button

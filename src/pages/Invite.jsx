@@ -149,7 +149,7 @@ const MAX_UNDER_5 = 10;
 // שיספרו את אותו ילד פעמיים, ועד אז היא סתם רעש.
 const mainCountLabel = (under5Open) =>
   under5Open ? "מספר מגיעים (מגיל 5 ומעלה)" : "מספר מגיעים";
-const UNDER_5_LABEL = "תינוקות/ילדים עד גיל 5";
+const UNDER_5_LABEL = "תינוקות/ילדים עד גיל 5 (ללא מנה)";
 
 const CountStepper = ({ label, value, min, max, onChange, disabled }) => (
   <div className="rounded-clay-field p-4 bg-clay-well shadow-clay-inset">
