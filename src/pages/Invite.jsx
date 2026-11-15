@@ -289,14 +289,9 @@ const Invite = () => {
   const bgDecor1 = useRef(null);
   const bgDecor2 = useRef(null);
 
-  // Lock background scroll while the RSVP sheet is open; Escape closes it
-  // (except on the success step, which auto-dismisses).
-  useModalBehavior({
-    open: showRsvp,
-    onClose: () => {
-      if (rsvpStep !== RSVP_STEP_SUCCESS) setShowRsvp(false);
-    },
-  });
+  // Lock background scroll while the RSVP sheet is open. No onClose on
+  // purpose: Escape must not dismiss the form, saving is the only way out.
+  useModalBehavior({ open: showRsvp });
 
   useEffect(() => {
     let isMounted = true;
@@ -1028,14 +1023,8 @@ const Invite = () => {
           role="dialog"
           aria-modal="true"
           aria-label="אישור הגעה"
-          onClick={() => {
-            if (rsvpStep !== RSVP_STEP_SUCCESS) setShowRsvp(false);
-          }}
         >
-          <div
-            className="bg-clay-sheet w-full max-w-lg md:rounded-clay-lg rounded-t-[38px] p-6 md:p-8 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-[0_-14px_40px_rgba(0,0,0,0.16)] relative max-h-full overflow-y-auto clay-scroll"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <div className="bg-clay-sheet w-full max-w-lg md:rounded-clay-lg rounded-t-[38px] p-6 md:p-8 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-[0_-14px_40px_rgba(0,0,0,0.16)] relative max-h-full overflow-y-auto clay-scroll">
             {/* Grab handle */}
             <div className="w-[52px] h-1.5 rounded-full bg-[#cfcabc] mx-auto mb-2 shadow-[inset_1px_1px_2px_rgba(0,0,0,0.12)]" />
 
