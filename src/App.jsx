@@ -14,7 +14,7 @@ const Admin = React.lazy(() => import("./pages/Admin"));
 const Album = React.lazy(() => import("./pages/Album"));
 const Privacy = React.lazy(() => import("./pages/Privacy"));
 const Terms = React.lazy(() => import("./pages/Terms"));
-const RsvpAction = React.lazy(() => import("./pages/RsvpAction"));
+const RsvpLink = React.lazy(() => import("./pages/RsvpLink"));
 
 // ייבוא המודולים באופן עצל
 const Photos = React.lazy(() => import("./modules/Photos"));
@@ -71,12 +71,21 @@ function App() {
                 </ErrorBoundary>
               }
             />
-            {/* קישור קסם לאישור/ביטול הגעה מוואטסאפ */}
+            {/* קישור קסם לאישור/ביטול הגעה מוואטסאפ. /r/:code הוא הקישור
+                הקצר; /rsvp-action נשאר בשביל קישורים ישנים שכבר נשלחו. */}
+            <Route
+              path="/r/:code"
+              element={
+                <ErrorBoundary>
+                  <RsvpLink />
+                </ErrorBoundary>
+              }
+            />
             <Route
               path="/rsvp-action"
               element={
                 <ErrorBoundary>
-                  <RsvpAction />
+                  <RsvpLink />
                 </ErrorBoundary>
               }
             />

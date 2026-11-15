@@ -12,6 +12,8 @@
 // cloaking, מנועי חיפוש מענישים על זה, והיא נשברת בכל פעם שוואטסאפ משנה את
 // ה-UA שלו. כולם מקבלים את אותו עמוד.
 
+import { Buffer } from "node:buffer";
+
 const SUPABASE_URL =
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
 const SUPABASE_KEY =
@@ -64,6 +66,39 @@ async function fetchEvent(eventId) {
   if (!response.ok) return null;
   const rows = await response.json();
   return Array.isArray(rows) && rows.length ? rows[0] : null;
+}
+
+// קישורי הקסם הקצרים (/r/<code>?s=1) מגיעים לכאן עם g=<code> במקום id, כדי
+// שגם להם תהיה תצוגה מקדימה של האירוע בוואטסאפ. הקוד הוא ה-UUID של האורח
+// ב-base64url (ראו src/lib/rsvpLink.js); ממנו נגזר האירוע.
+const GUEST_CODE_RE = /^[A-Za-z0-9_-]{22}$/;
+
+const decodeGuestCode = (code) => {
+  const hex = Buffer.from(code, "base64url").toString("hex");
+  if (hex.length !== 32) return null;
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+};
+
+// קריאה בלבד דרך אותו RPC שהאפליקציה משתמשת בו — ל-anon אין גישה ישירה
+// ל-event_guests. מהתשובה נלקח רק event_id; שום פרט של האורח לא נכנס ל-HTML,
+// שנשמר ב-CDN.
+async function fetchGuestEventId(guestId) {
+  if (!SUPABASE_URL || !SUPABASE_KEY) return null;
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/rsvp_guest_group`, {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ p_guest_id: guestId }),
+    signal: AbortSignal.timeout(2500),
+  });
+  if (!response.ok) return null;
+  const rows = await response.json();
+  if (!Array.isArray(rows) || !rows.length) return null;
+  const row = rows.find((entry) => entry.is_self) || rows[0];
+  return typeof row.event_id === "string" ? row.event_id : null;
 }
 
 // מקור אמת ל-origin. לא נגזר מכותרות הבקשה:
@@ -143,7 +178,19 @@ export default async function handler(request, response) {
     SELF_ORIGIN ||
     `${request.headers["x-forwarded-proto"] || "http"}://${request.headers.host}`;
 
-  const eventId = String(request.query?.id || "");
+  let eventId = String(request.query?.id || "");
+  const guestCode = String(request.query?.g || "");
+  if (!eventId && GUEST_CODE_RE.test(guestCode)) {
+    try {
+      const guestId = decodeGuestCode(guestCode);
+      // UUID_RE שוב: הערך נשלח הלאה ל-PostgREST, כמו id שמגיע מה-URL.
+      if (guestId && UUID_RE.test(guestId)) {
+        eventId = (await fetchGuestEventId(guestId)) || "";
+      }
+    } catch {
+      eventId = ""; // קישור שלא פוענח מקבל את המעטפת בלי תצוגה מקדימה
+    }
+  }
   const canonical = `${origin}/invite/${eventId}`;
 
   let shell;

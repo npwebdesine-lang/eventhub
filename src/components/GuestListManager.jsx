@@ -23,6 +23,7 @@ import {
   dietaryLabelOf,
 } from "../lib/dietary";
 import { parseGuestFile, isValidGuestRow } from "../lib/guestImport";
+import { buildRsvpLink } from "../lib/rsvpLink";
 import { useToast } from "./Toast";
 
 // ניהול רשימת מוזמנים + "קישורי קסם" לוואטסאפ.
@@ -64,14 +65,12 @@ export const toWhatsAppPhone = (phone) => {
   return null;
 };
 
-// הקישור מצביע על ההזמנה המאוחדת (/invite/:eventId?guest_id=) — האורח רואה
-// את האירוע ואת אישור ההגעה במקום אחד.
-//
-// ה-status נשאר בשאילתה כי שני הקישורים בהודעה חייבים להיות שונים: בלעדיו
-// "לאישור" ו"לביטול" היו אותה כתובת בדיוק. Invite.jsx מחיל את הערך הזה מיד
-// עם הטעינה, ולכן לחיצה אחת עדיין מספיקה — בדיוק כמו ב-/rsvp-action.
-export const buildRsvpMessage = (guest, origin, eventId) =>
-  `היי ${guest.guest_name}, מתרגשים לקראת האירוע! נשמח לאישור סופי. לאישור: ${origin}/invite/${eventId}?guest_id=${guest.id}&status=confirmed | לביטול: ${origin}/invite/${eventId}?guest_id=${guest.id}&status=canceled`;
+// שני קישורים קצרים (/r/<code>?s=1|0 — ראו lib/rsvpLink.js). RsvpLink.jsx
+// מעביר את האורח להזמנה המאוחדת, ו-Invite.jsx מחיל את הסטטוס מיד עם
+// הטעינה, ולכן לחיצה אחת מספיקה. הסטטוס חייב להישאר בכתובת: בלעדיו
+// "לאישור" ו"לביטול" היו אותה כתובת בדיוק.
+export const buildRsvpMessage = (guest, origin) =>
+  `היי ${guest.guest_name}, מתרגשים לקראת האירוע! נשמח לאישור סופי. לאישור: ${buildRsvpLink(origin, guest.id, "confirmed")} | לביטול: ${buildRsvpLink(origin, guest.id, "canceled")}`;
 
 // "שם, טלפון, כמות" בכל שורה. טלפון וכמות אופציונליים.
 export const parseGuestLines = (text) => {
@@ -418,9 +417,7 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
 
   const copyMessage = async (guest) => {
     try {
-      await navigator.clipboard.writeText(
-        buildRsvpMessage(guest, origin, eventId),
-      );
+      await navigator.clipboard.writeText(buildRsvpMessage(guest, origin));
       showToast("ההודעה הועתקה", "success");
     } catch {
       showToast("לא ניתן להעתיק", "error");
@@ -709,8 +706,7 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                     <ul className="space-y-0.5 text-xs text-rose-700">
                       {preview.invalid.map((row) => (
                         <li key={row.lineNumber}>
-                          שורה {row.lineNumber}: {row.line} —{" "}
-                          {row.reason}
+                          שורה {row.lineNumber}: {row.line} — {row.reason}
                         </li>
                       ))}
                     </ul>
@@ -913,7 +909,7 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                           {waPhone ? (
                             <a
                               href={`https://wa.me/${waPhone}?text=${encodeURIComponent(
-                                buildRsvpMessage(guest, origin, eventId),
+                                buildRsvpMessage(guest, origin),
                               )}`}
                               target="_blank"
                               rel="noopener noreferrer"
