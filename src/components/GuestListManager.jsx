@@ -90,7 +90,7 @@ export const buildRsvpMessage = (guest, origin) =>
 // wa.me מפנה (302) ל-api.whatsapp.com ובדרך מקלקל אימוג'י: תו של 4 בתים
 // כמו 💍 (%F0%9F%92%8D) יוצא מההפניה כ-%EF%BF%BD — סימן השאלה "�". הקידוד
 // שלנו תקין; הפנייה ישירה ליעד של ההפניה פשוט מדלגת על השלב שמקלקל.
-const buildWhatsAppSendUrl =(waPhone, text) =>
+const buildWhatsAppSendUrl = (waPhone, text) =>
   `https://api.whatsapp.com/send?phone=${waPhone}&text=${encodeURIComponent(text)}`;
 
 // "שם, טלפון, כמות" בכל שורה. טלפון וכמות אופציונליים.
