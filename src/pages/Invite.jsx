@@ -1442,6 +1442,13 @@ const Invite = () => {
                     </>
                   )}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setShowRsvp(false)}
+                  className="w-full mt-3 py-2 text-sm font-bold text-clay-muted underline underline-offset-4"
+                >
+                  ביטול
+                </button>
               </form>
             )}
 
@@ -1487,6 +1494,14 @@ const Invite = () => {
                     )}
                   </button>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setShowRsvp(false)}
+                  disabled={isSubmitting}
+                  className="w-full mt-3 py-2 text-sm font-bold text-clay-muted underline underline-offset-4 disabled:opacity-50"
+                >
+                  ביטול
+                </button>
               </div>
             )}
 
