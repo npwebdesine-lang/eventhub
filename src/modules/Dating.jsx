@@ -824,8 +824,7 @@ const Dating = () => {
         {/* Gallery tab — Tinder-style horizontal scroll cards */}
         {view === "gallery" && (
           <div
-            className="flex-1 overflow-x-auto flex gap-4 px-5 relative z-20 pb-12 snap-x snap-mandatory pt-2"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            className="flex-1 overflow-x-auto flex gap-4 px-5 relative z-20 pb-12 snap-x snap-mandatory pt-2 scrollbar-hide"
           >
             {profiles.length === 0 ? (
               <div className="w-full flex flex-col items-center justify-center mt-16 gap-4">

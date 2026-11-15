@@ -1093,8 +1093,7 @@ const Home = () => {
             <div>
               <div
                 ref={modulesCarouselRef}
-                className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2"
-                style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 scrollbar-hide"
                 onScroll={() => {
                   const el = modulesCarouselRef.current;
                   if (!el) return;

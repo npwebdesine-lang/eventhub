@@ -348,39 +348,46 @@ body {
   }
 }
 
-/* פס גלילה בסגנון Clay לגיליון אישור ההגעה. פס הגלילה של הדפדפן (אפור,
-   עם חיצים) נראה זר על המשטח הבהיר. כאן הוא דק, מעוגל ובצבע ידית הגרירה;
-   המסילה שקופה ומתקצרת בקצוות כדי לא לחתוך את הפינות המעוגלות. */
-.clay-scroll::-webkit-scrollbar {
+/* פס גלילה בסגנון Clay לכל האפליקציה. פס הגלילה של הדפדפן (אפור, עם חיצים)
+   נראה זר על המשטח הבהיר. כאן הוא דק, מעוגל ובצבע ידית הגרירה, והמסילה
+   שקופה. חל על כל אזור גלילה: החלון, מודאלים, רשימות וקרוסלות. */
+::-webkit-scrollbar {
   width: 10px;
+  height: 10px;
 }
 
-.clay-scroll::-webkit-scrollbar-track {
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
   background: transparent;
-  margin-block: 30px;
 }
 
-.clay-scroll::-webkit-scrollbar-thumb {
+::-webkit-scrollbar-thumb {
   background-color: #cfcabc;
   border: 3px solid transparent;
   border-radius: 999px;
   background-clip: padding-box;
 }
 
-.clay-scroll::-webkit-scrollbar-thumb:hover {
+::-webkit-scrollbar-thumb:hover {
   background-color: #b9b3a3;
 }
 
-.clay-scroll::-webkit-scrollbar-button {
+::-webkit-scrollbar-button {
   display: none;
   width: 0;
   height: 0;
 }
 
+/* בגיליונות עם פינות מעוגלות גדולות: המסילה מתקצרת בקצוות כדי לא לחתוך
+   את הפינות. */
+.clay-scroll::-webkit-scrollbar-track {
+  margin-block: 30px;
+}
+
 /* Firefox: אין ::-webkit-scrollbar. רק שם — בכרום, scrollbar-color מבטל את
    כל העיצוב שלמעלה ומחזיר פס סטנדרטי. */
 @supports not selector(::-webkit-scrollbar) {
-  .clay-scroll {
+  * {
     scrollbar-width: thin;
     scrollbar-color: #cfcabc transparent;
   }
