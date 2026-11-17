@@ -15,6 +15,7 @@ const Album = React.lazy(() => import("./pages/Album"));
 const Privacy = React.lazy(() => import("./pages/Privacy"));
 const Terms = React.lazy(() => import("./pages/Terms"));
 const RsvpLink = React.lazy(() => import("./pages/RsvpLink"));
+const InviteShortLink = React.lazy(() => import("./pages/InviteShortLink"));
 
 // ייבוא המודולים באופן עצל
 const Photos = React.lazy(() => import("./modules/Photos"));
@@ -52,6 +53,15 @@ function App() {
               element={
                 <ErrorBoundary>
                   <Invite />
+                </ErrorBoundary>
+              }
+            />
+            {/* הקישור הכללי הקצר להזמנה — מתפענח ל-/invite/:id */}
+            <Route
+              path="/i/:code"
+              element={
+                <ErrorBoundary>
+                  <InviteShortLink />
                 </ErrorBoundary>
               }
             />

@@ -47,5 +47,11 @@ export const decodeGuestCode = (code) => {
   }
 };
 
+// אותה אריזה משמשת גם לקישור ההזמנה הכללי של האירוע: /i/<code> במקום
+// /invite/<uuid>. מזהה האירוע ממילא גלוי בקישור הארוך, כך שאין כאן שינוי
+// בהרשאות — רק בקיצור.
+export const buildInviteLink = (origin, eventId) =>
+  `${origin}/i/${encodeGuestCode(eventId)}`;
+
 export const buildRsvpLink = (origin, guestId, status) =>
   `${origin}/r/${encodeGuestCode(guestId)}?s=${RSVP_LINK_STATUS[status]}`;

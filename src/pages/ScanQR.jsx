@@ -7,6 +7,7 @@ import gsap from "gsap";
 import { buttonPalette } from "../lib/colors";
 import { CLAY_INK_BUTTON, DEFAULT_PRIMARY } from "../lib/clay";
 import { useToast } from "../components/Toast";
+import { decodeGuestCode } from "../lib/rsvpLink";
 
 const ScanQR = () => {
   const navigate = useNavigate();
@@ -69,6 +70,9 @@ const ScanQR = () => {
         eventId = text.split("/event/")[1].split(/[?/#]/)[0];
       } else if (text.includes("/invite/")) {
         eventId = text.split("/invite/")[1].split(/[?/#]/)[0];
+        targetRoute = "invite";
+      } else if (text.includes("/i/")) {
+        eventId = decodeGuestCode(text.split("/i/")[1].split(/[?/#]/)[0]);
         targetRoute = "invite";
       } else if (text.length > 20) {
         eventId = text;

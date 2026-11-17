@@ -85,6 +85,7 @@ import {
 } from "../lib/clay";
 import { CLAY_PAGE_HEX } from "../lib/colors";
 import { isAllowedImageType } from "../lib/imageUtils";
+import { buildInviteLink } from "../lib/rsvpLink";
 
 const GALLERY_PAGE_SIZE = 60;
 
@@ -542,7 +543,7 @@ const Admin = () => {
     }
   };
   const copyInviteLink = async (eventId) => {
-    const url = `${window.location.origin}/invite/${eventId}`;
+    const url = buildInviteLink(window.location.origin, eventId);
     try {
       await navigator.clipboard.writeText(url);
       setCopiedInviteId(eventId);

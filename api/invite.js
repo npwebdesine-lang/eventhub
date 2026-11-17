@@ -187,6 +187,16 @@ export default async function handler(request, response) {
 
   let eventId = String(request.query?.id || "");
   const guestCode = String(request.query?.g || "");
+  // הקישור הכללי הקצר (/i/<code>): אותה אריזה, אבל של ה-UUID של האירוע
+  // עצמו — מפענחים ישירות, בלי RPC. UUID_RE בהמשך בודק את התוצאה.
+  const eventCode = String(request.query?.e || "");
+  if (!eventId && GUEST_CODE_RE.test(eventCode)) {
+    try {
+      eventId = decodeGuestCode(eventCode) || "";
+    } catch {
+      eventId = "";
+    }
+  }
   if (!eventId && GUEST_CODE_RE.test(guestCode)) {
     try {
       const guestId = decodeGuestCode(guestCode);

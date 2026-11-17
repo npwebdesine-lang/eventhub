@@ -10,6 +10,10 @@
       "destination": "/api/invite?id=:id"
     },
     {
+      "source": "/i/:code",
+      "destination": "/api/invite?e=:code"
+    },
+    {
       "source": "/r/:code",
       "destination": "/api/invite?g=:code"
     },
