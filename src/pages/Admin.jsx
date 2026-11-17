@@ -406,6 +406,8 @@ const Admin = () => {
         ...event.active_modules,
       },
       design_config: {
+        // שומר מפתחות שאין להם שדה בטופס (למשל og_title) — אחרת שמירה מוחקת אותם.
+        ...event.design_config,
         template: event.design_config?.template || "glass",
         colors: {
           primary: DEFAULT_PRIMARY,

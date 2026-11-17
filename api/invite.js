@@ -13,6 +13,7 @@
 // ה-UA שלו. כולם מקבלים את אותו עמוד.
 
 import { Buffer } from "node:buffer";
+import { createHash } from "node:crypto";
 
 const SUPABASE_URL =
   process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || "";
@@ -144,7 +145,7 @@ async function loadShell() {
   }
 }
 
-const buildTags = ({ title, description, image, url }) => {
+const buildTags = ({ title, description, image, fallbackImage, url }) => {
   const tags = [
     `<meta property="og:type" content="website" />`,
     `<meta property="og:site_name" content="Eventick" />`,
@@ -163,9 +164,15 @@ const buildTags = ({ title, description, image, url }) => {
     tags.push(
       `<meta property="og:image" content="${escapeHtml(image)}" />`,
       `<meta property="og:image:secure_url" content="${escapeHtml(image)}" />`,
+      `<meta property="og:image:type" content="image/jpeg" />`,
+      `<meta property="og:image:width" content="1200" />`,
+      `<meta property="og:image:height" content="630" />`,
       `<meta property="og:image:alt" content="${escapeHtml(title)}" />`,
       `<meta name="twitter:image" content="${escapeHtml(image)}" />`,
     );
+  } else {
+    // בלי תמונת הזמנה: האייקון, בלי מידות 1200x630 שהוא לא עומד בהן.
+    tags.push(`<meta property="og:image" content="${escapeHtml(fallbackImage)}" />`);
   }
   return tags.join("\n    ");
 };
@@ -233,12 +240,23 @@ export default async function handler(request, response) {
       ? ". לחצו לפרטים ואישור הגעה!"
       : "לחצו לפרטים ואישור הגעה!");
 
-  const image = event.design_config?.invite_image || `${origin}/icon-512.png`;
+  // כותרת מזמינה במקום שם האירוע היבש. אפשר לדרוס פר-אירוע דרך
+  // design_config.og_title (למשל "בואו לאשר הגעה לחתונה של נתיב ואוראל").
+  const customTitle = String(event.design_config?.og_title || "").trim();
+  const title = customTitle || `בואו לאשר הגעה ל${eventName}`;
+
+  // התמונה המקורית לרוב כבדה מדי לוואטסאפ; api/og-image מגיש גרסה של
+  // 1200x630. v משתנה כשהתמונה מוחלפת, כדי לעקוף את המטמון.
+  const inviteImage = event.design_config?.invite_image;
+  const image = inviteImage
+    ? `${origin}/api/og-image?id=${eventId}&v=${createHash("sha1").update(String(inviteImage)).digest("hex").slice(0, 10)}`
+    : null;
 
   const injected = buildTags({
-    title: eventName,
+    title,
     description,
     image,
+    fallbackImage: `${origin}/icon-512.png`,
     url: canonical,
   });
 
