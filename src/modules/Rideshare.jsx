@@ -17,12 +17,17 @@ import {
   Phone,
 } from "lucide-react";
 import gsap from "gsap";
-import { CLAY_CARD, CLAY_FIELD, CLAY_INSET, DEFAULT_PRIMARY, clayButtonStyle } from "../lib/clay";
+import {
+  CLAY_CARD,
+  CLAY_FIELD,
+  CLAY_INSET,
+  DEFAULT_PRIMARY,
+  clayButtonStyle,
+} from "../lib/clay";
 import { accentOn } from "../lib/colors";
 import { useEventBackdrop } from "../lib/useEventBackdrop";
 
 const formatDialer = (phone) => `tel:${phone.replace(/\D/g, "")}`;
-
 
 // Improved Ride Card — sculpted in clay
 const RideCard = ({ ride, primaryColor }) => {
@@ -280,15 +285,14 @@ const Rideshare = () => {
 
   if (loading || !eventData) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center bg-clay-gradient"
-      >
+      <div className="min-h-screen flex items-center justify-center bg-clay-gradient">
         <Loader2 className="animate-spin text-clay-muted" size={48} />
       </div>
     );
   }
 
-  const primaryColor = eventData.design_config?.colors?.primary || DEFAULT_PRIMARY;
+  const primaryColor =
+    eventData.design_config?.colors?.primary || DEFAULT_PRIMARY;
 
   // ---- Welcome ----
   if (step === "welcome") {
@@ -647,10 +651,7 @@ const Rideshare = () => {
 
   // ---- Board ----
   return (
-    <div
-      className="min-h-screen font-sans pb-12 bg-clay-gradient"
-      dir="rtl"
-    >
+    <div className="min-h-screen font-sans pb-12 bg-clay-gradient" dir="rtl">
       <div className="pt-[calc(2.5rem+env(safe-area-inset-top))] pb-4 px-6 relative z-10 flex justify-between items-center max-w-md mx-auto w-full">
         <button
           onClick={() => navigate(-1)}

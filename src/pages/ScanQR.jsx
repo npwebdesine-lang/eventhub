@@ -122,20 +122,13 @@ const ScanQR = () => {
         <div className="w-24 h-24 rounded-full flex items-center justify-center mb-8 welcome-text bg-white/20 shadow-[inset_2px_2px_5px_rgba(255,255,255,0.35),inset_-2px_-2px_5px_rgba(0,0,0,0.12),6px_6px_16px_rgba(0,0,0,0.2)]">
           <PartyPopper size={48} />
         </div>
-        <p
-          className="welcome-text font-bold tracking-widest uppercase text-sm mb-3"
-        >
+        <p className="welcome-text font-bold tracking-widest uppercase text-sm mb-3">
           ברוכים הבאים לאירוע של
         </p>
-        <h1
-          className="welcome-text text-5xl md:text-6xl font-black mb-12 leading-tight drop-shadow-md"
-        >
+        <h1 className="welcome-text text-5xl md:text-6xl font-black mb-12 leading-tight drop-shadow-md">
           {successEvent.name}
         </h1>
-        <Loader2
-          className="welcome-text animate-spin opacity-60"
-          size={40}
-        />
+        <Loader2 className="welcome-text animate-spin opacity-60" size={40} />
       </div>
     );
   }

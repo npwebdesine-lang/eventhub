@@ -6,7 +6,10 @@ const Privacy = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-clay-page p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:p-12 md:pt-[calc(3rem+env(safe-area-inset-top))] font-sans" dir="rtl">
+    <div
+      className="min-h-screen bg-clay-page p-6 pt-[calc(1.5rem+env(safe-area-inset-top))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:p-12 md:pt-[calc(3rem+env(safe-area-inset-top))] font-sans"
+      dir="rtl"
+    >
       <div className="max-w-4xl mx-auto bg-clay-surface p-8 md:p-12 rounded-clay shadow-clay">
         <button
           onClick={() => navigate(-1)}

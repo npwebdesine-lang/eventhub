@@ -171,7 +171,10 @@ const PhotoMarqueeCard = ({
 
       {/* Bottom */}
       <div className="p-6 text-center">
-        <h3 className="font-black text-lg mb-1" style={{ color: accentOn(primaryColor) }}>
+        <h3
+          className="font-black text-lg mb-1"
+          style={{ color: accentOn(primaryColor) }}
+        >
           כל אחד צלם
         </h3>
         <p className="text-clay-muted text-sm mb-5 font-medium">
@@ -736,11 +739,7 @@ const Home = () => {
     try {
       // מסננים לפי השם כפי שהוא רשום בהושבה ולא לפי מה שהאורח הקליד — בהתאמה
       // חלקית השניים שונים, והאורח היה מופיע ברשימת השותפים של עצמו.
-      const selfName = (
-        myTable?.seatedName ||
-        safeGetItem("guest_name") ||
-        ""
-      )
+      const selfName = (myTable?.seatedName || safeGetItem("guest_name") || "")
         .trim()
         .toLowerCase();
       const { data, error } = await supabase

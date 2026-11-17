@@ -4,11 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import QRCodeStyling from "qr-code-styling";
 import { Capacitor } from "@capacitor/core";
 import { DEFAULT_PRIMARY } from "../lib/clay";
-import {
-  POSTER_SIZES,
-  posterQrColor,
-  printQrPoster,
-} from "../lib/qrPoster";
+import { POSTER_SIZES, posterQrColor, printQrPoster } from "../lib/qrPoster";
 import {
   DownloadCloud,
   Image as ImageIcon,
@@ -293,7 +289,10 @@ const AdminQRGenerator = ({
           </p>
         )}
         {posterError && (
-          <p role="alert" className="text-sm font-bold text-rose-700 text-center">
+          <p
+            role="alert"
+            className="text-sm font-bold text-rose-700 text-center"
+          >
             {posterError}
           </p>
         )}

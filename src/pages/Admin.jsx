@@ -143,7 +143,9 @@ const storagePathFromUrl = (bucket, publicUrl) => {
   const prefix = `/storage/v1/object/public/${bucket}/`;
   const start = publicUrl?.indexOf(prefix) ?? -1;
   if (start < 0) return null;
-  return decodeURIComponent(publicUrl.slice(start + prefix.length).split("?")[0]);
+  return decodeURIComponent(
+    publicUrl.slice(start + prefix.length).split("?")[0],
+  );
 };
 
 // כתובת הקובץ נכתבת על ידי האורח, ולכן לא סומכים עליה כנתיב למחיקה.
@@ -291,28 +293,29 @@ const Admin = () => {
     if (selectedEvent && !selectedEvent.isNew) {
       let isMounted = true;
       const fetchStats = async () => {
-        const [guestTotals, photos, dating, reports, blessings] = await Promise.all([
-          // event_guests הוא מקור האמת היחיד למוזמנים — גם רשימה מיובאת מראש
-          // וגם הרשמות מדף ההזמנה. rsvps מכיל רק היסטוריה מלפני האיחוד.
-          fetchConfirmedGuestTotals(selectedEvent.id),
-          supabase
-            .from("photos")
-            .select("id", { count: "exact", head: true })
-            .eq("event_id", selectedEvent.id),
-          supabase
-            .from("dating_profiles")
-            .select("id", { count: "exact", head: true })
-            .eq("event_id", selectedEvent.id),
-          supabase
-            .from("reports")
-            .select("id", { count: "exact", head: true })
-            .eq("event_id", selectedEvent.id)
-            .eq("status", "pending"),
-          supabase
-            .from("blessings")
-            .select("id", { count: "exact", head: true })
-            .eq("event_id", selectedEvent.id),
-        ]);
+        const [guestTotals, photos, dating, reports, blessings] =
+          await Promise.all([
+            // event_guests הוא מקור האמת היחיד למוזמנים — גם רשימה מיובאת מראש
+            // וגם הרשמות מדף ההזמנה. rsvps מכיל רק היסטוריה מלפני האיחוד.
+            fetchConfirmedGuestTotals(selectedEvent.id),
+            supabase
+              .from("photos")
+              .select("id", { count: "exact", head: true })
+              .eq("event_id", selectedEvent.id),
+            supabase
+              .from("dating_profiles")
+              .select("id", { count: "exact", head: true })
+              .eq("event_id", selectedEvent.id),
+            supabase
+              .from("reports")
+              .select("id", { count: "exact", head: true })
+              .eq("event_id", selectedEvent.id)
+              .eq("status", "pending"),
+            supabase
+              .from("blessings")
+              .select("id", { count: "exact", head: true })
+              .eq("event_id", selectedEvent.id),
+          ]);
         // תשובה מאוחרת של האירוע הקודם לא דורסת את המונים של הנוכחי.
         if (!isMounted) return;
         setEventStats({
@@ -667,9 +670,7 @@ const Admin = () => {
     const label = isVideoMedia(photo) ? "הסרטון" : "התמונה";
     if (!window.confirm(`למחוק את ${label} של ${photo.guest_name}?`)) return;
     try {
-      await mustAffectRows(
-        supabase.from("photos").delete().eq("id", photo.id),
-      );
+      await mustAffectRows(supabase.from("photos").delete().eq("id", photo.id));
     } catch (error) {
       alert(error.message);
       return;
@@ -861,9 +862,7 @@ const Admin = () => {
   const handleDeleteGuest = async (guestId, name) => {
     if (!window.confirm(`למחוק את ${name}?`)) return;
     try {
-      await mustAffectRows(
-        supabase.from("seating").delete().eq("id", guestId),
-      );
+      await mustAffectRows(supabase.from("seating").delete().eq("id", guestId));
       setSeatingGuests((prev) => prev.filter((g) => g.id !== guestId));
       setSavedGuestsCount((prev) => prev - 1);
     } catch (error) {
@@ -1078,7 +1077,9 @@ const Admin = () => {
       const [matchesRes, profilesRes] = await Promise.all([
         supabase
           .from("icebreaker_matches")
-          .select("id, guest1_id, guest2_id, mission_text, photo_url, completed_at")
+          .select(
+            "id, guest1_id, guest2_id, mission_text, photo_url, completed_at",
+          )
           .eq("event_id", eventId)
           .eq("status", "completed")
           .order("completed_at", { ascending: false }),
@@ -1297,7 +1298,10 @@ const Admin = () => {
       await mustAffectRows(
         supabase
           .from("blessings")
-          .update({ guest_name: editBlessingName, message: editBlessingMessage })
+          .update({
+            guest_name: editBlessingName,
+            message: editBlessingMessage,
+          })
           .eq("id", blessingId),
       );
 
@@ -1377,7 +1381,10 @@ const Admin = () => {
   }
 
   return (
-    <div className="min-h-screen bg-clay-page p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] md:p-8" dir="rtl">
+    <div
+      className="min-h-screen bg-clay-page p-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] md:p-8"
+      dir="rtl"
+    >
       {!selectedEvent && (
         <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in">
           <div className="flex flex-col md:flex-row justify-between items-center bg-clay-surface p-8 rounded-[2rem] shadow-clay-sm gap-6">
@@ -1762,8 +1769,8 @@ const Admin = () => {
                       צבע רקע (Background)
                     </label>
                     <p className="text-xs text-clay-muted">
-                      צובע את רקע דפי האורחים. צבע כהה מוחל כגוון בהיר יותר,
-                      כדי שהטקסט יישאר קריא.
+                      צובע את רקע דפי האורחים. צבע כהה מוחל כגוון בהיר יותר, כדי
+                      שהטקסט יישאר קריא.
                     </p>
                     <div className="flex items-center gap-3">
                       <div
@@ -2844,7 +2851,9 @@ const Admin = () => {
                         return (
                           <tr
                             key={row.rowNumber}
-                            className={invalid ? "bg-rose-50" : "bg-clay-surface"}
+                            className={
+                              invalid ? "bg-rose-50" : "bg-clay-surface"
+                            }
                           >
                             <td className="rounded-r-2xl px-3 py-2.5 text-xs font-bold text-clay-muted">
                               {row.rowNumber}
@@ -3262,7 +3271,9 @@ const Admin = () => {
                         {entry.completed_at && (
                           <p className="text-xs text-clay-muted font-medium">
                             הושלמה:{" "}
-                            {new Date(entry.completed_at).toLocaleString("he-IL")}
+                            {new Date(entry.completed_at).toLocaleString(
+                              "he-IL",
+                            )}
                           </p>
                         )}
                         <button

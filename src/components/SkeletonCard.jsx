@@ -37,7 +37,10 @@ export const ProfileCardSkeleton = ({ count = 2 }) => (
 export const ModuleGridSkeleton = ({ count = 4 }) => (
   <div className="grid grid-cols-2 gap-4">
     {Array.from({ length: count }).map((_, i) => (
-      <div key={i} className="animate-pulse bg-clay-shade rounded-[2rem] h-36" />
+      <div
+        key={i}
+        className="animate-pulse bg-clay-shade rounded-[2rem] h-36"
+      />
     ))}
   </div>
 );

@@ -53,7 +53,6 @@ const MAX_VIDEOS_PER_GUEST = 2;
 const PAGE_SIZE = 12;
 const PHOTO_COLUMNS = "id, image_url, guest_name, created_at, media_type";
 
-
 // Relative time helper
 const timeAgo = (dateStr) => {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -65,12 +64,21 @@ const timeAgo = (dateStr) => {
   return `לפני ${Math.floor(h / 24)} ימים`;
 };
 
-const UploadChoice = ({ icon, label, accept, capture, onChange, colorStyle }) => {
+const UploadChoice = ({
+  icon,
+  label,
+  accept,
+  capture,
+  onChange,
+  colorStyle,
+}) => {
   const Icon = icon;
   return (
     <label
       className={`min-h-14 px-2 py-3 rounded-full flex justify-center items-center gap-2 text-sm font-black leading-tight text-center cursor-pointer active:scale-[0.97] ${
-        colorStyle ? "text-white transition-all" : `text-slate-700 ${CLAY_BUTTON}`
+        colorStyle
+          ? "text-white transition-all"
+          : `text-slate-700 ${CLAY_BUTTON}`
       }`}
       style={colorStyle}
     >
@@ -134,10 +142,7 @@ const Photos = () => {
     async ({ reset = false } = {}) => {
       if (!eventId) return true;
       const query = orderNewestFirst(
-        supabase
-          .from("photos")
-          .select(PHOTO_COLUMNS)
-          .eq("event_id", eventId),
+        supabase.from("photos").select(PHOTO_COLUMNS).eq("event_id", eventId),
       ).limit(PAGE_SIZE);
       const { data, error } = await (reset
         ? query
@@ -454,7 +459,9 @@ const Photos = () => {
   // supabase-js לא זורק — השגיאה חוזרת בתוצאה. בלי הבדיקה האורח ראה "הדיווח
   // התקבל" גם כשהדיווח מעולם לא נשמר.
   const handleReport = async (photo) => {
-    const label = isVideoMedia(photo) ? "הסרטון הזה כפוגעני" : "התמונה הזו כפוגענית";
+    const label = isVideoMedia(photo)
+      ? "הסרטון הזה כפוגעני"
+      : "התמונה הזו כפוגענית";
     if (!window.confirm(`לדווח על ${label}?`)) return;
     try {
       const { error } = await supabase.from("reports").insert([
@@ -512,15 +519,14 @@ const Photos = () => {
 
   if (loading || !eventData) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center bg-clay-gradient"
-      >
+      <div className="min-h-screen flex items-center justify-center bg-clay-gradient">
         <Loader2 className="animate-spin text-clay-muted" size={56} />
       </div>
     );
   }
 
-  const primaryColor = eventData.design_config?.colors?.primary || DEFAULT_PRIMARY;
+  const primaryColor =
+    eventData.design_config?.colors?.primary || DEFAULT_PRIMARY;
   const canUploadPhoto = myPhotoCount < MAX_PHOTOS_PER_GUEST;
   const canUploadVideo =
     ENABLE_VIDEO_UPLOAD && myVideoCount < MAX_VIDEOS_PER_GUEST;
@@ -528,10 +534,7 @@ const Photos = () => {
   const quotaColor = (isFull) => (isFull ? "#be123c" : accentOn(primaryColor));
 
   return (
-    <div
-      className="min-h-screen font-sans pb-20 bg-clay-gradient"
-      dir="rtl"
-    >
+    <div className="min-h-screen font-sans pb-20 bg-clay-gradient" dir="rtl">
       {/* Header — clay surface, title + back */}
       <div className="pt-[calc(3.5rem+env(safe-area-inset-top))] pb-6 px-5 relative z-10 max-w-md mx-auto">
         <div className="flex items-center justify-between">
@@ -587,7 +590,8 @@ const Photos = () => {
                 className="font-black text-slate-700 text-xl"
                 style={{ fontFamily: "'Assistant', sans-serif" }}
               >
-                {uploadSuccess === "video" ? "הסרטון הועלה!" : "התמונה הועלתה!"} ✨
+                {uploadSuccess === "video" ? "הסרטון הועלה!" : "התמונה הועלתה!"}{" "}
+                ✨
               </h3>
               <p className="text-clay-muted font-medium text-sm mt-2">
                 נוספה בהצלחה לאלבום המשותף
@@ -596,7 +600,10 @@ const Photos = () => {
           ) : (
             <>
               <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5 bg-clay-surface shadow-clay-inset-deep">
-                <UploadCloud size={32} style={{ color: accentOn(primaryColor) }} />
+                <UploadCloud
+                  size={32}
+                  style={{ color: accentOn(primaryColor) }}
+                />
               </div>
               <h2
                 className="text-2xl font-black text-slate-700 mb-2"
@@ -697,7 +704,8 @@ const Photos = () => {
                   )}
                   {ENABLE_VIDEO_UPLOAD && (
                     <p className="text-clay-muted font-medium text-xs">
-                      סרטון: עד {MAX_VIDEO_SECONDS} שניות ועד {MAX_VIDEO_SIZE_MB}MB
+                      סרטון: עד {MAX_VIDEO_SECONDS} שניות ועד{" "}
+                      {MAX_VIDEO_SIZE_MB}MB
                     </p>
                   )}
                 </div>
@@ -768,39 +776,43 @@ const Photos = () => {
                     />
                   ) : (
                     <>
-                        <img
-                          src={photo.image_url}
-                          alt={`תמונה של ${photo.guest_name}`}
-                          className="w-full object-cover rounded-clay-field transition-all duration-700 group-hover:scale-105"
-                          loading="lazy"
-                          style={{
-                            aspectRatio:
-                              idx % 3 === 0 ? "4/5" : idx % 3 === 1 ? "1/1" : "4/3",
-                            boxShadow: "inset 2px 2px 6px rgba(0,0,0,0.15)",
-                          }}
-                          onError={(e) => {
-                            e.target.style.minHeight = "120px";
-                          }}
-                        />
-                        {/* Overlay */}
-                        <div className="absolute inset-2 rounded-clay-field bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
-                          <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                            <div className="flex items-center justify-between mb-1">
-                              <p className="text-white text-sm font-black truncate flex items-center gap-1.5">
-                                <Heart
-                                  size={12}
-                                  className="fill-current"
-                                  style={{ color: accentOn(primaryColor) }}
-                                />
-                                {photo.guest_name}
-                              </p>
-                              <ZoomIn size={14} className="text-white/80" />
-                            </div>
-                            <p className="text-white/60 text-[11px] font-medium">
-                              {timeAgo(photo.created_at)}
+                      <img
+                        src={photo.image_url}
+                        alt={`תמונה של ${photo.guest_name}`}
+                        className="w-full object-cover rounded-clay-field transition-all duration-700 group-hover:scale-105"
+                        loading="lazy"
+                        style={{
+                          aspectRatio:
+                            idx % 3 === 0
+                              ? "4/5"
+                              : idx % 3 === 1
+                                ? "1/1"
+                                : "4/3",
+                          boxShadow: "inset 2px 2px 6px rgba(0,0,0,0.15)",
+                        }}
+                        onError={(e) => {
+                          e.target.style.minHeight = "120px";
+                        }}
+                      />
+                      {/* Overlay */}
+                      <div className="absolute inset-2 rounded-clay-field bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
+                        <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-white text-sm font-black truncate flex items-center gap-1.5">
+                              <Heart
+                                size={12}
+                                className="fill-current"
+                                style={{ color: accentOn(primaryColor) }}
+                              />
+                              {photo.guest_name}
                             </p>
+                            <ZoomIn size={14} className="text-white/80" />
                           </div>
+                          <p className="text-white/60 text-[11px] font-medium">
+                            {timeAgo(photo.created_at)}
+                          </p>
                         </div>
+                      </div>
                     </>
                   )}
                 </div>

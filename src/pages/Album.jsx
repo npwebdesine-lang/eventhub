@@ -236,9 +236,7 @@ const Album = () => {
 
   if (loading)
     return (
-      <div
-        className="min-h-screen flex flex-col items-center justify-center bg-clay-gradient"
-      >
+      <div className="min-h-screen flex flex-col items-center justify-center bg-clay-gradient">
         <div className="relative">
           <Loader2 className="animate-spin text-clay-muted mb-6" size={56} />
           <div
@@ -253,9 +251,7 @@ const Album = () => {
     );
   if (!eventData)
     return (
-      <div
-        className="min-h-screen flex items-center justify-center text-slate-700 text-2xl font-black bg-clay-gradient"
-      >
+      <div className="min-h-screen flex items-center justify-center text-slate-700 text-2xl font-black bg-clay-gradient">
         האירוע לא נמצא 💔
       </div>
     );
@@ -270,7 +266,8 @@ const Album = () => {
   };
 
   // משיכת צבע המיתוג מהאירוע (המשטח קבוע בסגנון חימר)
-  const primaryColor = eventData.design_config?.colors?.primary || DEFAULT_PRIMARY;
+  const primaryColor =
+    eventData.design_config?.colors?.primary || DEFAULT_PRIMARY;
 
   return (
     <div
@@ -347,7 +344,9 @@ const Album = () => {
                   ? "bg-white shadow-[4px_4px_10px_rgba(0,0,0,0.14)] scale-105"
                   : "hover:bg-[var(--hero-chip)]"
               }`}
-              style={activeTab === "photos" ? { color: accentOn(primaryColor) } : {}}
+              style={
+                activeTab === "photos" ? { color: accentOn(primaryColor) } : {}
+              }
             >
               <ImageIcon size={18} /> תמונות
             </button>
@@ -358,7 +357,11 @@ const Album = () => {
                   ? "bg-white shadow-[4px_4px_10px_rgba(0,0,0,0.14)] scale-105"
                   : "hover:bg-[var(--hero-chip)]"
               }`}
-              style={activeTab === "blessings" ? { color: accentOn(primaryColor) } : {}}
+              style={
+                activeTab === "blessings"
+                  ? { color: accentOn(primaryColor) }
+                  : {}
+              }
             >
               <MessageCircle size={18} /> ברכות
             </button>
@@ -402,31 +405,31 @@ const Album = () => {
                     />
                   ) : (
                     <>
-                        <img
-                          src={photo.image_url}
-                          alt={`Photo by ${photo.guest_name}`}
-                          className="w-full h-auto object-cover transition-all duration-700 group-hover:scale-[1.03] bg-clay-well rounded-[18px] shadow-[inset_2px_2px_6px_rgba(0,0,0,0.2)]"
-                          loading="lazy"
-                          decoding="async"
-                        />
-                        <div className="absolute inset-[7px] rounded-[18px] bg-gradient-to-t from-slate-950/95 via-slate-900/30 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-6">
-                          <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                            <p className="text-white/70 text-[11px] font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
-                              <Heart
-                                size={12}
-                                className="fill-rose-500"
-                                style={{ color: accentOn(primaryColor) }}
-                              />{" "}
-                              צולם ע"י
-                            </p>
-                            <p
-                              className="text-white text-lg font-black tracking-tight"
-                              style={{ fontFamily: "'Assistant', sans-serif" }}
-                            >
-                              {photo.guest_name}
-                            </p>
-                          </div>
+                      <img
+                        src={photo.image_url}
+                        alt={`Photo by ${photo.guest_name}`}
+                        className="w-full h-auto object-cover transition-all duration-700 group-hover:scale-[1.03] bg-clay-well rounded-[18px] shadow-[inset_2px_2px_6px_rgba(0,0,0,0.2)]"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                      <div className="absolute inset-[7px] rounded-[18px] bg-gradient-to-t from-slate-950/95 via-slate-900/30 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-6">
+                        <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                          <p className="text-white/70 text-[11px] font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
+                            <Heart
+                              size={12}
+                              className="fill-rose-500"
+                              style={{ color: accentOn(primaryColor) }}
+                            />{" "}
+                            צולם ע"י
+                          </p>
+                          <p
+                            className="text-white text-lg font-black tracking-tight"
+                            style={{ fontFamily: "'Assistant', sans-serif" }}
+                          >
+                            {photo.guest_name}
+                          </p>
                         </div>
+                      </div>
                     </>
                   )}
                 </div>

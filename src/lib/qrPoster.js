@@ -53,7 +53,8 @@ const buildSprig = () => {
 
   const leaves = [0.14, 0.26, 0.38, 0.5, 0.62, 0.74, 0.86, 1]
     .map((t, index) => {
-      const tangent = (Math.atan2(slopeAt(t, 1), slopeAt(t, 0)) * 180) / Math.PI;
+      const tangent =
+        (Math.atan2(slopeAt(t, 1), slopeAt(t, 0)) * 180) / Math.PI;
       const isTip = t === 1;
       const angle = isTip ? tangent : tangent + (index % 2 ? 42 : -42);
       const x = pointAt(t, 0).toFixed(1);

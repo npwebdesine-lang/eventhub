@@ -20,7 +20,12 @@ import {
   Users,
 } from "lucide-react";
 import gsap from "gsap";
-import { CLAY_FIELD, CLAY_RAISED, DEFAULT_PRIMARY, clayButtonStyle } from "../lib/clay";
+import {
+  CLAY_FIELD,
+  CLAY_RAISED,
+  DEFAULT_PRIMARY,
+  clayButtonStyle,
+} from "../lib/clay";
 import { accentOn } from "../lib/colors";
 import { useEventBackdrop } from "../lib/useEventBackdrop";
 
@@ -61,7 +66,6 @@ const mergeWithPending = (prev, serverRows) => {
     next.every((message, index) => message.id === prev[index].id);
   return unchanged ? prev : next;
 };
-
 
 const Dating = () => {
   const [searchParams] = useSearchParams();
@@ -111,61 +115,65 @@ const Dating = () => {
   const [uploading, setUploading] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
-  const loadGalleryData = useCallback(async (me, isActive = () => true) => {
-    const blockedUsers = blockedUsersRef.current;
-    let query = supabase
-      .from("dating_profiles")
-      .select(
-        "id, guest_id, name, age, gender, seeking, connection, location, bio, photo_url",
-      )
-      .eq("event_id", eventId)
-      .neq("guest_id", guestId)
-      .order("created_at", { ascending: false })
-      .limit(PROFILES_PAGE);
+  const loadGalleryData = useCallback(
+    async (me, isActive = () => true) => {
+      const blockedUsers = blockedUsersRef.current;
+      let query = supabase
+        .from("dating_profiles")
+        .select(
+          "id, guest_id, name, age, gender, seeking, connection, location, bio, photo_url",
+        )
+        .eq("event_id", eventId)
+        .neq("guest_id", guestId)
+        .order("created_at", { ascending: false })
+        .limit(PROFILES_PAGE);
 
-    if (me.seeking !== "הכל") query = query.eq("gender", me.seeking);
-    const { data: others, error: othersError } = await query;
+      if (me.seeking !== "הכל") query = query.eq("gender", me.seeking);
+      const { data: others, error: othersError } = await query;
 
-    if (othersError) {
-      console.error("Error loading gallery data:", othersError);
-    }
+      if (othersError) {
+        console.error("Error loading gallery data:", othersError);
+      }
 
-    const matched = (others || []).filter(
-      (p) =>
-        (p.seeking === me.gender || p.seeking === "הכל") &&
-        !blockedUsers.includes(p.guest_id),
-    );
-    if (isActive()) setProfiles(matched);
-
-    const { data: msgs, error: msgsError } = await supabase
-      .from("dating_messages")
-      .select("id, sender_id, receiver_id, message, is_read, created_at")
-      .eq("event_id", eventId)
-      .or(`sender_id.eq.${guestId},receiver_id.eq.${guestId}`)
-      .order("created_at", { ascending: false })
-      .limit(MESSAGES_LIMIT);
-
-    if (msgsError) {
-      console.error("Error loading messages:", msgsError);
-    }
-
-    if (msgs && isActive()) {
-      const historyIds = new Set();
-      const unreads = {};
-      msgs.forEach((m) => {
-        const otherId = m.sender_id === guestId ? m.receiver_id : m.sender_id;
-        historyIds.add(otherId);
-        if (m.receiver_id === guestId && !m.is_read) {
-          unreads[m.sender_id] = (unreads[m.sender_id] || 0) + 1;
-        }
-      });
-      setUnreadCounts(unreads);
-      const historyProfiles = (others || []).filter(
-        (p) => historyIds.has(p.guest_id) && !blockedUsers.includes(p.guest_id),
+      const matched = (others || []).filter(
+        (p) =>
+          (p.seeking === me.gender || p.seeking === "הכל") &&
+          !blockedUsers.includes(p.guest_id),
       );
-      setChatHistory(historyProfiles);
-    }
-  }, [eventId, guestId]);
+      if (isActive()) setProfiles(matched);
+
+      const { data: msgs, error: msgsError } = await supabase
+        .from("dating_messages")
+        .select("id, sender_id, receiver_id, message, is_read, created_at")
+        .eq("event_id", eventId)
+        .or(`sender_id.eq.${guestId},receiver_id.eq.${guestId}`)
+        .order("created_at", { ascending: false })
+        .limit(MESSAGES_LIMIT);
+
+      if (msgsError) {
+        console.error("Error loading messages:", msgsError);
+      }
+
+      if (msgs && isActive()) {
+        const historyIds = new Set();
+        const unreads = {};
+        msgs.forEach((m) => {
+          const otherId = m.sender_id === guestId ? m.receiver_id : m.sender_id;
+          historyIds.add(otherId);
+          if (m.receiver_id === guestId && !m.is_read) {
+            unreads[m.sender_id] = (unreads[m.sender_id] || 0) + 1;
+          }
+        });
+        setUnreadCounts(unreads);
+        const historyProfiles = (others || []).filter(
+          (p) =>
+            historyIds.has(p.guest_id) && !blockedUsers.includes(p.guest_id),
+        );
+        setChatHistory(historyProfiles);
+      }
+    },
+    [eventId, guestId],
+  );
 
   // Initial load
   useEffect(() => {
@@ -486,15 +494,14 @@ const Dating = () => {
   // ---- Render guards ----
   if (view === "loading" || !eventData) {
     return (
-      <div
-        className="min-h-screen flex justify-center items-center bg-clay-gradient"
-      >
+      <div className="min-h-screen flex justify-center items-center bg-clay-gradient">
         <Loader2 className="animate-spin text-rose-400" size={48} />
       </div>
     );
   }
 
-  const primaryColor = eventData.design_config?.colors?.primary || DEFAULT_PRIMARY;
+  const primaryColor =
+    eventData.design_config?.colors?.primary || DEFAULT_PRIMARY;
 
   // ---- Registration ----
   if (view === "register") {
@@ -823,9 +830,7 @@ const Dating = () => {
 
         {/* Gallery tab — Tinder-style horizontal scroll cards */}
         {view === "gallery" && (
-          <div
-            className="flex-1 overflow-x-auto flex gap-4 px-5 relative z-20 pb-12 snap-x snap-mandatory pt-2 scrollbar-hide"
-          >
+          <div className="flex-1 overflow-x-auto flex gap-4 px-5 relative z-20 pb-12 snap-x snap-mandatory pt-2 scrollbar-hide">
             {profiles.length === 0 ? (
               <div className="w-full flex flex-col items-center justify-center mt-16 gap-4">
                 <div
@@ -928,7 +933,9 @@ const Dating = () => {
         {view === "chatList" && (
           <div className="flex-1 px-5 relative z-20 space-y-3 max-w-md mx-auto w-full pt-2">
             {chatHistory.length === 0 ? (
-              <div className={`text-center py-16 rounded-[2rem] ${CLAY_RAISED}`}>
+              <div
+                className={`text-center py-16 rounded-[2rem] ${CLAY_RAISED}`}
+              >
                 <MessageSquare
                   size={48}
                   className="mx-auto mb-4 text-slate-300"
@@ -1092,7 +1099,10 @@ const Dating = () => {
         </div>
 
         {/* Input */}
-        <form onSubmit={sendMessage} className="p-4 flex gap-3 shrink-0 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+        <form
+          onSubmit={sendMessage}
+          className="p-4 flex gap-3 shrink-0 pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
+        >
           <input
             type="text"
             value={newMessage}

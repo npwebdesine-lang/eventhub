@@ -21,7 +21,6 @@ import { CLAY_FIELD, DEFAULT_PRIMARY, clayButtonStyle } from "../lib/clay";
 import { accentOn } from "../lib/colors";
 import { useEventBackdrop } from "../lib/useEventBackdrop";
 
-
 const BlessingModule = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -190,7 +189,8 @@ const BlessingModule = () => {
     );
   }
 
-  const primaryColor = eventData?.design_config?.colors?.primary || DEFAULT_PRIMARY;
+  const primaryColor =
+    eventData?.design_config?.colors?.primary || DEFAULT_PRIMARY;
 
   return (
     <div
@@ -249,7 +249,10 @@ const BlessingModule = () => {
               }}
             >
               <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 bg-clay-surface shadow-clay-inset-deep">
-                <CheckCircle2 size={48} style={{ color: accentOn(primaryColor) }} />
+                <CheckCircle2
+                  size={48}
+                  style={{ color: accentOn(primaryColor) }}
+                />
               </div>
               <h3
                 className="text-3xl font-black text-slate-700 mb-3"
@@ -258,8 +261,7 @@ const BlessingModule = () => {
                 הברכה נשלחה! ✨
               </h3>
               <p className="text-slate-600 font-medium text-sm mb-8 px-4 leading-relaxed">
-                המילים המרגשות שלך צורפו לספר הברכות של{" "}
-                {eventData?.name || ""}.
+                המילים המרגשות שלך צורפו לספר הברכות של {eventData?.name || ""}.
               </p>
 
               <button

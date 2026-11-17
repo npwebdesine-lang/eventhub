@@ -23,7 +23,6 @@ import { CLAY_RAISED, DEFAULT_PRIMARY, clayButtonStyle } from "../lib/clay";
 import { accentOn } from "../lib/colors";
 import { useEventBackdrop } from "../lib/useEventBackdrop";
 
-
 const Icebreaker = () => {
   const [searchParams] = useSearchParams();
   const eventId = searchParams.get("event");
@@ -64,93 +63,101 @@ const Icebreaker = () => {
     };
   }, []);
 
-  const fetchFeed = useCallback(async (isActive = () => isMountedRef.current) => {
-    const { data, error } = await supabase
-      .from("icebreaker_matches")
-      .select("id, mission_text, photo_url, completed_at, guest1_id, guest2_id")
-      .eq("event_id", eventId)
-      .eq("status", "completed")
-      .order("completed_at", { ascending: false })
-      .limit(20);
-
-    if (error) console.error("Error fetching feed:", error);
-    if (isActive()) setFeed(data || []);
-  }, [eventId]);
-
-  const checkStatus = useCallback(async (isActive = () => isMountedRef.current) => {
-    try {
-      const { data: event, error: eventError } = await supabase
-        .from("events")
-        .select("id, name, design_config")
-        .eq("id", eventId)
-        .single();
-
-      if (eventError) throw eventError;
-      if (!isActive()) return;
-      setEventData(event);
-
-      const { data: profile, error: profileError } = await supabase
-        .from("icebreaker_profiles")
-        .select("id, guest_id, name, photo_url")
-        .eq("event_id", eventId)
-        .eq("guest_id", guestId)
-        .maybeSingle();
-
-      if (profileError) {
-        console.error("Error fetching icebreaker profile:", profileError);
-      }
-
-      if (!isActive()) return;
-
-      if (!profile) {
-        setView("register");
-        return;
-      }
-
-      setMyProfile(profile);
-
-      const { data: activeMatch, error: matchError } = await supabase
+  const fetchFeed = useCallback(
+    async (isActive = () => isMountedRef.current) => {
+      const { data, error } = await supabase
         .from("icebreaker_matches")
         .select(
-          "id, guest1_id, guest2_id, mission_text, status, photo_url, completed_at, created_at",
+          "id, mission_text, photo_url, completed_at, guest1_id, guest2_id",
         )
         .eq("event_id", eventId)
-        .eq("status", "pending")
-        .or(`guest1_id.eq.${guestId},guest2_id.eq.${guestId}`)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .eq("status", "completed")
+        .order("completed_at", { ascending: false })
+        .limit(20);
 
-      if (matchError) {
-        console.error("Error fetching active match:", matchError);
-      }
+      if (error) console.error("Error fetching feed:", error);
+      if (isActive()) setFeed(data || []);
+    },
+    [eventId],
+  );
 
-      if (activeMatch) {
-        const partnerId =
-          activeMatch.guest1_id === guestId
-            ? activeMatch.guest2_id
-            : activeMatch.guest1_id;
+  const checkStatus = useCallback(
+    async (isActive = () => isMountedRef.current) => {
+      try {
+        const { data: event, error: eventError } = await supabase
+          .from("events")
+          .select("id, name, design_config")
+          .eq("id", eventId)
+          .single();
 
-        const { data: partner } = await supabase
+        if (eventError) throw eventError;
+        if (!isActive()) return;
+        setEventData(event);
+
+        const { data: profile, error: profileError } = await supabase
           .from("icebreaker_profiles")
           .select("id, guest_id, name, photo_url")
           .eq("event_id", eventId)
-          .eq("guest_id", partnerId)
+          .eq("guest_id", guestId)
           .maybeSingle();
 
-        if (isActive()) {
-          setCurrentMatch({ ...activeMatch, partner });
-          setView("active_mission");
+        if (profileError) {
+          console.error("Error fetching icebreaker profile:", profileError);
         }
-      } else {
-        await fetchFeed(isActive);
-        if (isActive()) setView("hub");
+
+        if (!isActive()) return;
+
+        if (!profile) {
+          setView("register");
+          return;
+        }
+
+        setMyProfile(profile);
+
+        const { data: activeMatch, error: matchError } = await supabase
+          .from("icebreaker_matches")
+          .select(
+            "id, guest1_id, guest2_id, mission_text, status, photo_url, completed_at, created_at",
+          )
+          .eq("event_id", eventId)
+          .eq("status", "pending")
+          .or(`guest1_id.eq.${guestId},guest2_id.eq.${guestId}`)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (matchError) {
+          console.error("Error fetching active match:", matchError);
+        }
+
+        if (activeMatch) {
+          const partnerId =
+            activeMatch.guest1_id === guestId
+              ? activeMatch.guest2_id
+              : activeMatch.guest1_id;
+
+          const { data: partner } = await supabase
+            .from("icebreaker_profiles")
+            .select("id, guest_id, name, photo_url")
+            .eq("event_id", eventId)
+            .eq("guest_id", partnerId)
+            .maybeSingle();
+
+          if (isActive()) {
+            setCurrentMatch({ ...activeMatch, partner });
+            setView("active_mission");
+          }
+        } else {
+          await fetchFeed(isActive);
+          if (isActive()) setView("hub");
+        }
+      } catch (err) {
+        console.error("Icebreaker Init failed:", err);
+        if (isActive()) setView("register");
       }
-    } catch (err) {
-      console.error("Icebreaker Init failed:", err);
-      if (isActive()) setView("register");
-    }
-  }, [eventId, guestId, fetchFeed]);
+    },
+    [eventId, guestId, fetchFeed],
+  );
 
   useEffect(() => {
     if (!eventId || !guestName || !guestId || !isValidUUIDv4(guestId))
@@ -354,7 +361,8 @@ const Icebreaker = () => {
             .maybeSingle();
 
           if (!isMountedRef.current) return;
-          if (error || !matchData) throw error || new Error("match_not_created");
+          if (error || !matchData)
+            throw error || new Error("match_not_created");
 
           setCurrentMatch({ ...matchData, partner: randomPartner });
           setView("active_mission");
@@ -455,15 +463,14 @@ const Icebreaker = () => {
 
   if (view === "loading" || !eventData) {
     return (
-      <div
-        className="min-h-screen flex justify-center items-center bg-clay-gradient"
-      >
+      <div className="min-h-screen flex justify-center items-center bg-clay-gradient">
         <Loader2 className="animate-spin text-clay-muted" size={48} />
       </div>
     );
   }
 
-  const primaryColor = eventData.design_config?.colors?.primary || DEFAULT_PRIMARY;
+  const primaryColor =
+    eventData.design_config?.colors?.primary || DEFAULT_PRIMARY;
 
   // ---- Register ----
   if (view === "register") {
@@ -497,7 +504,9 @@ const Icebreaker = () => {
             <h2 className="text-lg font-bold mb-2 text-slate-700">
               תמונת זיהוי
             </h2>
-            <p className="text-clay-muted text-sm mb-5">כדי שימצאו אתכם בקלות</p>
+            <p className="text-clay-muted text-sm mb-5">
+              כדי שימצאו אתכם בקלות
+            </p>
             <label className="relative cursor-pointer inline-block group mb-6">
               <div
                 className="w-36 h-36 mx-auto rounded-full flex items-center justify-center overflow-hidden p-2 bg-clay-well"
@@ -554,7 +563,10 @@ const Icebreaker = () => {
         className="min-h-screen flex flex-col items-center justify-center text-center p-6 bg-clay-gradient"
         dir="rtl"
       >
-        <div ref={rouletteRef} className={`p-12 rounded-clay-lg ${CLAY_RAISED}`}>
+        <div
+          ref={rouletteRef}
+          className={`p-12 rounded-clay-lg ${CLAY_RAISED}`}
+        >
           <Loader2
             className="animate-spin mx-auto mb-8"
             size={72}
@@ -583,10 +595,7 @@ const Icebreaker = () => {
   // ---- Active Mission ----
   if (view === "active_mission" && currentMatch) {
     return (
-      <div
-        className="min-h-screen flex flex-col bg-clay-gradient"
-        dir="rtl"
-      >
+      <div className="min-h-screen flex flex-col bg-clay-gradient" dir="rtl">
         <header className="p-5 flex justify-between items-center z-10 mx-3 mt-[calc(0.75rem+env(safe-area-inset-top))] rounded-[1.8rem] bg-clay-surface shadow-clay-md">
           <button
             onClick={() => setView("hub")}
@@ -679,10 +688,7 @@ const Icebreaker = () => {
 
   // ---- Hub / Wall of Fame ----
   return (
-    <div
-      className="min-h-screen font-sans pb-12 bg-clay-gradient"
-      dir="rtl"
-    >
+    <div className="min-h-screen font-sans pb-12 bg-clay-gradient" dir="rtl">
       <div className="pt-[calc(3rem+env(safe-area-inset-top))] pb-6 px-6 relative z-10 flex justify-between items-center max-w-md mx-auto w-full">
         <button
           onClick={() => navigate(-1)}
@@ -692,7 +698,10 @@ const Icebreaker = () => {
         </button>
         <h1 className="text-2xl font-black flex items-center gap-2 text-slate-700">
           IceBreaker{" "}
-          <Zap size={18} style={{ fill: primaryColor, color: accentOn(primaryColor) }} />
+          <Zap
+            size={18}
+            style={{ fill: primaryColor, color: accentOn(primaryColor) }}
+          />
         </h1>
         <div className="w-11 h-11 rounded-[1rem] overflow-hidden bg-clay-well shadow-[inset_2px_2px_5px_rgba(0,0,0,0.12),inset_-2px_-2px_5px_rgba(255,255,255,0.7)]">
           {myProfile?.photo_url ? (
