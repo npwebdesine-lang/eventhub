@@ -60,6 +60,7 @@ const RSVP_ERROR_COPY = {
   invalid_guests_count: "מספר האורחים חייב להיות בין 0 ל-20.",
   invalid_under_5_count: "מספר הילדים עד גיל 5 חייב להיות בין 0 ל-20.",
   invalid_dietary: "העדפת התזונה אינה תקינה.",
+  invalid_status: "סטטוס ההגעה אינו תקין.",
   event_not_found: "האירוע לא נמצא.",
   primary_has_no_phone:
     "אי אפשר להוסיף אורחים להזמנה בלי מספר טלפון. פנו לבעלי האירוע.",
@@ -264,6 +265,9 @@ const Invite = () => {
   // הערה אחת לכל החבורה — נשמרת על השורה של הנרשם הראשי.
   const [rsvpNotes, setRsvpNotes] = useState("");
   const [submitterPhone, setSubmitterPhone] = useState("");
+  // "לא אגיע" בקישור הכללי: רק שם והערה. נשמר כ-canceled — אותו ערך שקישור
+  // הקסם כותב — כך שהמנהל רואה אותו ב"ביטלו" ולא צריך לרדוף אחריו.
+  const [rsvpDeclining, setRsvpDeclining] = useState(false);
   const [duplicateWarnings, setDuplicateWarnings] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -672,19 +676,32 @@ const Invite = () => {
   // אותו בדיוק לשתי הפעולות האלה.
   const handleVerifyBeforeSubmit = async (e) => {
     e.preventDefault();
-    if (guests.some((guest) => !guest.name.trim()) || !submitterPhone.trim()) {
-      showToast("אנא מלאו את כל השמות ואת מספר הטלפון", "warning");
-      return;
-    }
-    if (!PHONE_PATTERN.test(submitterPhone.trim())) {
-      showToast("מספר הטלפון אינו תקין", "warning");
-      return;
+    if (rsvpDeclining) {
+      if (!guests[0].name.trim()) {
+        showToast("אנא מלאו את השם", "warning");
+        return;
+      }
+    } else {
+      if (
+        guests.some((guest) => !guest.name.trim()) ||
+        !submitterPhone.trim()
+      ) {
+        showToast("אנא מלאו את כל השמות ואת מספר הטלפון", "warning");
+        return;
+      }
+      if (!PHONE_PATTERN.test(submitterPhone.trim())) {
+        showToast("מספר הטלפון אינו תקין", "warning");
+        return;
+      }
     }
     setIsSubmitting(true);
     try {
+      const names = rsvpDeclining
+        ? [guests[0].name.trim()]
+        : guests.map((guest) => guest.name.trim());
       const { data, error } = await supabase.rpc("rsvp_check_duplicates", {
         p_event_id: id,
-        p_names: guests.map((guest) => guest.name.trim()),
+        p_names: names,
       });
       if (error) throw error;
       if (Array.isArray(data) && data.length > 0) {
@@ -706,15 +723,24 @@ const Invite = () => {
   const executeSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const party = guests
-        .map((guest) => ({ name: guest.name.trim(), dietary: guest.dietary }))
-        .filter((guest) => guest.name);
+      // סירוב הוא אדם אחד: בלי טלפון, בלי מלווים ובלי העדפת תזונה — גם אם
+      // מולאו לפני שנבחר "לא אגיע", הם נשארים בטופס ולא נשלחים.
+      const party = rsvpDeclining
+        ? [{ name: guests[0].name.trim(), dietary: DEFAULT_DIETARY }]
+        : guests
+            .map((guest) => ({
+              name: guest.name.trim(),
+              dietary: guest.dietary,
+            }))
+            .filter((guest) => guest.name);
 
       const { error } = await supabase.rpc("rsvp_self_register", {
         p_event_id: id,
-        p_phone: submitterPhone.trim(),
+        p_phone: rsvpDeclining ? null : submitterPhone.trim(),
         p_guests: party,
         p_notes: rsvpNotes.trim() || null,
+        // נשלח רק בסירוב; אישור נשען על ברירת המחדל 'confirmed' של ה-RPC.
+        ...(rsvpDeclining ? { p_status: "canceled" } : {}),
       });
       if (error) throw error;
 
@@ -726,6 +752,7 @@ const Invite = () => {
         setGuests([newGuestDraft(0)]);
         setRsvpNotes("");
         setSubmitterPhone("");
+        setRsvpDeclining(false);
       }, 4000);
     } catch (err) {
       console.error("Submit Error:", err);
@@ -1305,107 +1332,180 @@ const Invite = () => {
                 className="step-anim pt-4"
               >
                 <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-clay-well shadow-clay-inset-deep">
-                  <Users size={32} style={{ color: accentOn(primaryColor) }} />
+                  {rsvpDeclining ? (
+                    <X size={32} className="text-clay-muted" />
+                  ) : (
+                    <Users
+                      size={32}
+                      style={{ color: accentOn(primaryColor) }}
+                    />
+                  )}
                 </div>
                 <h2 className="text-2xl font-black text-slate-700 mb-2 text-center">
                   אישור הגעה
                 </h2>
                 <p className="text-clay-muted font-medium text-center mb-6 text-sm">
-                  נשמח לדעת מי מגיע
+                  {rsvpDeclining
+                    ? "חבל שלא תוכלו להגיע — נשמח לדעת"
+                    : "נשמח לדעת מי מגיע"}
                 </p>
 
-                <div className="space-y-4 mb-8">
-                  <div className="space-y-1">
-                    <label
-                      htmlFor="rsvp-phone"
-                      className="text-xs font-bold text-clay-muted pr-2"
-                    >
-                      טלפון
-                    </label>
-                    <input
-                      id="rsvp-phone"
-                      type="tel"
-                      required
-                      placeholder="050-0000000"
-                      dir="ltr"
-                      value={submitterPhone}
-                      onChange={(e) => setSubmitterPhone(e.target.value)}
-                      className={`${CLAY_FIELD} text-left`}
-                    />
-                  </div>
+                {/* אותה בחירה כמו בקישור הקסם. ברירת המחדל "מגיע/ה", כך
+                    שהזרימה הקיימת לא משתנה למי שלא נוגע בה. */}
+                <div
+                  className="flex gap-3 mb-6"
+                  role="radiogroup"
+                  aria-label="האם תגיעו?"
+                >
+                  {[
+                    { declining: false, label: "מגיע/ה" },
+                    { declining: true, label: "לא אגיע" },
+                  ].map((option) => {
+                    const active = rsvpDeclining === option.declining;
+                    return (
+                      <button
+                        key={option.label}
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        disabled={isSubmitting}
+                        onClick={() => setRsvpDeclining(option.declining)}
+                        className={`flex-1 font-bold py-4 rounded-full transition-all disabled:opacity-50 ${
+                          active
+                            ? "text-white active:scale-[0.97]"
+                            : "text-slate-600 bg-clay-chip shadow-clay-md"
+                        }`}
+                        style={
+                          active ? clayButtonStyle(primaryColor) : undefined
+                        }
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
 
-                  {/* כרטיס לכל אדם: שם + העדפת תזונה. הראשון הוא הנרשם עצמו;
+                <div className="space-y-4 mb-8">
+                  {rsvpDeclining ? (
+                    <div className="space-y-1">
+                      <label
+                        htmlFor="rsvp-decline-name"
+                        className="text-xs font-bold text-clay-muted pr-2"
+                      >
+                        השם שלך
+                      </label>
+                      <input
+                        id="rsvp-decline-name"
+                        type="text"
+                        required
+                        maxLength={100}
+                        placeholder="השם שלך"
+                        value={guests[0].name}
+                        onChange={(e) =>
+                          updateGuest(guests[0].key, { name: e.target.value })
+                        }
+                        className={CLAY_FIELD}
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-1">
+                        <label
+                          htmlFor="rsvp-phone"
+                          className="text-xs font-bold text-clay-muted pr-2"
+                        >
+                          טלפון
+                        </label>
+                        <input
+                          id="rsvp-phone"
+                          type="tel"
+                          required
+                          placeholder="050-0000000"
+                          dir="ltr"
+                          value={submitterPhone}
+                          onChange={(e) => setSubmitterPhone(e.target.value)}
+                          className={`${CLAY_FIELD} text-left`}
+                        />
+                      </div>
+
+                      {/* כרטיס לכל אדם: שם + העדפת תזונה. הראשון הוא הנרשם עצמו;
                       כל לחיצה על "הוסף אורח" מוסיפה כרטיס נוסף — גם לתינוק,
                       שנבחרת לו ההעדפה "ילדים מתחת לגיל 5 (ללא מנה)". */}
-                  <div className="space-y-3">
-                    {guests.map((guest, index) => {
-                      const title =
-                        index === 0 ? "הפרטים שלך" : `אורח נוסף ${index}`;
-                      return (
-                        <div
-                          key={guest.key}
-                          className={`rounded-clay-field bg-clay-well p-3 shadow-clay-inset ${
-                            index > 0 ? "rsvp-card-in" : ""
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-2 mb-2 min-h-8">
-                            <span className="text-xs font-bold text-clay-muted pr-1">
-                              {title}
-                            </span>
-                            {index > 0 && (
-                              <button
-                                type="button"
-                                onClick={() => removeGuest(guest.key)}
-                                aria-label={`הסרת ${guest.name.trim() || title}`}
-                                className="w-11 h-11 -m-1.5 shrink-0 flex items-center justify-center rounded-full text-clay-muted transition-colors hover:bg-rose-50 hover:text-rose-700"
-                              >
-                                <X size={16} />
-                              </button>
-                            )}
-                          </div>
-                          <input
-                            type="text"
-                            required
-                            maxLength={100}
-                            // כרטיס שנוסף זה עתה מקבל פוקוס, כדי שאפשר יהיה
-                            // להקליד שם מיד אחרי הלחיצה על "הוסף אורח".
-                            autoFocus={index > 0}
-                            placeholder={index === 0 ? "השם שלך" : "שם האורח"}
-                            aria-label={index === 0 ? "השם שלך" : title}
-                            value={guest.name}
-                            onChange={(e) =>
-                              updateGuest(guest.key, { name: e.target.value })
-                            }
-                            className={`${CLAY_FIELD} bg-clay-surface`}
-                          />
-                          <div className="mt-3">
-                            <DietaryPicker
-                              options={
-                                index === 0
-                                  ? PRIMARY_DIETARY_OPTIONS
-                                  : DIETARY_OPTIONS
-                              }
-                              value={guest.dietary}
-                              onChange={(value) =>
-                                updateGuest(guest.key, { dietary: value })
-                              }
-                              primaryColor={primaryColor}
-                              compact
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                      <div className="space-y-3">
+                        {guests.map((guest, index) => {
+                          const title =
+                            index === 0 ? "הפרטים שלך" : `אורח נוסף ${index}`;
+                          return (
+                            <div
+                              key={guest.key}
+                              className={`rounded-clay-field bg-clay-well p-3 shadow-clay-inset ${
+                                index > 0 ? "rsvp-card-in" : ""
+                              }`}
+                            >
+                              <div className="flex items-center justify-between gap-2 mb-2 min-h-8">
+                                <span className="text-xs font-bold text-clay-muted pr-1">
+                                  {title}
+                                </span>
+                                {index > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => removeGuest(guest.key)}
+                                    aria-label={`הסרת ${guest.name.trim() || title}`}
+                                    className="w-11 h-11 -m-1.5 shrink-0 flex items-center justify-center rounded-full text-clay-muted transition-colors hover:bg-rose-50 hover:text-rose-700"
+                                  >
+                                    <X size={16} />
+                                  </button>
+                                )}
+                              </div>
+                              <input
+                                type="text"
+                                required
+                                maxLength={100}
+                                // כרטיס שנוסף זה עתה מקבל פוקוס, כדי שאפשר יהיה
+                                // להקליד שם מיד אחרי הלחיצה על "הוסף אורח".
+                                autoFocus={index > 0}
+                                placeholder={
+                                  index === 0 ? "השם שלך" : "שם האורח"
+                                }
+                                aria-label={index === 0 ? "השם שלך" : title}
+                                value={guest.name}
+                                onChange={(e) =>
+                                  updateGuest(guest.key, {
+                                    name: e.target.value,
+                                  })
+                                }
+                                className={`${CLAY_FIELD} bg-clay-surface`}
+                              />
+                              <div className="mt-3">
+                                <DietaryPicker
+                                  options={
+                                    index === 0
+                                      ? PRIMARY_DIETARY_OPTIONS
+                                      : DIETARY_OPTIONS
+                                  }
+                                  value={guest.dietary}
+                                  onChange={(value) =>
+                                    updateGuest(guest.key, { dietary: value })
+                                  }
+                                  primaryColor={primaryColor}
+                                  compact
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
 
-                  {guests.length < MAX_PARTY && (
-                    <button
-                      type="button"
-                      onClick={addGuest}
-                      className={ADD_GUEST_BUTTON}
-                    >
-                      <UserPlus size={18} /> הוסף אורח
-                    </button>
+                      {guests.length < MAX_PARTY && (
+                        <button
+                          type="button"
+                          onClick={addGuest}
+                          className={ADD_GUEST_BUTTON}
+                        >
+                          <UserPlus size={18} /> הוסף אורח
+                        </button>
+                      )}
+                    </>
                   )}
 
                   {/* הערה כללית אחת לכל החבורה — תמיד אחרונה בטופס */}
@@ -1414,7 +1514,9 @@ const Invite = () => {
                       htmlFor="rsvp-notes"
                       className="text-xs font-bold text-clay-muted pr-2"
                     >
-                      הערות כלליות (לכל החבורה)
+                      {rsvpDeclining
+                        ? "הערה (לא חובה)"
+                        : "הערות כלליות (לכל החבורה)"}
                     </label>
                     <textarea
                       id="rsvp-notes"
@@ -1422,7 +1524,11 @@ const Invite = () => {
                       onChange={(e) => setRsvpNotes(e.target.value)}
                       maxLength={500}
                       rows={2}
-                      placeholder="אלרגיות, הסעה, כל דבר שחשוב שנדע..."
+                      placeholder={
+                        rsvpDeclining
+                          ? "רוצים להשאיר מילה?"
+                          : "אלרגיות, הסעה, כל דבר שחשוב שנדע..."
+                      }
                       className={`${CLAY_FIELD} resize-none`}
                     />
                   </div>
@@ -1436,6 +1542,10 @@ const Invite = () => {
                 >
                   {isSubmitting ? (
                     <Loader2 className="animate-spin" size={24} />
+                  ) : rsvpDeclining ? (
+                    <>
+                      <Save size={20} /> שמור
+                    </>
                   ) : (
                     <>
                       <Send size={20} /> שלח אישור הגעה
@@ -1461,7 +1571,9 @@ const Invite = () => {
                   שימו לב!
                 </h2>
                 <p className="text-slate-600 text-sm font-medium mb-6 leading-snug">
-                  המערכת זיהתה שחלק מהשמות שהזנתם כבר אישרו הגעה בעבר:
+                  {rsvpDeclining
+                    ? "השם שהזנתם כבר רשום באירוע:"
+                    : "המערכת זיהתה שחלק מהשמות שהזנתם כבר אישרו הגעה בעבר:"}
                 </p>
                 <div className="rounded-clay-field p-4 mb-8 text-right space-y-2 bg-clay-well shadow-clay-inset">
                   {duplicateWarnings.map((dup, idx) => (
@@ -1508,13 +1620,19 @@ const Invite = () => {
             {rsvpStep === RSVP_STEP_SUCCESS && (
               <div className="step-anim py-12 text-center">
                 <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 bg-clay-well shadow-clay-inset-deep">
-                  <CheckCircle2 size={48} className="text-[#7d9a86]" />
+                  {rsvpDeclining ? (
+                    <X size={48} className="text-clay-muted" />
+                  ) : (
+                    <CheckCircle2 size={48} className="text-[#7d9a86]" />
+                  )}
                 </div>
                 <h2 className="text-3xl font-black text-slate-700 mb-2">
-                  נתראה בחתונה!
+                  {rsvpDeclining ? "תודה על העדכון" : "נתראה בחתונה!"}
                 </h2>
                 <p className="text-clay-muted font-medium text-lg">
-                  אישור ההגעה נקלט בהצלחה.
+                  {rsvpDeclining
+                    ? "תחסרו לנו מאוד! ניפגש בשמחות."
+                    : "אישור ההגעה נקלט בהצלחה."}
                 </p>
               </div>
             )}
