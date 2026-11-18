@@ -1185,8 +1185,8 @@ const Invite = () => {
                               setNewCompanionName(e.target.value)
                             }
                             maxLength={100}
-                            placeholder="שם האורח"
-                            aria-label="שם האורח"
+                            placeholder="שם מלא של האורח/ת"
+                            aria-label="שם מלא של האורח/ת"
                             className={`${CLAY_FIELD} bg-clay-well mb-2`}
                           />
                           <DietaryPicker
@@ -1399,13 +1399,20 @@ const Invite = () => {
                         type="text"
                         required
                         maxLength={100}
-                        placeholder="השם שלך"
+                        placeholder="שם מלא"
+                        aria-describedby="rsvp-decline-name-hint"
                         value={guests[0].name}
                         onChange={(e) =>
                           updateGuest(guests[0].key, { name: e.target.value })
                         }
                         className={CLAY_FIELD}
                       />
+                      <p
+                        id="rsvp-decline-name-hint"
+                        className="text-xs text-clay-muted pr-2"
+                      >
+                        אנא הזינו שם מלא
+                      </p>
                     </div>
                   ) : (
                     <>
@@ -1464,10 +1471,14 @@ const Invite = () => {
                                 // כרטיס שנוסף זה עתה מקבל פוקוס, כדי שאפשר יהיה
                                 // להקליד שם מיד אחרי הלחיצה על "הוסף אורח".
                                 autoFocus={index > 0}
+                                // שמות פרטיים בלבד מבלבלים בסידור הישיבה.
                                 placeholder={
-                                  index === 0 ? "השם שלך" : "שם האורח"
+                                  index === 0 ? "שם מלא" : "שם מלא של האורח/ת"
                                 }
                                 aria-label={index === 0 ? "השם שלך" : title}
+                                aria-describedby={
+                                  index === 0 ? "rsvp-name-hint" : undefined
+                                }
                                 value={guest.name}
                                 onChange={(e) =>
                                   updateGuest(guest.key, {
@@ -1476,6 +1487,14 @@ const Invite = () => {
                                 }
                                 className={`${CLAY_FIELD} bg-clay-surface`}
                               />
+                              {index === 0 && (
+                                <p
+                                  id="rsvp-name-hint"
+                                  className="text-xs text-clay-muted pr-1 mt-1"
+                                >
+                                  אנא הזינו שם מלא
+                                </p>
+                              )}
                               <div className="mt-3">
                                 <DietaryPicker
                                   options={
