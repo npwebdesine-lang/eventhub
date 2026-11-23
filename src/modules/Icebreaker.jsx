@@ -545,6 +545,20 @@ const Icebreaker = () => {
         ])
         .select("id, guest2_id, mission_text, status, created_at")
         .single();
+      // 42501 = ה-RLS דחה את ההגרלה: המשימה נמחקה או נערכה בדשבורד, או
+      // שהמטרה יצאה מהמאגר ממש עכשיו. ההגרלה כבר לא בתוקף — מגרילים
+      // מחדש בלי לחייב הגרלה חוזרת, במקום שגיאה בלי מוצא.
+      if (error?.code === "42501") {
+        const skip = {
+          guestId: preview.target.guest_id,
+          mission: preview.mission,
+        };
+        showToast("ההגרלה כבר לא בתוקף — מגרילים מחדש", "warning");
+        savePreview(null);
+        setAccepting(false);
+        startDraw({ skip });
+        return;
+      }
       if (error) throw error;
       if (!isMountedRef.current) return;
 
