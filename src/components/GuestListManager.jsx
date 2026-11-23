@@ -11,6 +11,7 @@ import {
   Download,
   Loader2,
   MessageCircle,
+  Search,
   Trash2,
   Upload,
   Users,
@@ -55,6 +56,23 @@ const CLAY_RAISED = "shadow-clay-md";
 const CLAY_INSET = "shadow-clay-inset-deep";
 
 const PHONE_PATTERN = /^[0-9+\-\s]{7,15}$/; // זהה ל-check constraint בטבלה
+
+// השוואת טלפונים בחיפוש: ספרות בלבד, ו-972 בהתחלה שקול ל-0. כך "050-123",
+// "050 123" ו-"+972 50 123" מוצאים את אותו מוזמן.
+const searchablePhone = (value) => {
+  const digits = String(value || "").replace(/\D/g, "");
+  return digits.startsWith("972") ? `0${digits.slice(3)}` : digits;
+};
+
+// חיפוש לפי שם (בלי תלות ברישיות) או טלפון. שאילתה ריקה מתאימה לכולם.
+const matchesSearch = (guest, query) => {
+  const text = query.trim().toLowerCase();
+  if (!text) return true;
+  if ((guest.guest_name || "").toLowerCase().includes(text)) return true;
+  const digits = searchablePhone(text);
+  // שאילתת טלפון צריכה לפחות 2 ספרות, אחרת "0" מתאים לכל מספר.
+  return digits.length >= 2 && searchablePhone(guest.phone).includes(digits);
+};
 
 // wa.me דורש ספרות בפורמט בינלאומי: 0501234567 -> 972501234567
 export const toWhatsAppPhone = (phone) => {
@@ -158,6 +176,8 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
   const [guests, setGuests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef(null);
   const [importOpen, setImportOpen] = useState(false);
   const [importText, setImportText] = useState("");
   const [importing, setImporting] = useState(false);
@@ -307,13 +327,18 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
     [guests],
   );
 
+  // לשונית הסטטוס והחיפוש פועלים יחד. מוני הלשוניות נשארים על כל הרשימה,
+  // כדי שהקלדה בחיפוש לא תשנה את המספרים שליד "אישרו" / "ממתינים".
   const filtered = useMemo(
     () =>
-      activeTab === "all"
-        ? guests
-        : guests.filter((g) => g.status === activeTab),
-    [guests, activeTab],
+      guests.filter(
+        (g) =>
+          (activeTab === "all" || g.status === activeTab) &&
+          matchesSearch(g, searchQuery),
+      ),
+    [guests, activeTab, searchQuery],
   );
+  const isSearching = searchQuery.trim() !== "";
 
   const preview = useMemo(
     () =>
@@ -788,20 +813,63 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
           </div>
         )}
 
-        <div className="flex shrink-0 gap-2 p-4 md:px-8">
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`rounded-2xl bg-clay-surface px-4 min-h-11 text-sm font-bold transition-all ${
-                activeTab === tab.key
-                  ? `${CLAY_INSET} text-slate-800`
-                  : `${CLAY_RAISED} text-clay-muted`
-              }`}
-            >
-              {tab.label} ({counts[tab.key]})
-            </button>
-          ))}
+        {/* לשוניות בצד ימין, חיפוש בצד שמאל (RTL). בטלפון החיפוש יורד
+            לשורה משלו, ברוחב מלא, מתחת ללשוניות. */}
+        <div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-3 p-4 md:px-8">
+          {/* בטלפון: ארבע עמודות שוות, כדי שהלשוניות לא יישברו לשורה
+              עקומה (שלוש + אחת). */}
+          <div className="grid w-full grid-cols-4 gap-2 md:flex md:w-auto">
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`rounded-2xl bg-clay-surface px-2 md:px-4 min-h-11 text-sm font-bold transition-all ${
+                  activeTab === tab.key
+                    ? `${CLAY_INSET} text-slate-800`
+                    : `${CLAY_RAISED} text-clay-muted`
+                }`}
+              >
+                {tab.label} ({counts[tab.key]})
+              </button>
+            ))}
+          </div>
+
+          <div className="relative w-full md:ms-auto md:w-72">
+            <Search
+              size={16}
+              aria-hidden="true"
+              className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-clay-muted"
+            />
+            <input
+              ref={searchInputRef}
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              onKeyDown={(event) => {
+                // Escape מנקה את החיפוש במקום לסגור את המסך כולו.
+                if (event.key === "Escape" && searchQuery) {
+                  event.stopPropagation();
+                  setSearchQuery("");
+                }
+              }}
+              placeholder="חיפוש לפי שם או טלפון..."
+              aria-label="חיפוש מוזמנים לפי שם או טלפון"
+              className={`${CLAY_INSET} w-full rounded-xl bg-clay-surface pr-10 pl-10 min-h-11 text-sm text-slate-600 placeholder:text-clay-muted focus:outline-none focus:ring-2 focus:ring-clay-ink/30 [&::-webkit-search-cancel-button]:hidden`}
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                  searchInputRef.current?.focus();
+                }}
+                aria-label="ניקוי החיפוש"
+                className="absolute left-1 top-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-full text-clay-muted hover:text-slate-700 hover:bg-clay-well transition-colors"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* אזור גלילה אחד לשני הצירים. קודם הגלילה האופקית ישבה בתוך
@@ -817,11 +885,31 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
               <Loader2 className="animate-spin text-clay-muted" size={36} />
             </div>
           ) : filtered.length === 0 ? (
-            <div className="py-16 text-center text-clay-muted">
-              <Users size={40} className="mx-auto mb-3 opacity-50" />
-              <p className="font-bold">אין מוזמנים להצגה</p>
-              <p className="text-sm">ייבאו רשימה כדי להתחיל</p>
-            </div>
+            isSearching ? (
+              <div className="py-16 text-center text-clay-muted" role="status">
+                <Search size={40} className="mx-auto mb-3 opacity-50" />
+                <p className="font-bold">לא נמצאו מוזמנים התואמים לחיפוש</p>
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="mt-2 text-sm font-bold underline underline-offset-4 hover:text-slate-700"
+                >
+                  ניקוי החיפוש
+                </button>
+              </div>
+            ) : guests.length > 0 ? (
+              // יש מוזמנים, רק לא בלשונית הזו — "ייבאו רשימה" היה מטעה כאן.
+              <div className="py-16 text-center text-clay-muted">
+                <Users size={40} className="mx-auto mb-3 opacity-50" />
+                <p className="font-bold">אין מוזמנים בסטטוס הזה</p>
+              </div>
+            ) : (
+              <div className="py-16 text-center text-clay-muted">
+                <Users size={40} className="mx-auto mb-3 opacity-50" />
+                <p className="font-bold">אין מוזמנים להצגה</p>
+                <p className="text-sm">ייבאו רשימה כדי להתחיל</p>
+              </div>
+            )
           ) : (
             <div>
               <table className="w-full min-w-[1140px] border-separate border-spacing-y-2 text-right">
