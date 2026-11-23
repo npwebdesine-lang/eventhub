@@ -172,7 +172,9 @@ const buildTags = ({ title, description, image, fallbackImage, url }) => {
     );
   } else {
     // בלי תמונת הזמנה: האייקון, בלי מידות 1200x630 שהוא לא עומד בהן.
-    tags.push(`<meta property="og:image" content="${escapeHtml(fallbackImage)}" />`);
+    tags.push(
+      `<meta property="og:image" content="${escapeHtml(fallbackImage)}" />`,
+    );
   }
   return tags.join("\n    ");
 };
@@ -244,9 +246,25 @@ export default async function handler(request, response) {
   const dateText = formatHebrewDate(event.event_date);
   const locationText = (event.location || "").trim();
 
+  // לוח הזמנים (design_config.schedule) — אותו ניקוי כמו ב-
+  // src/lib/eventSchedule.js: רק שורות עם תווית ושעה HH:MM.
+  const scheduleText = (
+    Array.isArray(event.design_config?.schedule)
+      ? event.design_config.schedule
+      : []
+  )
+    .map((item) => ({
+      label: String(item?.label ?? "").trim(),
+      time: String(item?.time ?? "").trim(),
+    }))
+    .filter((item) => item.label && /^([01]\d|2[0-3]):[0-5]\d$/.test(item.time))
+    .slice(0, 4)
+    .map((item) => `${item.label} ${item.time}`)
+    .join(" · ");
+
   const description =
-    [dateText, locationText].filter(Boolean).join(" | ") +
-    (dateText || locationText
+    [dateText, scheduleText, locationText].filter(Boolean).join(" | ") +
+    (dateText || scheduleText || locationText
       ? ". לחצו לפרטים ואישור הגעה!"
       : "לחצו לפרטים ואישור הגעה!");
 

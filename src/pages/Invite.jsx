@@ -24,6 +24,8 @@ import {
   Save,
   Navigation,
   MapPin,
+  Heart,
+  Wine,
 } from "lucide-react";
 import gsap from "gsap";
 import { accentOn } from "../lib/colors";
@@ -38,6 +40,7 @@ import {
 } from "../lib/clay";
 import { useEventBackdrop } from "../lib/useEventBackdrop";
 import InviteCountdown from "../components/InviteCountdown";
+import { getEventSchedule } from "../lib/eventSchedule";
 
 // שלב ייעודי ל"קישור קסם" (?guest_id=). 1-4 נשארים הזרימה העצמאית הקיימת.
 const RSVP_STEP_GUEST = 0;
@@ -111,6 +114,82 @@ const LocationLine = ({
         {text}
       </span>
     </div>
+  );
+};
+
+// אייקון לפי התווית: ההזמנה העברית סטנדרטית מספיק כדי לזהות את שני השלבים
+// הנפוצים; כל שלב אחר מקבל שעון.
+const scheduleIcon = (label) => {
+  if (label.includes("חופה")) return Heart;
+  if (label.includes("קבלת פנים")) return Wine;
+  return Clock;
+};
+
+// לוח הזמנים (design_config.schedule). "cards": כרטיסי חימר זה לצד זה בעמוד
+// ההזמנה. "compact": שורת גלולות קטנה בתוך גיליון קישור הקסם. מחזיר null
+// כשאין לוח זמנים, כך שאירועים בלי שעות נראים בדיוק כמו קודם.
+const EventSchedule = ({
+  items,
+  primaryColor,
+  variant = "cards",
+  className = "",
+}) => {
+  if (!items.length) return null;
+  const accent = accentOn(primaryColor);
+
+  if (variant === "compact") {
+    return (
+      <ul
+        className={`flex flex-wrap justify-center gap-2 ${className}`}
+        aria-label="לוח זמנים"
+      >
+        {items.map((item) => (
+          <li
+            key={item.label}
+            className="flex items-center gap-1.5 rounded-full bg-clay-well shadow-clay-inset px-3.5 py-1.5 text-sm whitespace-nowrap"
+          >
+            <span className="font-bold text-clay-muted">{item.label}</span>
+            <span
+              className="font-black tabular-nums"
+              style={{ color: accent }}
+              dir="ltr"
+            >
+              {item.time}
+            </span>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  return (
+    <ul
+      className={`flex justify-center gap-3 ${className}`}
+      aria-label="לוח זמנים"
+    >
+      {items.map((item) => {
+        const Icon = scheduleIcon(item.label);
+        return (
+          <li
+            key={item.label}
+            className="flex-1 min-w-0 max-w-[11rem] flex flex-col items-center gap-1 rounded-clay-field bg-clay-chip shadow-clay-md px-3 py-4"
+          >
+            <span className="w-9 h-9 rounded-full flex items-center justify-center bg-clay-well shadow-clay-inset mb-1">
+              <Icon size={18} style={{ color: accent }} aria-hidden="true" />
+            </span>
+            <span className="text-xs font-bold text-clay-muted truncate max-w-full">
+              {item.label}
+            </span>
+            <span
+              className="text-2xl font-black text-slate-700 tabular-nums leading-none"
+              dir="ltr"
+            >
+              {item.time}
+            </span>
+          </li>
+        );
+      })}
+    </ul>
   );
 };
 
@@ -780,6 +859,9 @@ const Invite = () => {
   const primaryColor = design_config?.colors?.primary || DEFAULT_PRIMARY;
   const template = design_config?.invite_template || "modern";
   const inviteImage = design_config?.invite_image;
+  const schedule = getEventSchedule(design_config);
+  // הספירה לאחור מכוונת לשלב הראשון (קבלת הפנים), לא לשעה קבועה.
+  const startTime = schedule[0]?.time;
 
   const renderTemplate = () => {
     if (template === "elegant") {
@@ -840,6 +922,7 @@ const Invite = () => {
             </div>
             <InviteCountdown
               eventDate={event_date}
+              startTime={startTime}
               variant="elegant"
               primaryColor={primaryColor}
             />
@@ -852,6 +935,11 @@ const Invite = () => {
             </p>
             <LocationLine
               location={location}
+              primaryColor={primaryColor}
+              className="fade-up-item mb-8"
+            />
+            <EventSchedule
+              items={schedule}
               primaryColor={primaryColor}
               className="fade-up-item mb-8"
             />
@@ -916,6 +1004,11 @@ const Invite = () => {
                 size="sm"
                 className="mt-2"
               />
+              <EventSchedule
+                items={schedule}
+                primaryColor={primaryColor}
+                className="mt-5"
+              />
             </div>
             <div
               className="fade-up-item rounded-[2rem] -mt-8 mx-4 p-6 relative z-20"
@@ -927,6 +1020,7 @@ const Invite = () => {
             >
               <InviteCountdown
                 eventDate={event_date}
+                startTime={startTime}
                 variant="corporate"
                 primaryColor={primaryColor}
               />
@@ -1004,7 +1098,7 @@ const Invite = () => {
           </h1>
           <p
             className={`fade-up-item text-xl ${subTextColor} ${
-              location ? "mb-3" : "mb-12"
+              location ? "mb-3" : schedule.length ? "mb-6" : "mb-12"
             } font-medium flex items-center justify-center gap-2`}
           >
             <Clock size={20} />{" "}
@@ -1012,6 +1106,11 @@ const Invite = () => {
           </p>
           <LocationLine
             location={location}
+            primaryColor={primaryColor}
+            className={`fade-up-item ${schedule.length ? "mb-6" : "mb-12"}`}
+          />
+          <EventSchedule
+            items={schedule}
             primaryColor={primaryColor}
             className="fade-up-item mb-12"
           />
@@ -1081,6 +1180,14 @@ const Invite = () => {
                       : "נשמח לדעת אם תגיעו"}
                   </p>
                 )}
+
+                {/* הגיליון מכסה את עמוד ההזמנה, אז השעות חוזרות כאן בקטן */}
+                <EventSchedule
+                  items={schedule}
+                  primaryColor={primaryColor}
+                  variant="compact"
+                  className="mb-6"
+                />
 
                 <div className="flex gap-3 mb-6">
                   {[

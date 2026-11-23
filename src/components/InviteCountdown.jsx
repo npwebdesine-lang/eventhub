@@ -26,14 +26,20 @@ const pad = (n) => n.toString().padStart(2, "0");
  * היה אפסים, ולכן הרינדור הראשון הציג לרגע "היום זה קורה!" ואנימציית
  * הכניסה של GSAP רצה על האלמנט הלא נכון.
  */
-const useCountdown = (eventDate) => {
+// startTime: "HH:MM" מלוח הזמנים של האירוע (השורה הראשונה, למשל קבלת פנים).
+// בלי לוח זמנים נשארים עם 19:00 כמו קודם.
+const DEFAULT_START_TIME = "19:00";
+
+const useCountdown = (eventDate, startTime = DEFAULT_START_TIME) => {
   const [timeLeft, setTimeLeft] = useState(() =>
-    eventDate ? computeTimeLeft(new Date(`${eventDate}T19:00:00`)) : ZERO,
+    eventDate
+      ? computeTimeLeft(new Date(`${eventDate}T${startTime}:00`))
+      : ZERO,
   );
 
   useEffect(() => {
     if (!eventDate) return undefined;
-    const date = new Date(`${eventDate}T19:00:00`);
+    const date = new Date(`${eventDate}T${startTime}:00`);
     let timer = null;
     const tick = () => {
       const next = computeTimeLeft(date);
@@ -45,13 +51,13 @@ const useCountdown = (eventDate) => {
     if (tick() === ZERO) return undefined;
     timer = setInterval(tick, 1000);
     return () => clearInterval(timer);
-  }, [eventDate]);
+  }, [eventDate, startTime]);
 
   return timeLeft;
 };
 
-const InviteCountdown = ({ eventDate, variant, primaryColor }) => {
-  const timeLeft = useCountdown(eventDate);
+const InviteCountdown = ({ eventDate, startTime, variant, primaryColor }) => {
+  const timeLeft = useCountdown(eventDate, startTime);
   const isHappeningNow = timeLeft === ZERO;
   const accent = accentOn(primaryColor);
 
