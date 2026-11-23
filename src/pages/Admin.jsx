@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import { supabase } from "../lib/supabase";
-import { useModalBehavior } from "../components/Modal";
+import Modal, { useModalBehavior } from "../components/Modal";
+import QrCodeView from "../components/QrCodeView";
+import { downloadQrPng } from "../lib/qrImage";
+import { isValidBitPhone, isValidBitUrl } from "../lib/bitGift";
 import { useToast } from "../components/Toast";
 import GuestListManager from "../components/GuestListManager";
 import VideoTile from "../components/VideoTile";
@@ -185,6 +188,7 @@ const Admin = () => {
     activeEventIdRef.current = selectedEvent?.id ?? null;
   }, [selectedEvent]);
   const [saving, setSaving] = useState(false);
+  const [isBitQrOpen, setIsBitQrOpen] = useState(false);
   const [formData, setFormData] = useState(null);
   const [uploadingAsset, setUploadingAsset] = useState(false);
 
@@ -454,13 +458,35 @@ const Admin = () => {
     });
   };
 
+  // שדות המתנה ב-bit: שגיאה מוצגת רק כשיש תוכן — שדה ריק פשוט כבוי.
+  const bitLink = (formData?.design_config?.bit_link || "").trim();
+  const bitLinkValid = isValidBitUrl(bitLink);
+  const bitLinkInvalid = bitLink !== "" && !bitLinkValid;
+  const bitPhone = (formData?.design_config?.bit_phone || "").trim();
+  const bitPhoneInvalid = bitPhone !== "" && !isValidBitPhone(bitPhone);
+
   const handleSave = async () => {
     if (!formData.name) return alert("יש להזין שם אירוע");
+    const bitLinkToSave = (formData.design_config?.bit_link || "").trim();
+    const bitPhoneToSave = (formData.design_config?.bit_phone || "").trim();
+    if (bitLinkToSave && !isValidBitUrl(bitLinkToSave)) {
+      return alert(
+        "קישור ה-bit אינו תקין. הוא צריך להתחיל ב-https:// ולהיות של bitpay.co.il.",
+      );
+    }
+    if (bitPhoneToSave && !isValidBitPhone(bitPhoneToSave)) {
+      return alert("מספר הטלפון לגיבוי ב-bit אינו תקין.");
+    }
     const payloadToSave = {
       ...formData,
       short_code: formData.short_code
         ? formData.short_code.trim().toUpperCase()
         : null,
+      design_config: {
+        ...formData.design_config,
+        bit_link: bitLinkToSave,
+        bit_phone: bitPhoneToSave,
+      },
     };
 
     setSaving(true);
@@ -1773,6 +1799,124 @@ const Admin = () => {
                     </button>
                   </div>
                 </div>
+
+                {/* מתנה ב-bit: נשמר ב-design_config.bit_link / bit_phone.
+                    ריק = האורחים לא רואים כלום. רק קישור https של bitpay.co.il
+                    מוצג לאורחים (ראו lib/bitGift.js). */}
+                <div className="space-y-2 bg-clay-well shadow-clay-inset p-4 rounded-2xl">
+                  <label
+                    htmlFor="bit-link"
+                    className="text-sm font-bold text-slate-800 block"
+                  >
+                    קישור לתשלום ב-bit (מתנה לזוג)
+                  </label>
+                  <p className="text-xs text-clay-muted mb-3">
+                    אופציונלי. האורחים יראו כפתור "רוצים לפנק במתנה ב-bit?"
+                    בהזמנה ובקישורי הקסם.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      id="bit-link"
+                      type="url"
+                      inputMode="url"
+                      value={formData.design_config?.bit_link || ""}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          design_config: {
+                            ...prev.design_config,
+                            bit_link: e.target.value,
+                          },
+                        }))
+                      }
+                      placeholder="https://www.bitpay.co.il/app/..."
+                      aria-invalid={bitLinkInvalid}
+                      aria-describedby={
+                        bitLinkInvalid ? "bit-link-error" : undefined
+                      }
+                      className="w-full min-w-0 p-4 bg-clay-surface shadow-clay-inset rounded-xl focus:ring-2 focus:ring-clay-ink/40 outline-none text-sm text-left"
+                      dir="ltr"
+                    />
+                    {bitLinkValid && (
+                      <button
+                        type="button"
+                        onClick={() => setIsBitQrOpen(true)}
+                        className="shrink-0 flex items-center justify-center gap-2 bg-clay-ink hover:bg-clay-ink-hover text-white shadow-clay-btn px-4 py-3 rounded-xl font-bold text-sm transition-colors"
+                      >
+                        <QrCode size={16} /> הצג / הורד קוד QR ל-bit
+                      </button>
+                    )}
+                  </div>
+                  {bitLinkInvalid && (
+                    <p
+                      id="bit-link-error"
+                      className="text-xs font-bold text-rose-700"
+                    >
+                      הקישור צריך להתחיל ב-https:// ולהיות של bit
+                      (bitpay.co.il).
+                    </p>
+                  )}
+
+                  <label
+                    htmlFor="bit-phone"
+                    className="text-xs font-bold text-slate-700 block pt-2"
+                  >
+                    מספר טלפון לגיבוי ב-bit (אופציונלי)
+                  </label>
+                  <input
+                    id="bit-phone"
+                    type="tel"
+                    value={formData.design_config?.bit_phone || ""}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        design_config: {
+                          ...prev.design_config,
+                          bit_phone: e.target.value,
+                        },
+                      }))
+                    }
+                    placeholder="050-0000000"
+                    aria-invalid={bitPhoneInvalid}
+                    className="w-full p-4 bg-clay-surface shadow-clay-inset rounded-xl focus:ring-2 focus:ring-clay-ink/40 outline-none text-sm text-left"
+                    dir="ltr"
+                  />
+                  {bitPhoneInvalid && (
+                    <p className="text-xs font-bold text-rose-700">
+                      מספר הטלפון אינו תקין.
+                    </p>
+                  )}
+                </div>
+
+                <Modal
+                  open={isBitQrOpen && bitLinkValid}
+                  onClose={() => setIsBitQrOpen(false)}
+                  title="קוד QR לתשלום ב-bit"
+                  size="sm"
+                >
+                  <div className="flex flex-col items-center gap-4 text-center">
+                    <QrCodeView
+                      data={bitLink}
+                      size={260}
+                      label="קוד QR לתשלום ב-bit"
+                    />
+                    <p className="text-xs text-clay-muted font-medium">
+                      להדפסה לשולחנות או לכניסה. האורחים סורקים ונפתח להם התשלום
+                      ב-bit.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        downloadQrPng(bitLink, "bit-gift-qr").catch(() =>
+                          alert("הורדת הקוד נכשלה, נסו שוב"),
+                        )
+                      }
+                      className="w-full flex items-center justify-center gap-2 bg-clay-ink hover:bg-clay-ink-hover text-white shadow-clay-btn py-3.5 rounded-xl font-bold transition-colors"
+                    >
+                      <Download size={18} /> הורדת PNG להדפסה
+                    </button>
+                  </div>
+                </Modal>
 
                 <div className="space-y-4 pt-2">
                   <div className="space-y-2">

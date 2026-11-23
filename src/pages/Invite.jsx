@@ -26,7 +26,10 @@ import {
   MapPin,
   Heart,
   Wine,
+  Gift,
 } from "lucide-react";
+import BitGiftModal, { BIT_ACCENT } from "../components/BitGiftModal";
+import { getBitGift } from "../lib/bitGift";
 import gsap from "gsap";
 import { accentOn } from "../lib/colors";
 import { useToast } from "../components/Toast";
@@ -255,6 +258,24 @@ const newGuestDraft = (key) => ({ key, name: "", dietary: DEFAULT_DIETARY });
 const ADD_GUEST_BUTTON =
   "w-full min-h-12 rounded-full flex items-center justify-center gap-2 font-bold text-slate-600 bg-clay-chip shadow-clay-md active:shadow-clay-pressed transition-all disabled:opacity-40";
 
+// "רוצים לפנק במתנה ב-bit?" — מוצג רק כשלאירוע יש קישור bit תקין
+// (getBitGift), כך שאירועים בלי קישור נראים בדיוק כמו קודם.
+const BitGiftButton = ({ onClick, className = "" }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`w-full flex items-center justify-center gap-2 font-bold py-4 rounded-full text-sm transition-all active:scale-95 text-clay-ink ${CLAY_RAISED} active:shadow-clay-pressed ${className}`}
+  >
+    <span
+      className="w-8 h-8 rounded-full flex items-center justify-center text-white shrink-0"
+      style={{ backgroundColor: BIT_ACCENT }}
+    >
+      <Gift size={15} />
+    </span>
+    רוצים לפנק במתנה ב-bit? 🎁
+  </button>
+);
+
 // כפתורי פעולה משותפים (Moved outside to prevent re-mounting)
 const ActionButtons = ({
   theme,
@@ -266,6 +287,8 @@ const ActionButtons = ({
   setRsvpStep,
   initialRsvpStep = 1,
   navigate,
+  bitGift,
+  onOpenGift,
 }) => {
   const isLight = theme === "light";
   return (
@@ -285,6 +308,7 @@ const ActionButtons = ({
           <CheckCircle2 size={24} /> אישור הגעה (RSVP)
         </button>
       )}
+      {bitGift && <BitGiftButton onClick={onOpenGift} />}
       <div className="flex flex-col md:flex-row gap-3">
         {location && (
           <a
@@ -347,6 +371,7 @@ const Invite = () => {
   // "לא אגיע" בקישור הכללי: רק שם והערה. נשמר כ-canceled — אותו ערך שקישור
   // הקסם כותב — כך שהמנהל רואה אותו ב"ביטלו" ולא צריך לרדוף אחריו.
   const [rsvpDeclining, setRsvpDeclining] = useState(false);
+  const [giftOpen, setGiftOpen] = useState(false);
   const [duplicateWarnings, setDuplicateWarnings] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -860,6 +885,7 @@ const Invite = () => {
   const template = design_config?.invite_template || "modern";
   const inviteImage = design_config?.invite_image;
   const schedule = getEventSchedule(design_config);
+  const bitGift = getBitGift(design_config);
   // הספירה לאחור מכוונת לשלב הראשון (קבלת הפנים), לא לשעה קבועה.
   const startTime = schedule[0]?.time;
 
@@ -953,6 +979,8 @@ const Invite = () => {
               setRsvpStep={setRsvpStep}
               initialRsvpStep={magicGuest ? RSVP_STEP_GUEST : 1}
               navigate={navigate}
+              bitGift={bitGift}
+              onOpenGift={() => setGiftOpen(true)}
             />
           </div>
         </div>
@@ -1037,6 +1065,8 @@ const Invite = () => {
                 setShowRsvp={setShowRsvp}
                 setRsvpStep={setRsvpStep}
                 initialRsvpStep={magicGuest ? RSVP_STEP_GUEST : 1}
+                bitGift={bitGift}
+                onOpenGift={() => setGiftOpen(true)}
                 navigate={navigate}
               />
             </div>
@@ -1131,6 +1161,8 @@ const Invite = () => {
             setRsvpStep={setRsvpStep}
             initialRsvpStep={magicGuest ? RSVP_STEP_GUEST : 1}
             navigate={navigate}
+            bitGift={bitGift}
+            onOpenGift={() => setGiftOpen(true)}
           />
         </div>
       </div>
@@ -1390,6 +1422,12 @@ const Invite = () => {
                     בחרו "מגיע/ה" או "לא אגיע" כדי לשמור
                   </p>
                 )}
+                {bitGift && (
+                  <BitGiftButton
+                    onClick={() => setGiftOpen(true)}
+                    className="mt-4"
+                  />
+                )}
               </div>
             )}
 
@@ -1430,6 +1468,12 @@ const Invite = () => {
                     סגירה
                   </button>
                 </div>
+                {bitGift && (
+                  <BitGiftButton
+                    onClick={() => setGiftOpen(true)}
+                    className="mt-4"
+                  />
+                )}
               </div>
             )}
 
@@ -1765,6 +1809,13 @@ const Invite = () => {
           </div>
         </div>
       )}
+
+      {/* אחרון ב-DOM, כדי שייפתח מעל גיליון ה-RSVP (אותו z-index) */}
+      <BitGiftModal
+        open={giftOpen}
+        onClose={() => setGiftOpen(false)}
+        gift={bitGift}
+      />
     </>
   );
 };
