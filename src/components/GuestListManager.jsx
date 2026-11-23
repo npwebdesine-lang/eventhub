@@ -142,6 +142,16 @@ export const parseGuestLines = (text) => {
 const CSV_BOM = "\uFEFF"; // אקסל מזהה UTF-8 רק לפי ה-BOM בתחילת הקובץ
 const csvCell = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
 
+// הכותרת נדבקת לראש אזור הגלילה; הרקע אטום כדי שהשורות לא ייראו דרכה.
+// הצל התחתון מפריד בינה לבין השורות שנגללות מתחתיה.
+const STICKY_HEAD =
+  "sticky top-0 z-20 bg-clay-surface px-3 pt-2 pb-2 shadow-[0_8px_8px_-8px_rgba(0,0,0,0.18)]";
+// עמודת השם (הראשונה, בצד ימין ב-RTL) נשארת במקום בגלילה אופקית, כדי
+// שתמיד יהיה ברור של מי השורה. רק מ-md: בטלפון היא תופסת חצי מסך.
+// הרקע חובה: בתא רגיל הוא מגיע מה-tr, אבל תא דביק זז בנפרד מהשורה ובלעדיו
+// העמודות שנגללות מתחתיו נראות דרכו.
+const STICKY_NAME = "md:sticky md:right-0 bg-clay-surface";
+
 export default function GuestListManager({ eventId, eventName, onClose }) {
   const { showToast } = useToast();
 
@@ -794,7 +804,14 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
           ))}
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 md:px-8">
+        {/* אזור גלילה אחד לשני הצירים. קודם הגלילה האופקית ישבה בתוך
+            האנכית, ולכן פס הגלילה האופקי הופיע רק אחרי השורה האחרונה —
+            ברשימה ארוכה לא היה אפשר להגיע לעמודות השמאליות. כאן הפס תמיד
+            בתחתית החלון, הכותרת נדבקת למעלה ועמודת השם נשארת בצד ימין. */}
+        {/* השוליים הצדדיים הם border שקוף ולא padding: תוכן נגלל מצויר גם
+            בתוך ה-padding, ואז עמודות שגלשו מתחת לעמודת השם הדביקה הציצו
+            ברצועה שמימינה. */}
+        <div className="min-h-0 flex-1 overflow-auto overscroll-contain border-x-[1rem] border-transparent pb-6 md:border-x-[2rem]">
           {loading ? (
             <div className="flex justify-center py-16">
               <Loader2 className="animate-spin text-clay-muted" size={36} />
@@ -806,19 +823,19 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
               <p className="text-sm">ייבאו רשימה כדי להתחיל</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div>
               <table className="w-full min-w-[1140px] border-separate border-spacing-y-2 text-right">
                 <thead>
                   <tr className="text-xs font-bold text-clay-muted">
-                    <th className="px-3 pb-1">שם</th>
-                    <th className="px-3 pb-1">טלפון</th>
-                    <th className="px-3 pb-1">סטטוס</th>
-                    <th className="px-3 pb-1">מנות (5+)</th>
-                    <th className="px-3 pb-1">עד גיל 5</th>
-                    <th className="px-3 pb-1">העדפת תזונה</th>
-                    <th className="px-3 pb-1">הערות</th>
-                    <th className="px-3 pb-1">קישור קסם</th>
-                    <th className="px-3 pb-1">מחיקה</th>
+                    <th className={`${STICKY_HEAD} ${STICKY_NAME} z-30`}>שם</th>
+                    <th className={STICKY_HEAD}>טלפון</th>
+                    <th className={STICKY_HEAD}>סטטוס</th>
+                    <th className={STICKY_HEAD}>מנות (5+)</th>
+                    <th className={STICKY_HEAD}>עד גיל 5</th>
+                    <th className={STICKY_HEAD}>העדפת תזונה</th>
+                    <th className={STICKY_HEAD}>הערות</th>
+                    <th className={STICKY_HEAD}>קישור קסם</th>
+                    <th className={STICKY_HEAD}>מחיקה</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -829,7 +846,7 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                     return (
                       <tr key={guest.id} className="bg-clay-surface">
                         <td
-                          className={`${CLAY_RAISED} rounded-r-2xl px-3 py-3`}
+                          className={`${CLAY_RAISED} ${STICKY_NAME} z-10 rounded-r-2xl px-3 py-3`}
                         >
                           <input
                             key={`name-${guest.id}-${guest.guest_name}`}
