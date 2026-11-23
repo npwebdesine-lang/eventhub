@@ -86,6 +86,11 @@ import {
 import { CLAY_PAGE_HEX } from "../lib/colors";
 import { isAllowedImageType } from "../lib/imageUtils";
 import { buildInviteLink } from "../lib/rsvpLink";
+import {
+  SCHEDULE_FIELDS,
+  getScheduleTime,
+  setScheduleTime,
+} from "../lib/eventSchedule";
 
 const GALLERY_PAGE_SIZE = 60;
 
@@ -1666,6 +1671,70 @@ const Admin = () => {
                     placeholder="לדוגמה: אולמי שושנים, תל אביב"
                     className="w-full p-4 bg-clay-well shadow-clay-inset rounded-2xl focus:ring-2 focus:ring-clay-ink/40 outline-none text-sm"
                   />
+                </div>
+
+                {/* לוח זמנים: נשמר ב-design_config.schedule. שדה ריק מסיר את
+                    השלב, ובלי שעות בכלל ההזמנה מוצגת כמו קודם. */}
+                <div className="space-y-2 bg-clay-well shadow-clay-inset p-4 rounded-2xl">
+                  <label className="text-sm font-bold text-slate-800 block">
+                    לוח זמנים (אופציונלי)
+                  </label>
+                  <p className="text-xs text-clay-muted mb-3">
+                    השעות יוצגו בהזמנה, בקישורי הקסם ובתצוגה המקדימה בוואטסאפ.
+                    השאירו ריק כדי לא להציג.
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {SCHEDULE_FIELDS.map((field) => {
+                      const inputId = `schedule-${field.label}`;
+                      const value = getScheduleTime(
+                        formData.design_config?.schedule,
+                        field.label,
+                      );
+                      const setTime = (time) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          design_config: {
+                            ...prev.design_config,
+                            schedule: setScheduleTime(
+                              prev.design_config?.schedule,
+                              field.label,
+                              time,
+                            ),
+                          },
+                        }));
+                      return (
+                        <div key={field.label} className="space-y-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2 min-h-6">
+                            <label
+                              htmlFor={inputId}
+                              className="text-xs font-bold text-slate-700"
+                            >
+                              {field.label}
+                            </label>
+                            {/* בחלק מהדפדפנים (iOS) אין דרך נוחה לרוקן שדה שעה */}
+                            {value && (
+                              <button
+                                type="button"
+                                onClick={() => setTime("")}
+                                className="text-xs font-bold text-clay-muted underline underline-offset-2"
+                                aria-label={`ניקוי שעת ${field.label}`}
+                              >
+                                ניקוי
+                              </button>
+                            )}
+                          </div>
+                          <input
+                            id={inputId}
+                            type="time"
+                            value={value}
+                            onChange={(e) => setTime(e.target.value)}
+                            className="w-full p-3 bg-clay-surface shadow-clay-inset rounded-xl focus:ring-2 focus:ring-clay-ink/40 outline-none text-sm font-black text-center"
+                            dir="ltr"
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <div className="space-y-2 bg-clay-well shadow-clay-inset p-4 rounded-2xl">
