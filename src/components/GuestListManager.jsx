@@ -7,8 +7,10 @@ import React, {
 } from "react";
 import {
   Check,
+  ChevronDown,
   Copy,
   Download,
+  Link2,
   Loader2,
   MessageCircle,
   Search,
@@ -63,6 +65,23 @@ const searchablePhone = (value) => {
   const digits = String(value || "").replace(/\D/g, "");
   return digits.startsWith("972") ? `0${digits.slice(3)}` : digits;
 };
+
+// מפתח קיבוץ לחבורה: אותה נרמול כמו בחיפוש, ובנוסף מסנן מספרים שאינם
+// מספר אמיתי — קצר מדי, או מספר "ממלא מקום" כמו 050-0000000 שבו שבע הספרות
+// האחרונות זהות. בלי הסינון הזה כל המוזמנים עם טלפון פיקטיבי היו מתמזגים
+// לחבורה אחת גדולה. null = שורה בודדת.
+const groupingPhoneKey = (value) => {
+  const normalized = searchablePhone(value);
+  if (normalized.length < 9 || normalized.length > 13) return null;
+  if (/^(\d)\1+$/.test(normalized.slice(-7))) return null;
+  return normalized;
+};
+
+// 0501234567 -> 050-1234567 לתצוגה בכותרת החבורה; כל צורה אחרת נשארת כמות שהיא.
+const formatPhoneForDisplay = (normalized) =>
+  /^05\d{8}$/.test(normalized)
+    ? `${normalized.slice(0, 3)}-${normalized.slice(3)}`
+    : normalized;
 
 // חיפוש לפי שם (בלי תלות ברישיות) או טלפון. שאילתה ריקה מתאימה לכולם.
 const matchesSearch = (guest, query) => {
@@ -169,6 +188,20 @@ const STICKY_HEAD =
 // הרקע חובה: בתא רגיל הוא מגיע מה-tr, אבל תא דביק זז בנפרד מהשורה ובלעדיו
 // העמודות שנגללות מתחתיו נראות דרכו.
 const STICKY_NAME = "md:sticky md:right-0 bg-clay-surface";
+
+// table-fixed עם רוחבים קבועים, כי כל חבורה מצוירת כטבלה מקוננת משלה בתוך
+// כרטיס: רק כשהעמודות מוגדרות במפורש הן מתיישרות בין השורות הבודדות לבין
+// השורות שבתוך החבורות. "הערות" בלי רוחב — היא סופגת את שארית השטח.
+const COLUMN_WIDTHS = [190, 160, 120, 88, 88, 170, null, 150, 110];
+const ColumnGroup = () => (
+  <colgroup>
+    {COLUMN_WIDTHS.map((width, index) => (
+      <col key={index} style={width ? { width } : undefined} />
+    ))}
+  </colgroup>
+);
+const TABLE_CLASS =
+  "w-full table-fixed border-separate border-spacing-y-2 text-right";
 
 export default function GuestListManager({ eventId, eventName, onClose }) {
   const { showToast } = useToast();
@@ -298,18 +331,29 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
     [guests],
   );
 
-  // אדם אחד = שורה אחת, ולכן חבורה מזוהה רק לפי טלפון משותף. הספירה מתבצעת
-  // על כל המוזמנים ולא על התצוגה המסוננת, אחרת מעבר ללשונית "אישרו" היה
-  // מקטין את מספר בני החבורה ונראה כמו באג.
-  const phoneGroupSizes = useMemo(() => {
-    const sizes = new Map();
+  // אדם אחד = שורה אחת, ולכן חבורה מזוהה רק לפי טלפון משותף (מנורמל). הקיבוץ
+  // מתבצע על כל המוזמנים ולא על התצוגה המסוננת, אחרת מעבר ללשונית "אישרו"
+  // היה מקטין את מספר בני החבורה ונראה כמו באג.
+  const phoneGroups = useMemo(() => {
+    const groups = new Map();
     guests.forEach((guest) => {
-      const key = (guest.phone || "").trim();
-      if (!key) return; // בלי טלפון אין מפתח קיבוץ — שורה בודדת
-      sizes.set(key, (sizes.get(key) || 0) + 1);
+      const key = groupingPhoneKey(guest.phone);
+      if (!key) return; // בלי טלפון אמיתי אין מפתח קיבוץ — שורה בודדת
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(guest);
     });
-    return sizes;
+    return groups;
   }, [guests]);
+
+  // חבורות מקופלות. ברירת המחדל פתוחה, כדי שכל בני החבורה זמינים לעריכה מיד.
+  const [collapsedGroups, setCollapsedGroups] = useState(() => new Set());
+  const toggleGroup = (key) =>
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
 
   // המספר שהאולם מבקש: מנות בתשלום בלבד (מגיל 5 ומעלה). ילדים עד גיל 5
   // נספרים בנפרד — הם לא מנה, אבל צריכים כיסא תינוק / מקום לעגלה.
@@ -339,6 +383,34 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
     [guests, activeTab, searchQuery],
   );
   const isSearching = searchQuery.trim() !== "";
+  const isFiltering = isSearching || activeTab !== "all";
+
+  // מה שמוצג בפועל: שורות בודדות וחבורות, לפי סדר ההופעה של החבר הראשון.
+  // חבורה מוצגת בשלמותה אם לפחות אחד מבניה תואם ללשונית ולחיפוש — כך רואים
+  // את ההקשר — ומי שלא תואם מוצג מעומעם. filtered נשאר הרשימה המסוננת
+  // השטוחה, ועליו נשענים הייצוא והמצבים הריקים.
+  const listItems = useMemo(() => {
+    const filteredIds = new Set(filtered.map((g) => g.id));
+    const placed = new Set();
+    const items = [];
+    guests.forEach((guest) => {
+      const key = groupingPhoneKey(guest.phone);
+      const members = key ? phoneGroups.get(key) : null;
+      if (members && members.length > 1) {
+        if (placed.has(key)) return;
+        placed.add(key);
+        const matchingIds = new Set(
+          members.filter((m) => filteredIds.has(m.id)).map((m) => m.id),
+        );
+        if (matchingIds.size > 0) {
+          items.push({ type: "group", key, members, matchingIds });
+        }
+      } else if (filteredIds.has(guest.id)) {
+        items.push({ type: "single", guest });
+      }
+    });
+    return items;
+  }, [guests, filtered, phoneGroups]);
 
   const preview = useMemo(
     () =>
@@ -544,6 +616,347 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  };
+
+  // שורת מוזמן אחת. group מגיע רק לשורה שבתוך כרטיס חבורה.
+  const renderGuestRow = (guest, group = null) => {
+    const waPhone = toWhatsAppPhone(guest.phone);
+    // מעומעם = בן חבורה שמוצג רק כהקשר, כי הוא עצמו לא תואם לסינון. מעמעמים
+    // את התוכן ולא את התא: תא דביק שקוף היה חושף את העמודות שנגללות מתחתיו.
+    const dimmed = group && !group.matchingIds.has(guest.id);
+    return (
+      <tr
+        key={guest.id}
+        className={`bg-clay-surface ${dimmed ? "[&>td>*]:opacity-50" : ""}`}
+      >
+        <td
+          className={`${CLAY_RAISED} ${STICKY_NAME} z-10 rounded-r-2xl px-3 py-3`}
+        >
+          <input
+            key={`name-${guest.id}-${guest.guest_name}`}
+            defaultValue={guest.guest_name || ""}
+            onBlur={(event) =>
+              saveField(guest, "guest_name", event.target.value)
+            }
+            maxLength={100}
+            aria-label="שם המוזמן"
+            className={`${CLAY_INSET} w-full rounded-xl bg-clay-surface px-3 min-h-11 text-sm font-bold text-slate-700 focus:outline-none`}
+          />
+        </td>
+        <td className="px-3 py-3">
+          <input
+            key={`phone-${guest.id}-${guest.phone}`}
+            defaultValue={guest.phone || ""}
+            onBlur={(event) =>
+              saveField(guest, "phone", event.target.value)
+            }
+            dir="ltr"
+            placeholder="050-0000000"
+            aria-label="טלפון"
+            className={`${CLAY_INSET} w-full rounded-xl bg-clay-surface px-3 min-h-11 text-right text-sm text-slate-600 placeholder:text-clay-muted focus:outline-none`}
+          />
+        </td>
+        <td className="px-3 py-3">
+          <select
+            value={guest.status}
+            onChange={(event) =>
+              saveField(guest, "status", event.target.value)
+            }
+            aria-label="סטטוס"
+            className={`w-full rounded-lg px-2.5 min-h-11 text-xs font-bold focus:outline-none ${STATUS_BADGE[guest.status]}`}
+          >
+            {Object.entries(STATUS_LABEL).map(
+              ([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ),
+            )}
+          </select>
+        </td>
+        <td className="px-3 py-3">
+          <input
+            key={`count-${guest.id}-${guest.guests_count}`}
+            type="number"
+            min={0}
+            max={20}
+            defaultValue={guest.guests_count}
+            onBlur={(event) =>
+              saveField(
+                guest,
+                "guests_count",
+                event.target.value,
+              )
+            }
+            aria-label="מנות (מגיל 5 ומעלה)"
+            className={`${CLAY_INSET} w-16 rounded-xl bg-clay-surface px-2 min-h-11 text-center text-sm font-bold text-slate-700 focus:outline-none`}
+          />
+        </td>
+        <td className="px-3 py-3">
+          {/* מודגש כשיש ילדים — כך רואים במבט אילו משפחות
+              צריכות כיסא תינוק בסידורי ההושבה. */}
+          <input
+            key={`under5-${guest.id}-${guest.under_5_count}`}
+            type="number"
+            min={0}
+            max={20}
+            defaultValue={guest.under_5_count ?? 0}
+            onBlur={(event) =>
+              saveField(
+                guest,
+                "under_5_count",
+                event.target.value,
+              )
+            }
+            aria-label="תינוקות/ילדים עד גיל 5 (ללא מנה)"
+            className={`${CLAY_INSET} w-16 rounded-xl px-2 min-h-11 text-center text-sm font-bold focus:outline-none ${
+              (guest.under_5_count || 0) > 0
+                ? "bg-amber-100 text-amber-800"
+                : "bg-clay-surface text-clay-muted"
+            }`}
+          />
+        </td>
+        <td className="px-3 py-3">
+          <select
+            value={guest.dietary || DEFAULT_DIETARY}
+            onChange={(event) =>
+              saveField(guest, "dietary", event.target.value)
+            }
+            aria-label={`העדפת תזונה עבור ${guest.guest_name}`}
+            className={`${CLAY_INSET} w-full rounded-xl bg-clay-surface px-3 min-h-11 text-sm text-slate-600 focus:outline-none`}
+          >
+            {DIETARY_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.emoji} {option.label}
+              </option>
+            ))}
+          </select>
+        </td>
+        <td className="px-3 py-3">
+          <input
+            key={`notes-${guest.id}-${guest.notes}`}
+            defaultValue={guest.notes || ""}
+            onBlur={(event) =>
+              saveField(guest, "notes", event.target.value)
+            }
+            maxLength={500}
+            placeholder="הוסף הערה..."
+            aria-label="הערות"
+            className={`${CLAY_INSET} w-full rounded-xl bg-clay-surface px-3 min-h-11 text-sm text-slate-600 placeholder:text-clay-muted focus:outline-none`}
+          />
+        </td>
+        <td className="px-3 py-3">
+          {group?.sharedIds.has(guest.id) ? (
+            // הקישור המשותף בכותרת החבורה כבר פותח את השורה הזו — הודעה
+            // נפרדת לכל אחד הייתה שולחת לאותו טלפון את אותו טופס שוב ושוב.
+            <span
+              title="נשלח בקישור המשותף שבכותרת החבורה"
+              className="flex items-center gap-1.5 px-1 text-xs font-bold text-clay-muted"
+            >
+              {sentIds.has(guest.id) ? <Check size={14} /> : <Link2 size={14} />}
+              בקישור המשותף
+            </span>
+          ) : waPhone ? (
+            <a
+              href={buildWhatsAppSendUrl(
+                waPhone,
+                buildRsvpMessage(guest, origin),
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => markSent(guest.id)}
+              aria-label={`שליחת וואטסאפ אל ${guest.guest_name}`}
+              className={`flex items-center gap-1.5 rounded-xl px-3 min-h-11 text-sm font-bold transition-all ${
+                sentIds.has(guest.id)
+                  ? `${CLAY_INSET} bg-clay-surface text-clay-muted`
+                  : `${CLAY_RAISED} bg-emerald-700 text-white hover:bg-emerald-800`
+              }`}
+            >
+              {sentIds.has(guest.id) ? (
+                <>
+                  <Check size={16} /> נשלח
+                </>
+              ) : (
+                <>
+                  <MessageCircle size={16} /> שלח וואטסאפ
+                </>
+              )}
+            </a>
+          ) : (
+            <button
+              onClick={() => {
+                copyMessage(guest);
+                markSent(guest.id);
+              }}
+              title="אין טלפון תקין — העתקת ההודעה"
+              className={`flex items-center gap-1.5 rounded-xl px-3 min-h-11 text-sm font-bold transition-all ${
+                sentIds.has(guest.id)
+                  ? `${CLAY_INSET} bg-clay-surface text-clay-muted`
+                  : `${CLAY_RAISED} bg-clay-surface text-slate-600`
+              }`}
+            >
+              <Copy size={16} />
+              {sentIds.has(guest.id) ? "הועתק" : "העתק"}
+            </button>
+          )}
+        </td>
+        <td
+          className={`${CLAY_RAISED} rounded-l-2xl px-3 py-3`}
+        >
+          {confirmingDeleteId === guest.id ? (
+            <button
+              onClick={() => confirmDelete(guest)}
+              className="flex items-center gap-1.5 rounded-xl bg-rose-700 px-3 min-h-11 text-sm font-bold text-white transition-colors hover:bg-rose-800"
+            >
+              <Trash2 size={16} /> לאשר?
+            </button>
+          ) : (
+            <button
+              onClick={() => requestDelete(guest.id)}
+              aria-label={`מחיקת ${guest.guest_name}`}
+              className="flex items-center gap-1.5 rounded-xl px-3 min-h-11 text-sm font-bold text-clay-muted transition-colors hover:bg-rose-50 hover:text-rose-700"
+            >
+              <Trash2 size={16} /> מחק
+            </button>
+          )}
+        </td>
+      </tr>
+    );
+  };
+
+  // כרטיס חבורה: שורה אחת ברוחב כל הטבלה, ובתוכה טבלה מקוננת עם אותן
+  // עמודות בדיוק (ColumnGroup + table-fixed), כך שהשדות מתיישרים עם שאר
+  // הרשימה. ה-mx-2- מושך את המסגרת אל השוליים הפנימיים של עוטף הטבלה, כך
+  // שהטבלה המקוננת ברוחב התא בדיוק והעמודות לא זזות.
+  const renderGroup = ({ key, members, matchingIds }) => {
+    const collapsed = collapsedGroups.has(key);
+    // הקישור המשותף הוא הקישור של החבר הראשון. rsvp_guest_group מקבץ לפי
+    // הטלפון כפי שנשמר, תו בתו, ולכן הוא פותח רק את מי שהטלפון שלו כתוב
+    // בדיוק כמו של הראשון. מי שכתוב אחרת (למשל 972... מול 050-...) מקבל
+    // כפתור שליחה משלו בשורה, ומסומן כאן.
+    const primary = members[0];
+    const primaryRawPhone = (primary.phone || "").trim();
+    const sharedIds = new Set(
+      members
+        .filter((m) => (m.phone || "").trim() === primaryRawPhone)
+        .map((m) => m.id),
+    );
+    const mismatchedCount = members.length - sharedIds.size;
+    const waPhone = toWhatsAppPhone(primary.phone);
+    const meals = members.reduce((sum, m) => sum + (m.guests_count || 0), 0);
+    const under5 = members.reduce((sum, m) => sum + (m.under_5_count || 0), 0);
+    const confirmedCount = members.filter(
+      (m) => m.status === "confirmed",
+    ).length;
+    const sharedSent = [...sharedIds].every((id) => sentIds.has(id));
+    const markGroupSent = () =>
+      setSentIds((prev) => new Set([...prev, ...sharedIds]));
+    const bodyId = `guest-group-${key}`;
+
+    return (
+      <tr key={`group-${key}`}>
+        <td colSpan={COLUMN_WIDTHS.length} className="p-0">
+          <div className="-mx-2 rounded-3xl bg-clay-well-deep px-2 pt-2 shadow-clay-md ring-1 ring-indigo-200/80">
+            {/* הכותרת דביקה לימין, כדי שתישאר גלויה גם כשגוללים את הטבלה
+                הצידה. w-fit — אחרת היא ברוחב הטבלה כולה ואין לה לאן להידבק. */}
+            <div className="sticky right-0 flex w-fit max-w-[calc(100vw_-_4.5rem)] flex-wrap items-center gap-x-3 gap-y-2 px-1 py-1.5 md:max-w-none">
+              <button
+                type="button"
+                onClick={() => toggleGroup(key)}
+                aria-expanded={!collapsed}
+                aria-controls={bodyId}
+                aria-label={collapsed ? "הצגת בני החבורה" : "הסתרת בני החבורה"}
+                className={`${CLAY_RAISED} flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-clay-surface text-slate-600 transition-colors hover:text-slate-800`}
+              >
+                <ChevronDown
+                  size={18}
+                  className={`transition-transform ${collapsed ? "rotate-90" : ""}`}
+                />
+              </button>
+              <span className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-100 px-2.5 py-1 text-sm font-black text-indigo-800">
+                <Users size={15} /> חבורה של {members.length}
+              </span>
+              <span
+                dir="ltr"
+                className="text-sm font-bold tabular-nums text-slate-600"
+              >
+                {formatPhoneForDisplay(key)}
+              </span>
+              <span className="text-xs font-bold text-clay-muted">
+                {meals} מנות (5+) · {under5} עד גיל 5 · אישרו {confirmedCount}/
+                {members.length}
+              </span>
+              {isFiltering && matchingIds.size < members.length && (
+                <span className="rounded-lg bg-clay-surface px-2 py-0.5 text-xs font-bold text-slate-600">
+                  {matchingIds.size} תואמים לסינון
+                </span>
+              )}
+              {mismatchedCount > 0 && (
+                <span
+                  title="הטלפון של חלק מבני החבורה כתוב בפורמט אחר, ולכן הקישור המשותף לא יפתח אותם. אפשר לשלוח להם מהשורה, או לכתוב את הטלפון זהה לכולם."
+                  className="rounded-lg bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800"
+                >
+                  {mismatchedCount} בפורמט טלפון שונה
+                </span>
+              )}
+              <div className="flex items-center gap-2">
+                {waPhone && (
+                  <a
+                    href={buildWhatsAppSendUrl(
+                      waPhone,
+                      buildRsvpMessage(primary, origin),
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={markGroupSent}
+                    aria-label={`שליחת קישור קסם משותף לחבורה של ${primary.guest_name}`}
+                    className={`flex items-center gap-1.5 rounded-xl px-3 min-h-11 text-sm font-bold transition-all ${
+                      sharedSent
+                        ? `${CLAY_INSET} bg-clay-surface text-clay-muted`
+                        : `${CLAY_RAISED} bg-emerald-700 text-white hover:bg-emerald-800`
+                    }`}
+                  >
+                    {sharedSent ? (
+                      <>
+                        <Check size={16} /> נשלח
+                      </>
+                    ) : (
+                      <>
+                        <MessageCircle size={16} /> שלח לחבורה
+                      </>
+                    )}
+                  </a>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    copyMessage(primary);
+                    markGroupSent();
+                  }}
+                  title="העתקת קישור הקסם המשותף"
+                  aria-label="העתקת קישור הקסם המשותף לחבורה"
+                  className={`${CLAY_RAISED} flex items-center gap-1.5 rounded-xl bg-clay-surface px-3 min-h-11 text-sm font-bold text-slate-600`}
+                >
+                  <Copy size={16} />
+                  <span className="hidden sm:inline">העתק קישור</span>
+                </button>
+              </div>
+            </div>
+            <div id={bodyId} hidden={collapsed}>
+              <table className={TABLE_CLASS}>
+                <ColumnGroup />
+                <tbody>
+                  {members.map((guest) =>
+                    renderGuestRow(guest, { matchingIds, sharedIds }),
+                  )}
+                </tbody>
+              </table>
+            </div>
+            {collapsed && <div className="h-2" />}
+          </div>
+        </td>
+      </tr>
+    );
   };
 
   return (
@@ -879,7 +1292,7 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
         {/* השוליים הצדדיים הם border שקוף ולא padding: תוכן נגלל מצויר גם
             בתוך ה-padding, ואז עמודות שגלשו מתחת לעמודת השם הדביקה הציצו
             ברצועה שמימינה. */}
-        <div className="min-h-0 flex-1 overflow-auto overscroll-contain border-x-[1rem] border-transparent pb-6 md:border-x-[2rem]">
+        <div className="min-h-0 flex-1 overflow-auto overscroll-contain border-x-[0.5rem] border-transparent pb-6 md:border-x-[1.5rem]">
           {loading ? (
             <div className="flex justify-center py-16">
               <Loader2 className="animate-spin text-clay-muted" size={36} />
@@ -911,8 +1324,14 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
               </div>
             )
           ) : (
-            <div>
-              <table className="w-full min-w-[1140px] border-separate border-spacing-y-2 text-right">
+            // px-2 כאן ולא על אזור הגלילה: זה תוכן שנגלל, ולכן עמודת השם
+            // הדביקה עדיין נצמדת לקצה (ראו למעלה), אבל יש מקום למסגרת של
+            // כרטיסי החבורות. הרוחב המינימלי (1260 + הריפוד) נקבע על העוטף
+            // ולא על הטבלה, כדי שהריפוד יעטוף גם את הצד שגולש. לא w-max: עם
+            // עמודת הערות בלי רוחב, הרוחב הטבעי של table-fixed מתפוצץ.
+            <div className="min-w-[1276px] px-2">
+              <table className={TABLE_CLASS}>
+                <ColumnGroup />
                 <thead>
                   <tr className="text-xs font-bold text-clay-muted">
                     <th className={`${STICKY_HEAD} ${STICKY_NAME} z-30`}>שם</th>
@@ -927,206 +1346,11 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((guest) => {
-                    const waPhone = toWhatsAppPhone(guest.phone);
-                    const groupSize =
-                      phoneGroupSizes.get((guest.phone || "").trim()) || 1;
-                    return (
-                      <tr key={guest.id} className="bg-clay-surface">
-                        <td
-                          className={`${CLAY_RAISED} ${STICKY_NAME} z-10 rounded-r-2xl px-3 py-3`}
-                        >
-                          <input
-                            key={`name-${guest.id}-${guest.guest_name}`}
-                            defaultValue={guest.guest_name || ""}
-                            onBlur={(event) =>
-                              saveField(guest, "guest_name", event.target.value)
-                            }
-                            maxLength={100}
-                            aria-label="שם המוזמן"
-                            className={`${CLAY_INSET} w-full rounded-xl bg-clay-surface px-3 min-h-11 text-sm font-bold text-slate-700 focus:outline-none`}
-                          />
-                        </td>
-                        <td className="px-3 py-3">
-                          <input
-                            key={`phone-${guest.id}-${guest.phone}`}
-                            defaultValue={guest.phone || ""}
-                            onBlur={(event) =>
-                              saveField(guest, "phone", event.target.value)
-                            }
-                            dir="ltr"
-                            placeholder="050-0000000"
-                            aria-label="טלפון"
-                            className={`${CLAY_INSET} w-full rounded-xl bg-clay-surface px-3 min-h-11 text-right text-sm text-slate-600 placeholder:text-clay-muted focus:outline-none`}
-                          />
-                          {/* טלפון משותף = הגיעו יחד. הסימון הוא הרמז היחיד
-                              לקיבוץ אחרי שכל אדם הפך לשורה עצמאית. */}
-                          {groupSize > 1 && (
-                            <span
-                              title={`${groupSize} אורחים עם אותו טלפון — הגיעו יחד`}
-                              className="mt-1 inline-flex items-center gap-1 rounded-lg bg-indigo-100 px-2 py-0.5 text-[11px] font-bold text-indigo-700"
-                            >
-                              <Users size={11} /> חבורה של {groupSize}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-3 py-3">
-                          <select
-                            value={guest.status}
-                            onChange={(event) =>
-                              saveField(guest, "status", event.target.value)
-                            }
-                            aria-label="סטטוס"
-                            className={`w-full rounded-lg px-2.5 min-h-11 text-xs font-bold focus:outline-none ${STATUS_BADGE[guest.status]}`}
-                          >
-                            {Object.entries(STATUS_LABEL).map(
-                              ([key, label]) => (
-                                <option key={key} value={key}>
-                                  {label}
-                                </option>
-                              ),
-                            )}
-                          </select>
-                        </td>
-                        <td className="px-3 py-3">
-                          <input
-                            key={`count-${guest.id}-${guest.guests_count}`}
-                            type="number"
-                            min={0}
-                            max={20}
-                            defaultValue={guest.guests_count}
-                            onBlur={(event) =>
-                              saveField(
-                                guest,
-                                "guests_count",
-                                event.target.value,
-                              )
-                            }
-                            aria-label="מנות (מגיל 5 ומעלה)"
-                            className={`${CLAY_INSET} w-16 rounded-xl bg-clay-surface px-2 min-h-11 text-center text-sm font-bold text-slate-700 focus:outline-none`}
-                          />
-                        </td>
-                        <td className="px-3 py-3">
-                          {/* מודגש כשיש ילדים — כך רואים במבט אילו משפחות
-                              צריכות כיסא תינוק בסידורי ההושבה. */}
-                          <input
-                            key={`under5-${guest.id}-${guest.under_5_count}`}
-                            type="number"
-                            min={0}
-                            max={20}
-                            defaultValue={guest.under_5_count ?? 0}
-                            onBlur={(event) =>
-                              saveField(
-                                guest,
-                                "under_5_count",
-                                event.target.value,
-                              )
-                            }
-                            aria-label="תינוקות/ילדים עד גיל 5 (ללא מנה)"
-                            className={`${CLAY_INSET} w-16 rounded-xl px-2 min-h-11 text-center text-sm font-bold focus:outline-none ${
-                              (guest.under_5_count || 0) > 0
-                                ? "bg-amber-100 text-amber-800"
-                                : "bg-clay-surface text-clay-muted"
-                            }`}
-                          />
-                        </td>
-                        <td className="px-3 py-3">
-                          <select
-                            value={guest.dietary || DEFAULT_DIETARY}
-                            onChange={(event) =>
-                              saveField(guest, "dietary", event.target.value)
-                            }
-                            aria-label={`העדפת תזונה עבור ${guest.guest_name}`}
-                            className={`${CLAY_INSET} w-full rounded-xl bg-clay-surface px-3 min-h-11 text-sm text-slate-600 focus:outline-none`}
-                          >
-                            {DIETARY_OPTIONS.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.emoji} {option.label}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="px-3 py-3">
-                          <input
-                            key={`notes-${guest.id}-${guest.notes}`}
-                            defaultValue={guest.notes || ""}
-                            onBlur={(event) =>
-                              saveField(guest, "notes", event.target.value)
-                            }
-                            maxLength={500}
-                            placeholder="הוסף הערה..."
-                            aria-label="הערות"
-                            className={`${CLAY_INSET} w-full rounded-xl bg-clay-surface px-3 min-h-11 text-sm text-slate-600 placeholder:text-clay-muted focus:outline-none`}
-                          />
-                        </td>
-                        <td className="px-3 py-3">
-                          {waPhone ? (
-                            <a
-                              href={buildWhatsAppSendUrl(
-                                waPhone,
-                                buildRsvpMessage(guest, origin),
-                              )}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={() => markSent(guest.id)}
-                              aria-label={`שליחת וואטסאפ אל ${guest.guest_name}`}
-                              className={`flex items-center gap-1.5 rounded-xl px-3 min-h-11 text-sm font-bold transition-all ${
-                                sentIds.has(guest.id)
-                                  ? `${CLAY_INSET} bg-clay-surface text-clay-muted`
-                                  : `${CLAY_RAISED} bg-emerald-700 text-white hover:bg-emerald-800`
-                              }`}
-                            >
-                              {sentIds.has(guest.id) ? (
-                                <>
-                                  <Check size={16} /> נשלח
-                                </>
-                              ) : (
-                                <>
-                                  <MessageCircle size={16} /> שלח וואטסאפ
-                                </>
-                              )}
-                            </a>
-                          ) : (
-                            <button
-                              onClick={() => {
-                                copyMessage(guest);
-                                markSent(guest.id);
-                              }}
-                              title="אין טלפון תקין — העתקת ההודעה"
-                              className={`flex items-center gap-1.5 rounded-xl px-3 min-h-11 text-sm font-bold transition-all ${
-                                sentIds.has(guest.id)
-                                  ? `${CLAY_INSET} bg-clay-surface text-clay-muted`
-                                  : `${CLAY_RAISED} bg-clay-surface text-slate-600`
-                              }`}
-                            >
-                              <Copy size={16} />
-                              {sentIds.has(guest.id) ? "הועתק" : "העתק"}
-                            </button>
-                          )}
-                        </td>
-                        <td
-                          className={`${CLAY_RAISED} rounded-l-2xl px-3 py-3`}
-                        >
-                          {confirmingDeleteId === guest.id ? (
-                            <button
-                              onClick={() => confirmDelete(guest)}
-                              className="flex items-center gap-1.5 rounded-xl bg-rose-700 px-3 min-h-11 text-sm font-bold text-white transition-colors hover:bg-rose-800"
-                            >
-                              <Trash2 size={16} /> לאשר?
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => requestDelete(guest.id)}
-                              aria-label={`מחיקת ${guest.guest_name}`}
-                              className="flex items-center gap-1.5 rounded-xl px-3 min-h-11 text-sm font-bold text-clay-muted transition-colors hover:bg-rose-50 hover:text-rose-700"
-                            >
-                              <Trash2 size={16} /> מחק
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {listItems.map((item) =>
+                    item.type === "group"
+                      ? renderGroup(item)
+                      : renderGuestRow(item.guest),
+                  )}
                 </tbody>
               </table>
             </div>
