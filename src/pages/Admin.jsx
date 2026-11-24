@@ -2893,7 +2893,12 @@ const Admin = () => {
       {isGuestListOpen && selectedEvent && !selectedEvent.isNew && (
         <GuestListManager
           eventId={selectedEvent.id}
-          eventName={formData.name}
+          eventDetails={{
+            name: formData.name,
+            event_date: formData.event_date,
+            location: formData.location,
+            design_config: formData.design_config,
+          }}
           onClose={() => setIsGuestListOpen(false)}
         />
       )}

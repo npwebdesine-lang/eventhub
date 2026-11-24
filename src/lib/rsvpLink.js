@@ -53,5 +53,11 @@ export const decodeGuestCode = (code) => {
 export const buildInviteLink = (origin, eventId) =>
   `${origin}/i/${encodeGuestCode(eventId)}`;
 
-export const buildRsvpLink = (origin, guestId, status) =>
-  `${origin}/r/${encodeGuestCode(guestId)}?s=${RSVP_LINK_STATUS[status]}`;
+// בלי status: קישור "צפייה ועדכון" — פותח את ההזמנה האישית של האורח (וכל
+// החבורה) בלי להחיל אישור או ביטול. עם status: הלחיצה עצמה היא התשובה.
+export const buildRsvpLink = (origin, guestId, status) => {
+  const base = `${origin}/r/${encodeGuestCode(guestId)}`;
+  return status && RSVP_LINK_STATUS[status]
+    ? `${base}?s=${RSVP_LINK_STATUS[status]}`
+    : base;
+};

@@ -27,7 +27,7 @@ import {
   UNDER_5_DIETARY,
 } from "../lib/dietary";
 import { parseGuestFile, isValidGuestRow } from "../lib/guestImport";
-import { buildRsvpLink } from "../lib/rsvpLink";
+import { buildRsvpMessage } from "../lib/rsvpMessage";
 import { useToast } from "./Toast";
 
 // ניהול רשימת מוזמנים + "קישורי קסם" לוואטסאפ.
@@ -102,27 +102,6 @@ export const toWhatsAppPhone = (phone) => {
   if (digits.length >= 9 && digits.length <= 15) return digits;
   return null;
 };
-
-// שני קישורים קצרים (/r/<code>?s=1|0 — ראו lib/rsvpLink.js). RsvpLink.jsx
-// מעביר את האורח להזמנה המאוחדת, ו-Invite.jsx מחיל את הסטטוס מיד עם
-// הטעינה, ולכן לחיצה אחת מספיקה. הסטטוס חייב להישאר בכתובת: בלעדיו
-// "לאישור" ו"לביטול" היו אותה כתובת בדיוק.
-//
-// ההודעה נבנית כמערך שורות שמחובר ב-"\n", ולא כמחרוזת אחת עם שבירות בתוך
-// הקוד: כך אין רווחים נגררים לפני שבירת שורה, ופורמט אוטומטי של הקובץ לא
-// יכול לשנות את ההודעה. שורה ריקה = "". מי שבונה קישור wa.me חייב לעטוף
-// ב-encodeURIComponent (ה-"\n" הופך ל-%0A) — אחרת וואטסאפ מקבל שורה אחת.
-export const buildRsvpMessage = (guest, origin) =>
-  [
-    `היי ${String(guest.guest_name ?? "").trim()},`,
-    "אנחנו מתרגשים מאוד לקראת האירוע ונשמח לאישור סופי! 💍",
-    "",
-    "לאישור הגעה לחצו כאן:",
-    buildRsvpLink(origin, guest.id, "confirmed"),
-    "",
-    "לעדכון על חוסר יכולת להגיע:",
-    buildRsvpLink(origin, guest.id, "canceled"),
-  ].join("\n");
 
 // קישור שליחה עם טקסט מוכן. מכוון: api.whatsapp.com/send ולא wa.me.
 // wa.me מפנה (302) ל-api.whatsapp.com ובדרך מקלקל אימוג'י: תו של 4 בתים
@@ -203,7 +182,10 @@ const ColumnGroup = () => (
 const TABLE_CLASS =
   "w-full table-fixed border-separate border-spacing-y-2 text-right";
 
-export default function GuestListManager({ eventId, eventName, onClose }) {
+// eventDetails: { name, event_date, location, design_config } — לפרטים בהודעת קישור
+// הקסם (lib/rsvpMessage.js).
+export default function GuestListManager({ eventId, eventDetails, onClose }) {
+  const eventName = eventDetails?.name;
   const { showToast } = useToast();
 
   const [guests, setGuests] = useState([]);
@@ -573,7 +555,9 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
 
   const copyMessage = async (guest) => {
     try {
-      await navigator.clipboard.writeText(buildRsvpMessage(guest, origin));
+      await navigator.clipboard.writeText(
+        buildRsvpMessage(guest, eventDetails, origin),
+      );
       showToast("ההודעה הועתקה", "success");
     } catch {
       showToast("לא ניתן להעתיק", "error");
@@ -760,7 +744,7 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
             <a
               href={buildWhatsAppSendUrl(
                 waPhone,
-                buildRsvpMessage(guest, origin),
+                buildRsvpMessage(guest, eventDetails, origin),
               )}
               target="_blank"
               rel="noopener noreferrer"
@@ -831,17 +815,10 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
   const renderGroup = ({ key, members, matchingIds }) => {
     const collapsed = collapsedGroups.has(key);
     // הקישור המשותף הוא הקישור של החבר הראשון. rsvp_guest_group מקבץ לפי
-    // הטלפון כפי שנשמר, תו בתו, ולכן הוא פותח רק את מי שהטלפון שלו כתוב
-    // בדיוק כמו של הראשון. מי שכתוב אחרת (למשל 972... מול 050-...) מקבל
-    // כפתור שליחה משלו בשורה, ומסומן כאן.
+    // normalize_guest_phone — אותו כלל כמו groupingPhoneKey כאן — ולכן הוא
+    // פותח את כל בני הכרטיס, גם כשהטלפון כתוב אצלם בפורמטים שונים.
     const primary = members[0];
-    const primaryRawPhone = (primary.phone || "").trim();
-    const sharedIds = new Set(
-      members
-        .filter((m) => (m.phone || "").trim() === primaryRawPhone)
-        .map((m) => m.id),
-    );
-    const mismatchedCount = members.length - sharedIds.size;
+    const sharedIds = new Set(members.map((m) => m.id));
     const waPhone = toWhatsAppPhone(primary.phone);
     const meals = members.reduce((sum, m) => sum + (m.guests_count || 0), 0);
     const under5 = members.reduce((sum, m) => sum + (m.under_5_count || 0), 0);
@@ -891,20 +868,12 @@ export default function GuestListManager({ eventId, eventName, onClose }) {
                   {matchingIds.size} תואמים לסינון
                 </span>
               )}
-              {mismatchedCount > 0 && (
-                <span
-                  title="הטלפון של חלק מבני החבורה כתוב בפורמט אחר, ולכן הקישור המשותף לא יפתח אותם. אפשר לשלוח להם מהשורה, או לכתוב את הטלפון זהה לכולם."
-                  className="rounded-lg bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800"
-                >
-                  {mismatchedCount} בפורמט טלפון שונה
-                </span>
-              )}
               <div className="flex items-center gap-2">
                 {waPhone && (
                   <a
                     href={buildWhatsAppSendUrl(
                       waPhone,
-                      buildRsvpMessage(primary, origin),
+                      buildRsvpMessage(primary, eventDetails, origin),
                     )}
                     target="_blank"
                     rel="noopener noreferrer"
