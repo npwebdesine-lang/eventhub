@@ -18,7 +18,9 @@
 --     number cancel every guest in that party;
 --   * pending rows only: a guest who already answered (e.g. confirmed) is
 --     never flipped from this link — that goes through their magic link;
---   * returns NULL on the update path: the row id is the magic-link key.
+--   * every decline returns NULL (update or insert alike): the row id is the
+--     magic-link key, and a differing result would reveal whether a
+--     name+phone pair is a pending invitee.
 -- The frontend ignores the return value.
 --
 -- Confirmations are unchanged (always insert). Signature, defaults, grants and
@@ -162,6 +164,12 @@ begin
     v_index := v_index + 1;
   end loop;
 
+  -- A decline returns NULL on BOTH paths (update above, insert here), so a
+  -- caller cannot use the return value to learn whether a name+phone belongs
+  -- to a pending invitee. Confirmations still return their own new row's id.
+  if v_status = 'canceled' then
+    return null;
+  end if;
   return v_primary_id;
 end;
 $function$;
