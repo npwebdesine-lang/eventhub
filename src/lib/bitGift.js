@@ -77,6 +77,19 @@ export const validGiftLinks = (designConfig, provider) =>
     .links.map((link) => link.trim())
     .filter((link) => isValidGiftUrl(link, provider));
 
+// מודול "מתנה דיגיטלית" כתוסף שאפשר להדליק ולכבות לכל אירוע
+// (design_config.gift_enabled). כיבוי לא מוחק קישורים — הם נשמרים וחוזרים
+// בהדלקה. כשהדגל חסר (אירועים מלפני התוסף): דולק אם נשמר קישור כלשהו, כבוי
+// אם לא. שמירה בדשבורד כותבת תמיד ערך בוליאני מפורש.
+// אותו כלל ב-resolve_gift_redirect: false מפורש = אין הפניה.
+export const isGiftEnabled = (designConfig) => {
+  const flag = designConfig?.gift_enabled;
+  if (typeof flag === "boolean") return flag;
+  return Object.keys(GIFT_PROVIDERS).some((provider) =>
+    readGiftPair(designConfig, provider).links.some((link) => link.trim()),
+  );
+};
+
 // הקישור הדינמי שמודפס ב-QR ומשמש את כפתור המתנה בהזמנה.
 export const buildGiftLink = (origin, provider, eventId) =>
   `${origin}/g/${provider}/${encodeGuestCode(eventId)}`;
@@ -88,8 +101,10 @@ export const giftTitle = (gifts) => {
 };
 
 // לאורחים: { bit, paybox } — לכל ספק עם קישור תקין אחד לפחות { url, phones },
-// או null כשאין אף ספק, ואז לא מוצג כלום.
+// או null כשהמודול כבוי או כשאין אף ספק, ואז לא מוצג כלום (לא בהזמנה ולא
+// בגיליון קישור הקסם — כולם קוראים מכאן).
 export const getGiftOptions = (designConfig, eventId, origin) => {
+  if (!isGiftEnabled(designConfig)) return null;
   const options = {};
   for (const provider of Object.keys(GIFT_PROVIDERS)) {
     if (!validGiftLinks(designConfig, provider).length) continue;

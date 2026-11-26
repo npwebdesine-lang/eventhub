@@ -259,7 +259,8 @@ const ADD_GUEST_BUTTON =
   "w-full min-h-12 rounded-full flex items-center justify-center gap-2 font-bold text-slate-600 bg-clay-chip shadow-clay-md active:shadow-clay-pressed transition-all disabled:opacity-40";
 
 // "רוצים לפנק במתנה ב-bit?" — מוצג רק כשלאירוע יש קישור bit או PayBox תקין
-// (getGiftOptions), כך שאירועים בלי קישור נראים בדיוק כמו קודם. ספק אחד:
+// (getGiftOptions) ומודול המתנה דולק (design_config.gift_enabled), כך
+// שאירועים בלי קישור או עם מודול כבוי נראים בדיוק כמו קודם. ספק אחד:
 // בשמו ובצבעו; שניהם: "רוצים לפנק במתנה לזוג?".
 const BitGiftButton = ({ gifts, onClick, className = "" }) => {
   const providers = Object.values(gifts || {});

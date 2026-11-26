@@ -7,10 +7,11 @@ import {
   GIFT_PROVIDERS,
   buildGiftLink,
   isValidBitPhone,
+  isGiftEnabled,
   isValidGiftUrl,
   readGiftPair,
 } from "../lib/bitGift";
-import GiftLinksSettings from "../components/GiftLinksSettings";
+import GiftModuleSettings from "../components/GiftModuleSettings";
 import { useToast } from "../components/Toast";
 import GuestListManager from "../components/GuestListManager";
 import VideoTile from "../components/VideoTile";
@@ -475,8 +476,12 @@ const Admin = () => {
 
   const handleSave = async () => {
     if (!formData.name) return alert("יש להזין שם אירוע");
-    const giftConfig = {};
-    for (const provider of Object.keys(GIFT_PROVIDERS)) {
+    // הדגל נכתב תמיד כבוליאני מפורש (גם באירוע ישן שבו הוא נגזר מהקישורים).
+    // מודול כבוי: הקישורים נשארים בדיוק כמו שהם, בלי בדיקה ובלי ניקוי, כדי
+    // שהדלקה מחדש תחזיר אותם.
+    const giftEnabled = isGiftEnabled(formData.design_config);
+    const giftConfig = { gift_enabled: giftEnabled };
+    for (const provider of giftEnabled ? Object.keys(GIFT_PROVIDERS) : []) {
       const { label } = GIFT_PROVIDERS[provider];
       const { links, phones } = readGiftPair(formData.design_config, provider);
       const cleanLinks = links.map((link) => link.trim());
@@ -493,8 +498,10 @@ const Admin = () => {
       if (provider === "bit") giftConfig.bit_phones = cleanPhones;
     }
     // תאימות לאחור: bit_link / bit_phone = הקישור והטלפון הראשונים שמולאו.
-    giftConfig.bit_link = giftConfig.bit_links.find(Boolean) || "";
-    giftConfig.bit_phone = giftConfig.bit_phones.find(Boolean) || "";
+    if (giftEnabled) {
+      giftConfig.bit_link = giftConfig.bit_links.find(Boolean) || "";
+      giftConfig.bit_phone = giftConfig.bit_phones.find(Boolean) || "";
+    }
     const payloadToSave = {
       ...formData,
       short_code: formData.short_code
@@ -1817,69 +1824,70 @@ const Admin = () => {
                   </div>
                 </div>
 
-                {/* מתנה לזוג: לכל ספק זוג קישורים (חתן, כלה) ו-QR יחיד מודפס
-                    שמחלק את הסריקות ביניהם (lib/bitGift.js). ריק = האורחים לא
-                    רואים כלום. */}
-                {Object.keys(GIFT_PROVIDERS).map((provider) => (
-                  <GiftLinksSettings
-                    key={provider}
-                    provider={provider}
-                    designConfig={formData.design_config}
-                    onChange={updateDesignConfig}
-                    canShowQr={Boolean(selectedEvent?.id)}
-                    onOpenQr={() => setGiftQrProvider(provider)}
-                  />
-                ))}
+                {/* מתנה לזוג: תוסף שמודלק לכל אירוע (design_config.gift_enabled).
+                    לכל ספק זוג קישורים (חתן, כלה) ו-QR יחיד מודפס שמחלק את
+                    הסריקות ביניהם (lib/bitGift.js). כיבוי מסתיר הכל — בדשבורד,
+                    בהזמנה וב-/g/ — אבל לא מוחק את הקישורים. */}
+                <GiftModuleSettings
+                  designConfig={formData.design_config}
+                  onChange={updateDesignConfig}
+                  canShowQr={Boolean(selectedEvent?.id)}
+                  onOpenQr={setGiftQrProvider}
+                />
 
-                {giftQrProvider && selectedEvent?.id && (
-                  <Modal
-                    open
-                    onClose={() => setGiftQrProvider(null)}
-                    title={`QR יחיד ל-${GIFT_PROVIDERS[giftQrProvider].label}`}
-                    size="sm"
-                  >
-                    {(() => {
-                      const { label } = GIFT_PROVIDERS[giftQrProvider];
-                      const giftUrl = buildGiftLink(
-                        window.location.origin,
-                        giftQrProvider,
-                        selectedEvent.id,
-                      );
-                      return (
-                        <div className="flex flex-col items-center gap-4 text-center">
-                          <QrCodeView
-                            data={giftUrl}
-                            size={260}
-                            label={`קוד QR יחיד לתשלום ב-${label}`}
-                          />
-                          <p
-                            className="text-xs text-clay-muted font-mono break-all"
-                            dir="ltr"
-                          >
-                            {giftUrl}
-                          </p>
-                          <p className="text-xs text-clay-muted font-medium leading-relaxed">
-                            להדפסה לשולחנות או לכניסה. כל סריקה פותחת לסירוגין
-                            את הקישור של החתן ואת של הכלה. שינוי קישורים נכנס
-                            לתוקף אחרי "שמירה" — בלי להדפיס מחדש.
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              downloadQrPng(
-                                giftUrl,
-                                `${giftQrProvider}-gift-qr`,
-                              ).catch(() => alert("הורדת הקוד נכשלה, נסו שוב"))
-                            }
-                            className="w-full flex items-center justify-center gap-2 bg-clay-ink hover:bg-clay-ink-hover text-white shadow-clay-btn py-3.5 rounded-xl font-bold transition-colors"
-                          >
-                            <Download size={18} /> הורדת PNG להדפסה
-                          </button>
-                        </div>
-                      );
-                    })()}
-                  </Modal>
-                )}
+                {giftQrProvider &&
+                  selectedEvent?.id &&
+                  isGiftEnabled(formData.design_config) && (
+                    <Modal
+                      open
+                      onClose={() => setGiftQrProvider(null)}
+                      title={`QR יחיד ל-${GIFT_PROVIDERS[giftQrProvider].label}`}
+                      size="sm"
+                    >
+                      {(() => {
+                        const { label } = GIFT_PROVIDERS[giftQrProvider];
+                        const giftUrl = buildGiftLink(
+                          window.location.origin,
+                          giftQrProvider,
+                          selectedEvent.id,
+                        );
+                        return (
+                          <div className="flex flex-col items-center gap-4 text-center">
+                            <QrCodeView
+                              data={giftUrl}
+                              size={260}
+                              label={`קוד QR יחיד לתשלום ב-${label}`}
+                            />
+                            <p
+                              className="text-xs text-clay-muted font-mono break-all"
+                              dir="ltr"
+                            >
+                              {giftUrl}
+                            </p>
+                            <p className="text-xs text-clay-muted font-medium leading-relaxed">
+                              להדפסה לשולחנות או לכניסה. כל סריקה פותחת לסירוגין
+                              את הקישור של החתן ואת של הכלה. שינוי קישורים נכנס
+                              לתוקף אחרי "שמירה" — בלי להדפיס מחדש.
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                downloadQrPng(
+                                  giftUrl,
+                                  `${giftQrProvider}-gift-qr`,
+                                ).catch(() =>
+                                  alert("הורדת הקוד נכשלה, נסו שוב"),
+                                )
+                              }
+                              className="w-full flex items-center justify-center gap-2 bg-clay-ink hover:bg-clay-ink-hover text-white shadow-clay-btn py-3.5 rounded-xl font-bold transition-colors"
+                            >
+                              <Download size={18} /> הורדת PNG להדפסה
+                            </button>
+                          </div>
+                        );
+                      })()}
+                    </Modal>
+                  )}
 
                 <div className="space-y-4 pt-2">
                   <div className="space-y-2">
