@@ -283,9 +283,8 @@ const ActionButtons = ({
   location,
   id,
   primaryColor,
-  setShowRsvp,
-  setRsvpStep,
-  initialRsvpStep = 1,
+  onOpenRsvp,
+  isMagic,
   navigate,
   bitGift,
   onOpenGift,
@@ -296,18 +295,40 @@ const ActionButtons = ({
       className="fade-up-item mt-8 pt-8 border-t border-opacity-20 space-y-4 relative z-20"
       style={{ borderColor: isLight ? "#00000022" : "#ffffff22" }}
     >
-      {active_modules?.rsvp !== false && (
-        <button
-          onClick={() => {
-            setShowRsvp(true);
-            setRsvpStep(initialRsvpStep);
-          }}
-          className="w-full flex items-center justify-center gap-3 text-white font-black py-4 rounded-full text-lg active:scale-[0.97] transition-transform"
-          style={clayButtonStyle(primaryColor)}
-        >
-          <CheckCircle2 size={24} /> אישור הגעה (RSVP)
-        </button>
-      )}
+      {active_modules?.rsvp !== false &&
+        (isMagic ? (
+          // קישור קסם ישן (?guest_id=): הגיליון האישי כבר מציג את שתי
+          // האפשרויות, ולכן נשאר כפתור אחד.
+          <button
+            onClick={() => onOpenRsvp(false)}
+            className="w-full flex items-center justify-center gap-3 text-white font-black py-4 rounded-full text-lg active:scale-[0.97] transition-transform"
+            style={clayButtonStyle(primaryColor)}
+          >
+            <CheckCircle2 size={24} /> אישור הגעה (RSVP)
+          </button>
+        ) : (
+          // שתי תשובות כבר במסך הראשון: מי שלא מגיע רואה מיד איפה ללחוץ,
+          // ולא צריך לגלות את האפשרות מתוך טופס אישור ההגעה.
+          // flex-wrap: זה לצד זה, ובכרטיס הצר של תבנית "corporate" בטלפון
+          // קטן — אחד מעל השני ברוחב מלא, במקום תווית שנשברת לשתי שורות.
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => onOpenRsvp(false)}
+              className="grow basis-32 whitespace-nowrap flex items-center justify-center text-white font-black py-4 px-2.5 rounded-full text-base sm:text-lg active:scale-[0.97] transition-transform"
+              style={clayButtonStyle(primaryColor)}
+            >
+              מגיעים בשמחה ✅
+            </button>
+            <button
+              type="button"
+              onClick={() => onOpenRsvp(true)}
+              className={`grow basis-32 whitespace-nowrap flex items-center justify-center font-bold py-4 px-2.5 rounded-full text-base sm:text-lg text-slate-600 transition-all active:scale-[0.97] ${CLAY_RAISED} active:shadow-clay-pressed`}
+            >
+              לא אוכל להגיע ❌
+            </button>
+          </div>
+        ))}
       {bitGift && <BitGiftButton onClick={onOpenGift} />}
       <div className="flex flex-col md:flex-row gap-3">
         {location && (
@@ -775,6 +796,14 @@ const Invite = () => {
       prev.map((guest) => (guest.key === key ? { ...guest, ...patch } : guest)),
     );
 
+  // שני הכפתורים במסך הראשון פותחים את אותו טופס, כל אחד במצב שלו. החלפה
+  // בתוך הטופס נשארת אפשרית (מי שלחץ בטעות).
+  const openRsvp = (declining) => {
+    setRsvpDeclining(declining);
+    setRsvpStep(magicGuest ? RSVP_STEP_GUEST : RSVP_STEP_FORM);
+    setShowRsvp(true);
+  };
+
   // ההרשמה כולה עוברת ב-RPC: ל-anon אין policy על event_guests ולכן הוא לא
   // יכול לקרוא או לכתוב אותה ישירות. שתי הפונקציות security definer מגבילות
   // אותו בדיוק לשתי הפעולות האלה.
@@ -783,6 +812,11 @@ const Invite = () => {
     if (rsvpDeclining) {
       if (!guests[0].name.trim()) {
         showToast("אנא מלאו את השם", "warning");
+        return;
+      }
+      // בסירוב הטלפון לא חובה, אבל אם הוזן הוא חייב להיות תקין.
+      if (submitterPhone.trim() && !PHONE_PATTERN.test(submitterPhone.trim())) {
+        showToast("מספר הטלפון אינו תקין", "warning");
         return;
       }
     } else {
@@ -797,6 +831,12 @@ const Invite = () => {
         showToast("מספר הטלפון אינו תקין", "warning");
         return;
       }
+    }
+    // סירוב עם טלפון מעדכן את הרשומה הקיימת של אותו שם+טלפון (ראו
+    // rsvp_self_register), כך שאזהרת "השם כבר רשום" רק הייתה מבלבלת.
+    if (rsvpDeclining && submitterPhone.trim()) {
+      await executeSubmit();
+      return;
     }
     setIsSubmitting(true);
     try {
@@ -827,8 +867,9 @@ const Invite = () => {
   const executeSubmit = async () => {
     setIsSubmitting(true);
     try {
-      // סירוב הוא אדם אחד: בלי טלפון, בלי מלווים ובלי העדפת תזונה — גם אם
-      // מולאו לפני שנבחר "לא אגיע", הם נשארים בטופס ולא נשלחים.
+      // סירוב הוא אדם אחד: בלי מלווים ובלי העדפת תזונה — גם אם מולאו לפני
+      // שנבחר "לא אוכל להגיע", הם נשארים בטופס ולא נשלחים. הטלפון כן נשלח
+      // (אם הוזן): לפיו ה-RPC מוצא את הרשומה הקיימת ומעדכן אותה.
       const party = rsvpDeclining
         ? [{ name: guests[0].name.trim(), dietary: DEFAULT_DIETARY }]
         : guests
@@ -840,7 +881,7 @@ const Invite = () => {
 
       const { error } = await supabase.rpc("rsvp_self_register", {
         p_event_id: id,
-        p_phone: rsvpDeclining ? null : submitterPhone.trim(),
+        p_phone: submitterPhone.trim() || null,
         p_guests: party,
         p_notes: rsvpNotes.trim() || null,
         // נשלח רק בסירוב; אישור נשען על ברירת המחדל 'confirmed' של ה-RPC.
@@ -975,9 +1016,8 @@ const Invite = () => {
               id={id}
               location={location}
               primaryColor={primaryColor}
-              setShowRsvp={setShowRsvp}
-              setRsvpStep={setRsvpStep}
-              initialRsvpStep={magicGuest ? RSVP_STEP_GUEST : 1}
+              onOpenRsvp={openRsvp}
+              isMagic={Boolean(magicGuest)}
               navigate={navigate}
               bitGift={bitGift}
               onOpenGift={() => setGiftOpen(true)}
@@ -1062,9 +1102,8 @@ const Invite = () => {
                 id={id}
                 location={location}
                 primaryColor={primaryColor}
-                setShowRsvp={setShowRsvp}
-                setRsvpStep={setRsvpStep}
-                initialRsvpStep={magicGuest ? RSVP_STEP_GUEST : 1}
+                onOpenRsvp={openRsvp}
+                isMagic={Boolean(magicGuest)}
                 bitGift={bitGift}
                 onOpenGift={() => setGiftOpen(true)}
                 navigate={navigate}
@@ -1157,9 +1196,8 @@ const Invite = () => {
             id={id}
             location={location}
             primaryColor={primaryColor}
-            setShowRsvp={setShowRsvp}
-            setRsvpStep={setRsvpStep}
-            initialRsvpStep={magicGuest ? RSVP_STEP_GUEST : 1}
+            onOpenRsvp={openRsvp}
+            isMagic={Boolean(magicGuest)}
             navigate={navigate}
             bitGift={bitGift}
             onOpenGift={() => setGiftOpen(true)}
@@ -1493,24 +1531,24 @@ const Invite = () => {
                   )}
                 </div>
                 <h2 className="text-2xl font-black text-slate-700 mb-2 text-center">
-                  אישור הגעה
+                  {rsvpDeclining ? "לא תוכלו להגיע?" : "אישור הגעה"}
                 </h2>
                 <p className="text-clay-muted font-medium text-center mb-6 text-sm">
                   {rsvpDeclining
-                    ? "חבל שלא תוכלו להגיע — נשמח לדעת"
+                    ? "חבל שלא תהיו איתנו — רק כמה פרטים ונעדכן ברשימה"
                     : "נשמח לדעת מי מגיע"}
                 </p>
 
-                {/* אותה בחירה כמו בקישור הקסם. ברירת המחדל "מגיע/ה", כך
-                    שהזרימה הקיימת לא משתנה למי שלא נוגע בה. */}
+                {/* המצב נקבע לפי הכפתור שנלחץ במסך הראשון; כאן אפשר לתקן
+                    מי שלחץ בטעות. */}
                 <div
                   className="flex gap-3 mb-6"
                   role="radiogroup"
                   aria-label="האם תגיעו?"
                 >
                   {[
-                    { declining: false, label: "מגיע/ה" },
-                    { declining: true, label: "לא אגיע" },
+                    { declining: false, label: "מגיע/ה ✅" },
+                    { declining: true, label: "לא אוכל להגיע ❌" },
                   ].map((option) => {
                     const active = rsvpDeclining === option.declining;
                     return (
@@ -1521,7 +1559,7 @@ const Invite = () => {
                         aria-checked={active}
                         disabled={isSubmitting}
                         onClick={() => setRsvpDeclining(option.declining)}
-                        className={`flex-1 font-bold py-4 rounded-full transition-all disabled:opacity-50 ${
+                        className={`flex-1 min-w-0 font-bold py-4 px-2 rounded-full leading-tight transition-all disabled:opacity-50 ${
                           active
                             ? "text-white active:scale-[0.97]"
                             : "text-slate-600 bg-clay-chip shadow-clay-md"
@@ -1538,33 +1576,63 @@ const Invite = () => {
 
                 <div className="space-y-4 mb-8">
                   {rsvpDeclining ? (
-                    <div className="space-y-1">
-                      <label
-                        htmlFor="rsvp-decline-name"
-                        className="text-xs font-bold text-clay-muted pr-2"
-                      >
-                        השם שלך
-                      </label>
-                      <input
-                        id="rsvp-decline-name"
-                        type="text"
-                        required
-                        maxLength={100}
-                        placeholder="שם מלא"
-                        aria-describedby="rsvp-decline-name-hint"
-                        value={guests[0].name}
-                        onChange={(e) =>
-                          updateGuest(guests[0].key, { name: e.target.value })
-                        }
-                        className={CLAY_FIELD}
-                      />
-                      <p
-                        id="rsvp-decline-name-hint"
-                        className="text-xs text-clay-muted pr-2"
-                      >
-                        אנא הזינו שם מלא
-                      </p>
-                    </div>
+                    <>
+                      <div className="space-y-1">
+                        <label
+                          htmlFor="rsvp-decline-name"
+                          className="text-xs font-bold text-clay-muted pr-2"
+                        >
+                          שם מלא
+                        </label>
+                        <input
+                          id="rsvp-decline-name"
+                          type="text"
+                          required
+                          maxLength={100}
+                          placeholder="שם מלא"
+                          aria-describedby="rsvp-decline-name-hint"
+                          value={guests[0].name}
+                          onChange={(e) =>
+                            updateGuest(guests[0].key, { name: e.target.value })
+                          }
+                          className={CLAY_FIELD}
+                        />
+                        <p
+                          id="rsvp-decline-name-hint"
+                          className="text-xs text-clay-muted pr-2"
+                        >
+                          אנא הזינו שם מלא, כפי שהוזמנתם
+                        </p>
+                      </div>
+                      {/* לא חובה: בעזרתו (יחד עם השם) המערכת מעדכנת את הרשומה
+                        הקיימת ברשימת המוזמנים במקום להוסיף שורה חדשה. */}
+                      <div className="space-y-1">
+                        <label
+                          htmlFor="rsvp-decline-phone"
+                          className="text-xs font-bold text-clay-muted pr-2"
+                        >
+                          טלפון
+                        </label>
+                        <input
+                          id="rsvp-decline-phone"
+                          type="tel"
+                          inputMode="tel"
+                          autoComplete="tel"
+                          placeholder="050-0000000"
+                          dir="ltr"
+                          aria-describedby="rsvp-decline-phone-hint"
+                          value={submitterPhone}
+                          onChange={(e) => setSubmitterPhone(e.target.value)}
+                          className={`${CLAY_FIELD} text-left`}
+                        />
+                        <p
+                          id="rsvp-decline-phone-hint"
+                          className="text-xs text-clay-muted pr-2"
+                        >
+                          כדי שנעדכן אתכם ברשימת המוזמנים
+                        </p>
+                      </div>
+                    </>
                   ) : (
                     <>
                       <div className="space-y-1">
@@ -1685,7 +1753,7 @@ const Invite = () => {
                       className="text-xs font-bold text-clay-muted pr-2"
                     >
                       {rsvpDeclining
-                        ? "הערה (לא חובה)"
+                        ? "ברכה או הערה קצרה (לא חובה)"
                         : "הערות כלליות (לכל החבורה)"}
                     </label>
                     <textarea
@@ -1696,7 +1764,7 @@ const Invite = () => {
                       rows={2}
                       placeholder={
                         rsvpDeclining
-                          ? "רוצים להשאיר מילה?"
+                          ? "רוצים להשאיר ברכה לזוג?"
                           : "אלרגיות, הסעה, כל דבר שחשוב שנדע..."
                       }
                       className={`${CLAY_FIELD} resize-none`}
@@ -1714,7 +1782,7 @@ const Invite = () => {
                     <Loader2 className="animate-spin" size={24} />
                   ) : rsvpDeclining ? (
                     <>
-                      <Save size={20} /> שמור
+                      <Send size={20} /> עדכון שלא אוכל להגיע
                     </>
                   ) : (
                     <>
@@ -1791,17 +1859,22 @@ const Invite = () => {
               <div className="step-anim py-12 text-center">
                 <div className="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 bg-clay-well shadow-clay-inset-deep">
                   {rsvpDeclining ? (
-                    <X size={48} className="text-clay-muted" />
+                    <Heart
+                      size={44}
+                      style={{ color: accentOn(primaryColor) }}
+                    />
                   ) : (
                     <CheckCircle2 size={48} className="text-[#7d9a86]" />
                   )}
                 </div>
                 <h2 className="text-3xl font-black text-slate-700 mb-2">
-                  {rsvpDeclining ? "תודה על העדכון" : "נתראה בחתונה!"}
+                  {rsvpDeclining
+                    ? `תודה${guests[0].name.trim() ? ` ${guests[0].name.trim().split(/\s+/)[0]}` : ""} על העדכון 💛`
+                    : "נתראה בחתונה!"}
                 </h2>
                 <p className="text-clay-muted font-medium text-lg">
                   {rsvpDeclining
-                    ? "תחסרו לנו מאוד! ניפגש בשמחות."
+                    ? "תחסרו לנו מאוד! תודה שהודעתם, ניפגש בשמחות."
                     : "אישור ההגעה נקלט בהצלחה."}
                 </p>
               </div>
