@@ -7,15 +7,19 @@
 -- admin then had to spot and merge them by hand.
 --
 -- Now, for status = 'canceled' with a real phone, the function first looks for
--- rows in the same event whose NORMALIZED phone (public.normalize_guest_phone)
--- and normalized name (lower-cased, trimmed, inner whitespace collapsed) both
--- match. If any exist they are marked canceled (the note is kept unless a new
--- one was sent) and the oldest one's id is returned. Only when nothing matches
--- is a new canceled row inserted, exactly as before.
+-- PENDING rows in the same event whose NORMALIZED phone
+-- (public.normalize_guest_phone) and normalized name (lower-cased, trimmed,
+-- inner whitespace collapsed) both match. If any exist they are marked
+-- canceled (a new note is appended, never replacing one) and NULL is
+-- returned. Otherwise a new canceled row is inserted, exactly as before.
 --
--- Requiring name AND phone together is deliberate: the general invite link is
--- public, so phone alone would let anyone who knows a number cancel every
--- guest in that party.
+-- Guards, because the general invite link is public:
+--   * name AND phone together: phone alone would let anyone who knows a
+--     number cancel every guest in that party;
+--   * pending rows only: a guest who already answered (e.g. confirmed) is
+--     never flipped from this link — that goes through their magic link;
+--   * returns NULL on the update path: the row id is the magic-link key.
+-- The frontend ignores the return value.
 --
 -- Confirmations are unchanged (always insert). Signature, defaults, grants and
 -- return value are unchanged, so this is safe to apply before or after the
@@ -38,6 +42,7 @@ declare
   v_primary_id uuid;
   v_id         uuid;
   v_count      integer;
+  v_matched    integer;
   v_under_5    integer := coalesce(p_under_5_count, 0);
   v_status     text    := coalesce(p_status, 'confirmed');
   v_phone      text;
@@ -93,24 +98,32 @@ begin
       raise exception 'invalid_guest_name';
     end if;
 
+    -- Only rows still waiting for an answer ('pending'). A row that already
+    -- holds a response is never overwritten from the public link: the decline
+    -- falls through to a new row and the host sees both.
     with matched as (
       update public.event_guests g
          set status       = 'canceled',
-             notes        = coalesce(v_notes, g.notes),
+             notes        = case
+                              when v_notes is null then g.notes
+                              when g.notes is null then v_notes
+                              else left(g.notes || E'\n' || v_notes, 500)
+                            end,
              responded_at = now()
        where g.event_id = p_event_id
+         and g.status = 'pending'
          and public.normalize_guest_phone(g.phone) = v_phone_key
          and regexp_replace(lower(trim(g.guest_name)), '\s+', ' ', 'g')
            = regexp_replace(lower(v_name), '\s+', ' ', 'g')
-      returning g.id, g.created_at
+      returning g.id
     )
-    select m.id into v_id
-      from matched m
-     order by m.created_at asc
-     limit 1;
+    select count(*) into v_matched from matched;
 
-    if v_id is not null then
-      return v_id;
+    -- Deliberately returns NULL, not the matched id: a guest's id is the key
+    -- inside their personal /r/ magic link, so returning it would hand that
+    -- link to anyone who knows the guest's name and phone.
+    if v_matched > 0 then
+      return null;
     end if;
   end if;
 
