@@ -18,6 +18,10 @@
       "destination": "/api/invite?g=:code"
     },
     {
+      "source": "/g/:provider/:code",
+      "destination": "/api/gift-redirect?p=:provider&e=:code"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

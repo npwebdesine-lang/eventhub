@@ -28,8 +28,8 @@ import {
   Wine,
   Gift,
 } from "lucide-react";
-import BitGiftModal, { BIT_ACCENT } from "../components/BitGiftModal";
-import { getBitGift } from "../lib/bitGift";
+import BitGiftModal from "../components/BitGiftModal";
+import { getGiftOptions, giftTitle } from "../lib/bitGift";
 import gsap from "gsap";
 import { accentOn } from "../lib/colors";
 import { useToast } from "../components/Toast";
@@ -258,23 +258,27 @@ const newGuestDraft = (key) => ({ key, name: "", dietary: DEFAULT_DIETARY });
 const ADD_GUEST_BUTTON =
   "w-full min-h-12 rounded-full flex items-center justify-center gap-2 font-bold text-slate-600 bg-clay-chip shadow-clay-md active:shadow-clay-pressed transition-all disabled:opacity-40";
 
-// "רוצים לפנק במתנה ב-bit?" — מוצג רק כשלאירוע יש קישור bit תקין
-// (getBitGift), כך שאירועים בלי קישור נראים בדיוק כמו קודם.
-const BitGiftButton = ({ onClick, className = "" }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className={`w-full flex items-center justify-center gap-2 font-bold py-4 rounded-full text-sm transition-all active:scale-95 text-clay-ink ${CLAY_RAISED} active:shadow-clay-pressed ${className}`}
-  >
-    <span
-      className="w-8 h-8 rounded-full flex items-center justify-center text-white shrink-0"
-      style={{ backgroundColor: BIT_ACCENT }}
+// "רוצים לפנק במתנה ב-bit?" — מוצג רק כשלאירוע יש קישור bit או PayBox תקין
+// (getGiftOptions), כך שאירועים בלי קישור נראים בדיוק כמו קודם. ספק אחד:
+// בשמו ובצבעו; שניהם: "רוצים לפנק במתנה לזוג?".
+const BitGiftButton = ({ gifts, onClick, className = "" }) => {
+  const providers = Object.values(gifts || {});
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full flex items-center justify-center gap-2 font-bold py-4 rounded-full text-sm transition-all active:scale-95 text-clay-ink ${CLAY_RAISED} active:shadow-clay-pressed ${className}`}
     >
-      <Gift size={15} />
-    </span>
-    רוצים לפנק במתנה ב-bit? 🎁
-  </button>
-);
+      <span
+        className="w-8 h-8 rounded-full flex items-center justify-center text-white shrink-0"
+        style={{ backgroundColor: providers[0]?.accent }}
+      >
+        <Gift size={15} />
+      </span>
+      רוצים לפנק ב{giftTitle(gifts)}? 🎁
+    </button>
+  );
+};
 
 // כפתורי פעולה משותפים (Moved outside to prevent re-mounting)
 const ActionButtons = ({
@@ -329,7 +333,7 @@ const ActionButtons = ({
             </button>
           </div>
         ))}
-      {bitGift && <BitGiftButton onClick={onOpenGift} />}
+      {bitGift && <BitGiftButton gifts={bitGift} onClick={onOpenGift} />}
       <div className="flex flex-col md:flex-row gap-3">
         {location && (
           <a
@@ -926,7 +930,7 @@ const Invite = () => {
   const template = design_config?.invite_template || "modern";
   const inviteImage = design_config?.invite_image;
   const schedule = getEventSchedule(design_config);
-  const bitGift = getBitGift(design_config);
+  const bitGift = getGiftOptions(design_config, id, window.location.origin);
   // הספירה לאחור מכוונת לשלב הראשון (קבלת הפנים), לא לשעה קבועה.
   const startTime = schedule[0]?.time;
 
@@ -1462,6 +1466,7 @@ const Invite = () => {
                 )}
                 {bitGift && (
                   <BitGiftButton
+                    gifts={bitGift}
                     onClick={() => setGiftOpen(true)}
                     className="mt-4"
                   />
@@ -1508,6 +1513,7 @@ const Invite = () => {
                 </div>
                 {bitGift && (
                   <BitGiftButton
+                    gifts={bitGift}
                     onClick={() => setGiftOpen(true)}
                     className="mt-4"
                   />
@@ -1887,7 +1893,7 @@ const Invite = () => {
       <BitGiftModal
         open={giftOpen}
         onClose={() => setGiftOpen(false)}
-        gift={bitGift}
+        gifts={bitGift}
       />
     </>
   );
